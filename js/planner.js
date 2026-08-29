@@ -267,17 +267,24 @@ function freezeBaseline(items) {
   }
 }
 
-function enforceRuntimeConstraints(recipe, items, completed = {}) {
+function validTimestamp(value) {
+  if (!value) return null;
+  const date = value instanceof Date ? new Date(value) : new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function enforceRuntimeConstraints(recipe, items, actualCompletionTimes = {}, actualStartTimes = {}) {
   const byId = new Map(items.map(item => [item.step.id, item]));
   const ordered = topoOrder(recipe);
-  const maxIterations = Math.max(8, recipe.steps.length * 4);
+  const maxIterations = Math.max(8, recipe.steps.length * 6);
+  const fixed = stepId => Boolean(validTimestamp(actualCompletionTimes[stepId]) || validTimestamp(actualStartTimes[stepId]));
 
   for (let iteration = 0; iteration < maxIterations; iteration++) {
     let changed = false;
 
     for (const step of ordered) {
       const item = byId.get(step.id);
-      if (completed[step.id]) continue;
+      if (fixed(step.id)) continue;
       for (const dependency of step.dependencies || []) {
         const predecessor = byId.get(dependency.stepId);
         const threshold = dependencyThresholdMs(predecessor, dependency, false);
@@ -296,24 +303,23 @@ function enforceRuntimeConstraints(recipe, items, completed = {}) {
       const previous = reservations[i - 1];
       const current = reservations[i];
       if (current.start >= previous.end) continue;
-      if (completed[current.step.id] && completed[previous.step.id]) continue;
+      const previousFixed = fixed(previous.step.id);
+      const currentFixed = fixed(current.step.id);
+      if (previousFixed && currentFixed) continue;
 
-      if (!completed[current.step.id]) {
+      if (!currentFixed) {
         shiftItem(current, previous.end.getTime() - current.start.getTime());
-        changed = true;
+      } else if (!previousFixed) {
+        shiftItem(previous, current.end.getTime() - previous.start.getTime());
       }
+      changed = true;
+      break;
     }
 
     if (!changed) return;
   }
 
   throw new Error('Planner could not resolve runtime dependency/resource constraints.');
-}
-
-function validTimestamp(value) {
-  if (!value) return null;
-  const date = value instanceof Date ? new Date(value) : new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date;
 }
 
 export function buildSchedule(recipe, mealTime, referenceDate = new Date(), taskShifts = {}, options = {}) {
@@ -323,12 +329,19 @@ export function buildSchedule(recipe, mealTime, referenceDate = new Date(), task
   resolveBaselineResourceConflicts(recipe, items);
   freezeBaseline(items);
 
+  const actualStartTimes = options.actualStartTimes || {};
   const actualCompletionTimes = options.actualCompletionTimes || {};
   const expectedCompletionTimes = options.expectedCompletionTimes || {};
   for (const item of items) {
     const shift = isFiniteNumber(taskShifts[item.step.id]) ? taskShifts[item.step.id] : 0;
     if (shift) shiftItem(item, shift * 60000);
     item.shiftMin = shift;
+
+    const actualStart = validTimestamp(actualStartTimes[item.step.id]);
+    if (actualStart) {
+      item.start = actualStart;
+      item.end = new Date(actualStart.getTime() + plannedDurationMin(item.step) * 60000);
+    }
 
     const actualEnd = validTimestamp(actualCompletionTimes[item.step.id]);
     if (actualEnd) {
@@ -340,7 +353,7 @@ export function buildSchedule(recipe, mealTime, referenceDate = new Date(), task
     if (expectedEnd && expectedEnd > item.end) item.end = expectedEnd;
   }
 
-  enforceRuntimeConstraints(recipe, items, actualCompletionTimes);
+  enforceRuntimeConstraints(recipe, items, actualCompletionTimes, actualStartTimes);
 
   return items.sort((a, b) => a.start - b.start || recipe.steps.indexOf(a.step) - recipe.steps.indexOf(b.step));
 }
@@ -421,8 +434,12 @@ export function shiftDependentTasks(recipe, taskShifts, completed, sourceStepId,
   return next;
 }
 
-export function getNextScheduledTask(schedule, completed, nextActionTimes = {}) {
-  const candidates = schedule.filter(item => !completed[item.step.id]);
+export function getNextScheduledTask(schedule, completed, nextActionTimes = {}, started = {}) {
+  const candidates = schedule.filter(item => {
+    if (completed[item.step.id]) return false;
+    if (validTimestamp(nextActionTimes[item.step.id])) return true;
+    return !started[item.step.id];
+  });
   if (!candidates.length) return null;
   const effectiveTime = item => validTimestamp(nextActionTimes[item.step.id])?.getTime() ?? item.start.getTime();
   return [...candidates].sort((a, b) => effectiveTime(a) - effectiveTime(b) || schedule.indexOf(a) - schedule.indexOf(b))[0];
