@@ -2,15 +2,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-const [appJs, indexHtml, serviceWorker] = await Promise.all([
+const [appJs, sessionJs, indexHtml, serviceWorker] = await Promise.all([
   readFile(new URL('../app.js', import.meta.url), 'utf8'),
+  readFile(new URL('../js/session.js', import.meta.url), 'utf8'),
   readFile(new URL('../index.html', import.meta.url), 'utf8'),
   readFile(new URL('../service-worker.js', import.meta.url), 'utf8')
 ]);
 
 test('active cook persists observation and pending-recheck state', () => {
-  assert.match(appJs, /observations:\s*\[\]/);
-  assert.match(appJs, /rechecks:\s*\{\}/);
+  assert.match(sessionJs, /observations:\s*\[\]/);
+  assert.match(sessionJs, /rechecks:\s*\{\}/);
   assert.match(appJs, /applyObservation\(/);
   assert.match(appJs, /pendingRecheckDate\(state\.rechecks, step\.id\)/);
   assert.match(appJs, /state\.observations = result\.observations/);
