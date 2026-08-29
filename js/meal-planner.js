@@ -71,6 +71,7 @@ export function normalizeMealPlanContext(recipe, context = {}) {
     targetServingAt,
     referenceDate,
     taskShifts: { ...(context.taskShifts || {}) },
+    actualStartTimes: { ...(context.actualStartTimes || {}) },
     actualCompletionTimes: { ...(context.actualCompletionTimes || {}) },
     expectedCompletionTimes: { ...(context.expectedCompletionTimes || {}) },
     selectedComponents,
@@ -86,6 +87,7 @@ export function buildMealSchedule(recipe, context = {}) {
     normalized.referenceDate,
     normalized.taskShifts,
     {
+      actualStartTimes: normalized.actualStartTimes,
       actualCompletionTimes: normalized.actualCompletionTimes,
       expectedCompletionTimes: normalized.expectedCompletionTimes
     }
