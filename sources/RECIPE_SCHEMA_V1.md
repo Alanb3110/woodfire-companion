@@ -1,9 +1,9 @@
 # Woodfire Companion — Recipe Schema V1
 
 ## Status
-Schema V1 is the first concrete, executable recipe format used by the application. The reference implementation is `recipes/pork-belly-burnt-ends.json`.
+Schema V1 is the executable recipe format used by the application. The canonical reference is `recipes/pork-belly-burnt-ends.json`.
 
-This schema intentionally separates recipe semantics from UI code while preserving the current POC schedule during the first refactor.
+The reference recipe is now fully dependency-driven: it no longer uses `preferredStartOffsetMin` for step placement.
 
 ## Top-level structure
 A recipe/meal contains:
@@ -14,44 +14,33 @@ A recipe/meal contains:
 - `servings`: reference/min/max servings;
 - `timing`: active and elapsed estimates;
 - `temperature`: default logging target where useful;
-- optional `advancePrep`: pre-cook guidance that may be done before the active timeline;
-- `components`: main/side/sauce grouping;
-- `ingredients`: scalable ingredient definitions;
-- `equipment`: appliance/accessory/recipe-consumable requirements;
-- `steps`: executable planning units.
+- optional `advancePrep`;
+- `components`;
+- `ingredients`;
+- `equipment`;
+- `steps`.
 
 ## Ingredients
-Each ingredient has a stable `id`, a display name, shopping category and optional preparation note.
+Each ingredient has a stable `id`, display name, quantity/unit, scaling rule, shopping category and optional preparation note.
 
-Quantity may be:
-- a number;
-- `{ min, max }` for a range;
-- `null` when a false numeric quantity would be less useful than guidance such as `to taste`.
+Quantity may be a number, `{ min, max }`, or `null` when numeric guidance would be misleading.
 
-Supported scaling types in V1:
+Supported scaling types:
 - `linear`;
 - `fixed`;
 - `step` with serving breakpoints;
 - `range`;
 - `to_taste`.
 
-`js/recipe.js` contains the scaling implementation and recipe validator.
+`js/recipe.js` contains scaling and validation.
 
 ## Components
-Components group ingredients and steps into coherent meal parts such as:
-- main;
-- side;
-- sauce.
-
-V1 keeps components embedded in one meal JSON. Reusable component files may be extracted later when multiple recipes actually share them.
+Components group ingredients and steps into meal parts such as main, side and sauce. They remain embedded in one meal JSON until real reuse justifies external component files.
 
 ## Equipment and consumables
-Reusable equipment/accessories are declared in `equipment` with at least:
-- stable `id`;
-- `name`;
-- optional flag where relevant.
+Reusable equipment/accessories use stable `id` + `name` and may be optional.
 
-A recipe-specific non-food consumable can use:
+Recipe-specific non-food consumables may set:
 
 ```json
 {
@@ -62,53 +51,36 @@ A recipe-specific non-food consumable can use:
 }
 ```
 
-Consumables are included in the shopping list and excluded from the reusable equipment checklist. `displayQuantity` is display guidance rather than serving-scaled ingredient arithmetic.
+Consumables enter the shopping checklist and are excluded from reusable equipment.
 
 ## Advance preparation
-Optional `advancePrep` records describe useful work that may happen before the active cooking timeline.
+`advancePrep` records describe useful work before the active cooking timeline. They are informational in V1 and do not create planner nodes.
 
-Example:
-
-```json
-{
-  "id": "rub-ahead",
-  "title": "Assaisonner le porc en avance",
-  "timing": "Idéalement la veille · sinon ≥ 30 min avant",
-  "details": "Appliquer le rub puis conserver au frais."
-}
-```
-
-Current semantics are informational only. `advancePrep` does not yet create schedule nodes. If an item needs formal dependencies/resources/timing, migrate it into planner step semantics rather than duplicating scheduling logic.
+If advance work needs dependencies/resources/replanning, represent it as a real step instead of duplicating scheduler logic.
 
 ## Steps
-A step contains, where applicable:
-- `id`;
-- owning `component`;
-- `title` and collapsed `summary`;
-- `details` for expanded instructions;
-- planned duration or duration range;
+A step may contain:
+- stable `id` and owning `component`;
+- `title`, collapsed `summary`, expanded `details`;
+- `durationMin`, or `durationRangeMin` + `durationPlanMin`;
 - `dependencies`;
 - `resources`;
 - structured `woodfire` configuration;
 - `completion` criterion;
-- optional `recheck` behavior;
-- V1 planning hint under `plan`.
+- optional `recheck`;
+- optional `plan` semantics.
 
-### Duration
-Use one of:
-- `durationMin` for a deterministic/planning duration;
-- `durationRangeMin` plus `durationPlanMin` when real duration varies but planning needs one nominal value.
+The nominal duration supports planning; the completion criterion remains authoritative during real cooking.
 
-The nominal duration is for scheduling. The completion criterion remains authoritative during real cooking.
-
-### Dependencies
-V1 dependency records use:
+## Dependencies
+Example:
 
 ```json
 {
-  "stepId": "smoke",
+  "stepId": "first-check",
   "relation": "after_finish",
-  "lagMin": 0
+  "lagMin": 0,
+  "planningBufferMin": 35
 }
 ```
 
@@ -116,18 +88,47 @@ Supported relations:
 - `after_finish`;
 - `after_start`.
 
-The validator checks missing references and cycles. Planner utilities can identify violations and compute downstream dependent steps.
+`lagMin` is a hard timing constraint. `planningBufferMin` is reserved margin used only for baseline planning and may be consumed by a real delay before downstream work moves.
 
-### Resources
+This distinction is important for uncertain cooking phases.
+
+## Serving anchor
+The desired meal time is represented by a step such as:
+
+```json
+"plan": { "anchor": "serve" }
+```
+
+Optional `anchorOffsetMin` can anchor another task relative to service when a useful flexible-window model is not yet available.
+
+The reference recipe uses the `eat` step as the primary service anchor. Its independent sauce preparation is currently anchored earlier relative to service.
+
+## Placement
+Optional:
+
+```json
+"plan": { "placement": "earliest" }
+```
+
+This asks the planner to pull a dependency-connected step to the earliest feasible point. Default behavior is latest-feasible/backwards placement around the service anchor.
+
+## Legacy offset compatibility
+`preferredStartOffsetMin` is still accepted only for older recipe compatibility.
+
+When a serve anchor exists it is treated as a soft migration hint, not the primary scheduling rule. New curated recipes should not introduce it.
+
+The reference Pork Belly recipe contains zero preferred offsets; tests enforce this to prevent regression.
+
+## Resources
 Current vocabulary includes:
 - `woodfire`;
 - `stovetop`;
 - `fridge`;
 - `passive`.
 
-The Woodfire is treated as the main exclusive resource. `findResourceConflicts()` detects overlapping Woodfire reservations.
+The Woodfire is the exclusive resource in Planner V1. Baseline conflicts are resolved backwards to preserve desired service time. Runtime conflicts propagate unfinished work later when necessary.
 
-### Woodfire configuration
+## Woodfire configuration
 Every Woodfire step explicitly stores:
 - `mode`;
 - `temperatureC` and optional `temperatureRangeC`;
@@ -137,65 +138,47 @@ Every Woodfire step explicitly stores:
 - `covered`;
 - optional placement guidance.
 
-The UI converts this structure into the collapsed/expanded hardware instruction line; the setting is no longer encoded only as prose.
+Do not encode critical appliance state only in prose.
 
-## Compatibility planning hint
-Schema V1 currently includes:
+## Reference planning semantics
+For the current Pork Belly meal:
+- `eat` anchors service;
+- plate/potato/Woodfire/meat chains are derived backwards through dependencies;
+- a 35 min planning buffer after `first-check` represents the allowance for extra covered-cook/rechecks before finishing the pork;
+- a 25 min planning buffer between potato preparation and Air Fry allows the potatoes to be ready before the Woodfire becomes available;
+- sauce is independently anchored before service and is also required before `eat`.
 
-```json
-"plan": {
-  "preferredStartOffsetMin": -165
-}
-```
-
-This is a deliberate migration field, not the final planning architecture.
-
-Purpose:
-- reproduce the existing POC timeline exactly while recipe content is extracted from `app.js`;
-- make the first refactor behavior-preserving;
-- let tests establish a known baseline before changing planning semantics.
-
-At the same time, V1 already records durations, dependencies and resources. The next planner iteration should progressively derive actual placement from those constraints and serving time, reducing/removing `preferredStartOffsetMin` where it is no longer necessary.
-
-Do not add new recipe logic to UI code merely to preserve an offset. If a recipe needs a real timing relationship, express it as a dependency/window/resource rule in the schema/planner.
+These semantics reproduce the established 20:00 baseline without fixed start offsets.
 
 ## Validation
-`validateRecipe()` currently checks:
-- schema/content version basics;
-- unique ingredient and step IDs;
+`validateRecipe()` checks at least:
+- schema/content basics;
+- unique ingredient/equipment/advance-prep/step ids;
 - quantity/scaling structures;
-- equipment ids/names and optional consumable/display-quantity structures;
-- `advancePrep` ids/titles and optional text fields;
+- valid durations;
 - dependency references and cycles;
-- valid duration fields;
-- explicit Woodfire state and Woodfire resource reservation;
+- valid `lagMin` and non-negative `planningBufferMin`;
+- valid `serve` anchor / anchor offset / placement values;
+- presence of a serve anchor or complete legacy timing fallback;
+- explicit Woodfire state + Woodfire resource reservation;
 - component references.
 
-Planning and content tests additionally verify:
-- baseline times for the reference recipe;
-- schedules crossing midnight;
-- declared dependency order;
-- absence of Woodfire resource conflicts;
-- dependency-aware downstream shift primitives;
-- representative serving scaling;
-- shopping grouping/consumables;
-- advance-prep exposure.
+## Tests
+Tests verify:
+- reference-recipe validation and scaling;
+- zero legacy preferred offsets in the reference recipe;
+- explicit pork/potato planning buffers;
+- dependency-only scheduling;
+- baseline reference times;
+- midnight crossing;
+- Woodfire conflict resolution;
+- buffer absorption/service slippage;
+- actual completion propagation;
+- shopping/pre-cook semantics.
 
-## Current reference recipe
-`recipes/pork-belly-burnt-ends.json` is the canonical V1 fixture and includes:
-- Pork Belly Burnt Ends main;
-- smashed grenaille potato side;
-- fresh lemon-yogurt sauce;
-- all current POC steps and details;
-- explicit Woodfire modes/accessories/smoke/cover state;
-- ingredient scaling semantics;
-- shopping consumable declaration;
-- advance-prep guidance;
-- completion and recheck semantics.
-
-## Next schema/planner work
-1. Use dependencies/resource constraints to generate placement rather than only validate preferred offsets.
-2. Add at least one additional complete executable recipe to validate schema generality.
-3. Add richer planning windows/buffers only where a real recipe requires them.
-4. Introduce cross-component duplicate aggregation when components become externally reusable.
-5. Promote only genuinely schedulable advance-prep work into planner steps when required.
+## Next schema work
+1. Add a second complete executable recipe to validate generality.
+2. Introduce a real flexible-window concept when a recipe demonstrates the need, replacing independent fixed anchor offsets such as sauce-prep convenience timing.
+3. Add richer ingredient usage references to reduce scaling-sensitive quantities duplicated in step prose.
+4. Promote observation/recheck outcomes into structured active-cook semantics.
+5. Add additional resources such as user attention only when real meal plans require them.
