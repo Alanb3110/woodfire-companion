@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "recipes": [
+    {
+      "id": "pork-belly-burnt-ends-meal",
+      "status": "available",
+      "recipeUrl": "./recipes/pork-belly-burnt-ends.json",
+      "title": "Pork Belly Burnt Ends",
+      "description": "Porc fumé, confit et caramélisé avec grenailles croustillantes et sauce fraîche citronnée.",
+      "tags": ["Porc", "Fumé", "Repas complet"],
+      "difficulty": "Facile",
+      "activePrepMin": 45,
+      "elapsedRangeMin": [300, 360],
+      "servings": { "min": 2, "max": 8, "reference": 4 },
+      "visual": { "theme": "embers", "symbol": "🔥", "eyebrow": "SMOKER · ROAST · AIR FRY" }
+    },
+    {
+      "id": "korean-sweet-savory-chicken",
+      "status": "coming_soon",
+      "title": "Poulet coréen sucré-salé",
+      "description": "Volaille marinée au profil soja, paprika fumé et notes sucrées, pensée pour une cuisson Woodfire rapide.",
+      "tags": ["Volaille", "Sucré-salé", "Rapide"],
+      "difficulty": "Facile",
+      "visual": { "theme": "korean", "symbol": "🍗", "eyebrow": "BIENTÔT" }
+    },
+    {
+      "id": "smoked-beef-barbacoa",
+      "status": "coming_soon",
+      "title": "Barbacoa de bœuf fumée",
+      "description": "Bœuf fumé puis longuement attendri, conçu pour un repas tacos complet avec accompagnements.",
+      "tags": ["Bœuf", "Fumé", "Longue cuisson"],
+      "difficulty": "Intermédiaire",
+      "visual": { "theme": "barbacoa", "symbol": "🌮", "eyebrow": "BIENTÔT" }
+    }
+  ]
+}
