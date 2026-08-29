@@ -5,12 +5,13 @@ Woodfire Companion is a zero-backend static PWA intended for GitHub Pages and iP
 
 The application uses vanilla HTML/CSS/JavaScript with native ES modules. No runtime framework, backend or external API is required.
 
-Current structure after the recipe-library/configuration and UI-settings increments:
+Current structure after the recipe-library/configuration, UI-settings and shopping/pre-cook increments:
 
 ```text
 woodfire-companion/
 ├── index.html
 ├── styles.css
+├── prep.css
 ├── app.js
 ├── manifest.webmanifest
 ├── service-worker.js
@@ -18,9 +19,11 @@ woodfire-companion/
 ├── js/
 │   ├── library.js
 │   ├── planner.js
+│   ├── prep-ui.js
 │   ├── recipe.js
 │   ├── recipe-loader.js
-│   └── settings.js
+│   ├── settings.js
+│   └── shopping.js
 ├── recipes/
 │   ├── index.json
 │   └── pork-belly-burnt-ends.json
@@ -28,6 +31,7 @@ woodfire-companion/
 │   ├── library.test.js
 │   ├── planner.test.js
 │   ├── recipe.test.js
+│   ├── shopping.test.js
 │   ├── ui-contract.test.js
 │   └── version.test.js
 ├── sources/
@@ -38,7 +42,7 @@ woodfire-companion/
 The UI has three top-level views:
 
 1. `library` — browse recipe cards and resume an existing cook;
-2. `recipe` — review recipe metadata/components/ingredients, select servings and 24-hour serving time;
+2. `recipe` — review recipe metadata/components/ingredients, select servings and serving time, check shopping/preparation/equipment;
 3. `cook` — active planning + temperature tracking interface.
 
 The existing cook state remains local-first and can be resumed after navigating back to the library or reloading the PWA.
@@ -46,159 +50,120 @@ The existing cook state remains local-first and can be resumed after navigating 
 ## Recipe library
 `recipes/index.json` is the library manifest.
 
-Each entry currently provides:
-- stable id;
-- availability status;
-- recipe URL when executable;
-- title/description;
-- tags and basic metadata;
-- lightweight offline visual theme information.
+Each entry currently provides stable id, availability status, recipe URL when executable, title/description, tags/basic metadata and lightweight offline visual theme information.
 
 `js/library.js` validates and loads this manifest and resolves entries by id.
 
-The first library intentionally exposes only the Pork Belly meal as executable. Additional familiar meals may appear as `coming_soon` cards, but they should not become executable until a complete validated recipe JSON exists. Do not invent incomplete recipe data merely to populate the library.
+Only the Pork Belly meal is currently executable. `coming_soon` cards must not become executable until a complete validated recipe JSON exists.
 
 ## Current recipe/content layer
 Canonical executable recipe:
 
 `recipes/pork-belly-burnt-ends.json`
 
-The current content version is `2`. Version 2 keeps the same schema/planning structure while replacing user-facing `to taste` quantities in the reference ingredient overview with practical indicative quantities/ranges and explicit split guidance in preparation notes.
+The current content version is `3`.
 
-The JSON expresses:
-- recipe/content version;
-- metadata and servings;
-- meal components;
-- ingredients and scaling rules;
-- equipment;
-- executable steps;
-- nominal durations/ranges;
-- dependency relationships;
-- resource reservations;
-- structured Woodfire configuration;
-- completion/recheck semantics;
-- temporary V1 preferred-start planning hints.
+Version 3 retains the same planning steps while adding pre-cook semantics:
+- recipe-specific consumable declaration for Woodfire pellets;
+- reusable equipment vs consumable distinction;
+- `advancePrep` guidance for work that may be done before the active timeline.
 
-Exact recipe semantics are documented in `sources/RECIPE_SCHEMA_V1.md`.
+The JSON also retains the version-2 indicative ingredient quantities/ranges used for scaling and shopping display.
 
-`js/recipe.js` provides:
-- recipe validation;
-- serving scaling;
-- Woodfire summary formatting.
+`js/recipe.js` provides recipe validation, serving scaling and Woodfire summary formatting. Validation now also checks unique/valid equipment declarations and optional `advancePrep` records.
 
 `js/recipe-loader.js` fetches and validates recipe JSON before the UI consumes it.
+
+Exact V1 recipe semantics remain documented in `sources/RECIPE_SCHEMA_V1.md`; shopping/pre-cook semantics are documented in `sources/SHOPPING_PREP.md`.
 
 ## Serving configuration
 Ingredient scaling is user-visible on the recipe page.
 
 The selected serving count:
 - is constrained to the recipe-supported min/max range;
-- updates displayed ingredient quantities immediately;
+- updates ingredient quantities immediately;
+- updates the shopping list from the same scaled data;
 - is saved into the active cook session when cooking starts.
 
-The serving-time selector is implemented with explicit hour/minute controls so the UI remains unambiguously 24-hour regardless of browser locale. Its option contrast is explicitly styled for dark-mode browsers that otherwise render a white native menu with inherited light text.
+The serving-time selector uses explicit hour/minute controls so the UI remains unambiguously 24-hour regardless of browser locale.
 
-Starting a configured cook resets checklist/temperature state only after confirmation when an existing cook has progress. Navigating away from an active cook does not destroy it.
+## Shopping/pre-cook layer
+`js/shopping.js` is a pure data helper layered on recipe scaling.
+
+It currently provides:
+- shopping groups from scaled ingredients;
+- practical category ordering/labels;
+- recipe-specific consumables;
+- required reusable equipment;
+- advance-prep records;
+- shopping-item counts.
+
+`js/prep-ui.js` owns pre-cook rendering and shopping-list checkbox persistence. It does not alter planner placement.
+
+Shopping state uses a separate localStorage namespace:
+
+`woodfire-companion-shopping-v1`
+
+It is keyed by recipe id and shopping-item id. Changing servings updates quantities while keeping checked identities when ids are unchanged. Resetting the shopping list does not touch cook progress, temperature samples or UI settings.
+
+The recipe page now exposes:
+- scaled ingredient overview;
+- categorized shopping checklist;
+- progress count + explicit reset;
+- advance-preparation guidance;
+- reusable equipment/accessory checklist;
+- recommended start-time hint;
+- final `Démarrer la cuisson` action after pre-cook information.
 
 ## Current cook-session state model
-The app still uses the existing `localStorage` key:
+The active cook still uses:
 
 `woodfire-companion-v1`
 
-This remains intentional so architecture/UI iterations do not discard the existing POC state.
+Logical fields include `view`, `mealTime`, `servings`, `completed`, `taskShifts`, `temperatureTarget`, `measurements`, `cookStartedAt`, `activeTab`, `recipeId`, `recipeVersion` and `activeRecipeUrl`.
 
-Logical fields now include:
-- `view`;
-- `mealTime`;
-- `servings`;
-- `completed`;
-- `taskShifts`;
-- `temperatureTarget`;
-- `measurements`;
-- `cookStartedAt`;
-- `activeTab`;
-- `recipeId`;
-- `recipeVersion`;
-- `activeRecipeUrl`.
-
-Old records without the newer fields remain readable because defaults are merged during load. Legacy records containing actual cook progress default to the cook view on first load so a refresh does not strand an active cook in the library.
-
-When this schema evolves further, preserve existing user data where practical through migration rather than silently discarding it.
+Old records without newer fields remain readable because defaults are merged during load.
 
 ## UI preferences
-Visual preferences are deliberately stored separately from cook-session state under:
+Visual preferences remain separate from cook-session state under:
 
 `woodfire-companion-settings-v1`
 
-`js/settings.js` currently owns the accent-color preference. The settings dialog supports:
-- curated preset swatches;
-- native manual color picker;
-- HEX input;
-- RGB input;
-- reset to the default Woodfire orange.
-
-All controls remain synchronized and the selected accent is applied through CSS custom properties. Derived strong/soft/border accent variants use CSS `color-mix()`, which keeps the application palette coherent without storing several redundant color values.
-
-Resetting or starting a cook does not alter UI preferences.
+`js/settings.js` owns the accent-color preference. The settings dialog supports curated presets, native color picker, HEX, RGB and reset to Woodfire orange.
 
 ## Planning engine
 `js/planner.js` remains a pure module with no DOM access.
 
-It currently provides:
-- target serving-time conversion;
-- schedule generation from V1 preferred-start hints;
-- duration handling;
-- dependency-order validation;
-- Woodfire resource-conflict detection;
-- downstream dependency traversal;
-- dependency-aware shift primitives;
-- next-task selection.
+It currently provides target serving-time conversion, schedule generation from V1 preferred-start hints, duration handling, dependency-order validation, Woodfire resource-conflict detection, downstream dependency traversal, dependency-aware shift primitives and next-task selection.
 
 ### Important V1 limitation
 Actual placement still starts from:
 
 `plan.preferredStartOffsetMin`
 
-These offsets are recipe data rather than UI logic, and the same steps also carry dependencies/resources/durations. The next planner iteration should derive more of the schedule from those constraints instead of treating preferred offsets as the primary placement mechanism.
+These offsets are recipe data rather than UI logic, but remain the primary placement baseline. The next planner iteration should derive placement from dependencies, durations, resource constraints, buffers and serving time.
 
-The library/configuration increment deliberately does not mix this planner semantic change into navigation/UI work.
+Shopping/pre-cook work deliberately does not change planner semantics.
 
 ## Active-cook UI
-The cook view retains:
-- planned checklist cards;
-- expandable detail;
-- structured Woodfire configuration;
-- completion timestamps;
-- next-action countdown;
-- legacy +5/+10/+15 global unfinished-task shift;
-- manual temperature logging;
-- target temperature;
-- graph/history;
-- CSV export.
+The cook view retains planned checklist cards, expandable detail, structured Woodfire configuration, completion timestamps, next-action countdown, legacy +5/+10/+15 unfinished-task shift, manual temperature logging, target temperature, graph/history and CSV export.
 
-The selected serving count is currently informational once the cook starts; step prose is still authored against the reference recipe quantities. Future recipe rendering should progressively use ingredient references rather than embedding quantities in prose where that matters for scaling.
-
-## Visual library approach
-The first library uses local CSS/Unicode visual covers instead of network-hosted images. This is intentional for offline reliability while the UI flow is validated.
-
-The schema already retains `heroImage` capability. Local illustrated image assets can replace the temporary visual themes later without changing recipe/planner semantics.
-
-The global accent color is independent from per-recipe hero-cover themes: changing the accent should affect controls, active states and timing emphasis without recoloring recipe imagery.
+The selected serving count is informational once cooking starts; some step prose still embeds reference quantities and should progressively move toward data references where scaling matters.
 
 ## PWA/offline behavior
 The service worker uses a versioned cache and network-first reads while online, with cached fallback offline.
 
-It caches:
+The current dev version is `0.3.0-dev.3`.
+
+Cached assets now include:
 - shell HTML/CSS/JS;
-- library/planner/recipe/settings modules;
+- `prep.css`;
+- library/planner/recipe/settings/shopping/prep UI modules;
 - recipe-library manifest;
 - current executable recipe JSON;
 - manifest/icons.
 
-Constraints:
-- assets must work from the `/woodfire-companion/` GitHub Pages subpath;
-- offline fallback must not depend on server route rewrites;
-- iOS/Safari installed-PWA behavior remains a target use case.
+Assets must remain compatible with the `/woodfire-companion/` GitHub Pages subpath and installed iOS/Safari PWA behavior.
 
 ## Testing
 The repository uses Node's built-in test runner with no package dependency.
@@ -209,20 +174,16 @@ Run:
 npm test
 ```
 
-Existing tests cover recipe validation/scaling and planner behavior. UI/library tests additionally cover:
-- library-manifest validation;
-- resolution of the active recipe from the manifest;
-- consistency of the development version marker;
-- static DOM ids referenced by both `app.js` and `js/settings.js` existing in `index.html`;
-- the reference recipe exposing an indicative quantity/range for every displayed ingredient.
+Tests cover recipe validation/scaling, planner behavior, library manifest/resolution, development-version consistency, UI DOM contracts and reference ingredient quantities.
 
-Future tests should add:
-- generated placement from dependencies/resources rather than hints;
-- flexible windows/buffers;
-- completed-task replanning behavior;
-- multiple executable recipes;
-- storage migrations;
-- shopping-list aggregation.
+Shopping tests additionally cover:
+- category grouping from scaled ingredients;
+- scaled quantities in shopping output;
+- inclusion of recipe-specific consumables;
+- exclusion of consumables from reusable equipment;
+- exposure of advance-prep records.
+
+The UI contract includes DOM ids referenced by `app.js`, `js/settings.js` and `js/prep-ui.js`.
 
 ## Target architecture
 Continue maintaining four conceptual layers:
@@ -237,18 +198,18 @@ Pure/testable scheduling, dependencies, resource conflicts and replanning.
 Active recipe/version, servings, target time, actual completion, temperatures, notes and persistence/migrations.
 
 ### 4. UI layer
-Library/configuration/active-cook rendering and user interactions only; no recipe-specific scheduling rules.
+Library/configuration/pre-cook/active-cook rendering and user interactions only; no recipe-specific scheduling rules.
 
-UI preferences may remain a small separate local settings layer while they are independent from cook-session semantics.
+Small independent local settings such as UI accent and shopping checks may remain separate from cook-session state.
 
 ## Current technical debt / next work
-1. Implement consolidated shopping-list generation/display from scaled ingredients.
-2. Replace preferred-start offsets progressively with dependency/resource-aware schedule generation.
-3. Replace the legacy global delay buttons with dependency-aware replanning behavior.
-4. Add at least one second complete executable recipe to validate schema generality.
-5. Replace temporary CSS/emoji covers with local illustrated assets when the library visual direction is accepted.
-6. Reduce duplicated/scaling-sensitive ingredient quantities embedded in step prose.
-7. Evolve `localStorage` from one active POC-style session toward explicit schema versioning and cook journal/history.
-8. Activate observation-driven rechecks represented in recipe data.
+1. Replace preferred-start offsets progressively with dependency/resource-aware schedule generation.
+2. Replace the legacy global delay buttons with dependency-aware replanning behavior.
+3. Add at least one second complete executable recipe to validate schema generality and shopping aggregation assumptions.
+4. Replace temporary CSS/emoji covers with local illustrated assets when the library visual direction is accepted.
+5. Reduce duplicated/scaling-sensitive ingredient quantities embedded in step prose.
+6. Evolve `localStorage` from one active POC-style session toward explicit schema versioning and cook journal/history.
+7. Activate observation-driven rechecks represented in recipe data.
+8. Add true duplicate aggregation when reusable external components can contribute separate ingredient records.
 
 These are intended increments, not reasons to re-couple recipe, planner and UI logic.
