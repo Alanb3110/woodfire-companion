@@ -1,4 +1,4 @@
-const APP_VERSION = '0.3.0-dev.4';
+const APP_VERSION = '0.3.0-dev.5';
 const CACHE_NAME = `woodfire-companion-${APP_VERSION}`;
 const APP_ASSETS = [
   './',
@@ -17,14 +17,29 @@ const APP_ASSETS = [
   './js/journal.js',
   './js/journal-ui.js',
   './recipes/index.json',
-  './recipes/pork-belly-burnt-ends.json',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png'
 ];
 
+async function cacheAvailableRecipeContent(cache) {
+  const response = await fetch('./recipes/index.json', { cache: 'no-store' });
+  if (!response.ok) throw new Error(`Recipe manifest preload failed (${response.status}).`);
+
+  const library = await response.json();
+  const recipeUrls = (library.recipes || [])
+    .filter(entry => entry.status === 'available' && entry.recipeUrl)
+    .map(entry => entry.recipeUrl);
+
+  if (recipeUrls.length) await cache.addAll(recipeUrls);
+}
+
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_ASSETS)));
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    await cache.addAll(APP_ASSETS);
+    await cacheAvailableRecipeContent(cache);
+  })());
   self.skipWaiting();
 });
 
