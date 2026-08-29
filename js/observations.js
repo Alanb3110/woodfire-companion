@@ -7,20 +7,64 @@ function toDate(value) {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-export function getObservationOptions(step) {
-  return Array.isArray(step?.recheck?.observations) ? step.recheck.observations : [];
+function recheckBounds(step) {
+  const value = step?.recheck?.notReadyMin;
+  if (isFiniteNumber(value) && value > 0) return [value, value];
+  if (Array.isArray(value) && value.length === 2 && isFiniteNumber(value[0]) && isFiniteNumber(value[1]) && value[0] > 0 && value[1] >= value[0]) {
+    return value;
+  }
+  return null;
 }
 
-export function hasObservationControls(step) {
-  return getObservationOptions(step).length > 0;
+function temperatureTarget(step, recipe) {
+  const fromRecipe = recipe?.temperature?.defaultTargetC;
+  if (isFiniteNumber(fromRecipe)) return fromRecipe;
+  const match = /(\d+(?:[.,]\d+)?)\s*°\s*C/i.exec(step?.completion?.description || '');
+  return match ? Number(match[1].replace(',', '.')) : null;
+}
+
+export function getObservationOptions(step, recipe = null) {
+  const explicit = step?.recheck?.observations;
+  if (Array.isArray(explicit) && explicit.length) return explicit;
+
+  const bounds = recheckBounds(step);
+  if (!bounds) return [];
+  const [soonest, latest] = bounds;
+  const almostDelay = Math.max(1, Math.min(soonest, Math.round(latest / 2)));
+
+  if (step?.completion?.type === 'tenderness') {
+    return [
+      { id: 'still-firm', label: 'Encore ferme', outcome: 'recheck', delayMin: latest },
+      { id: 'almost-ready', label: 'Presque prêt', outcome: 'recheck', delayMin: almostDelay },
+      { id: 'tender', label: 'Très tendre', outcome: 'complete' }
+    ];
+  }
+
+  const target = temperatureTarget(step, recipe);
+  if (target !== null && ['temperature', 'combined'].includes(step?.completion?.type)) {
+    const displayTarget = Number.isInteger(target) ? String(target) : String(target).replace('.', ',');
+    return [
+      { id: 'below-target', label: `Sous ${displayTarget} °C`, outcome: 'recheck', delayMin: latest },
+      { id: 'near-target', label: `Presque ${displayTarget} °C`, outcome: 'recheck', delayMin: soonest },
+      { id: 'target-reached', label: `${displayTarget} °C atteint`, outcome: 'complete' }
+    ];
+  }
+
+  return [
+    { id: 'not-ready', label: 'Pas prêt', outcome: 'recheck', delayMin: latest },
+    { id: 'almost-ready', label: 'Presque prêt', outcome: 'recheck', delayMin: almostDelay },
+    { id: 'ready', label: 'Prêt', outcome: 'complete' }
+  ];
+}
+
+export function hasObservationControls(step, recipe = null) {
+  return getObservationOptions(step, recipe).length > 0;
 }
 
 export function resolveObservationDelayMin(step, option) {
   if (isFiniteNumber(option?.delayMin) && option.delayMin > 0) return option.delayMin;
-  const fallback = step?.recheck?.notReadyMin;
-  if (isFiniteNumber(fallback) && fallback > 0) return fallback;
-  if (Array.isArray(fallback) && fallback.length === 2 && isFiniteNumber(fallback[0]) && fallback[0] > 0) return fallback[0];
-  return null;
+  const bounds = recheckBounds(step);
+  return bounds ? bounds[0] : null;
 }
 
 export function applyObservation({ observations = [], rechecks = {}, completed = {} }, step, option, now = new Date()) {
