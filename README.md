@@ -2,23 +2,43 @@
 
 Mobile-first static PWA for planning and executing complete Ninja Woodfire meals.
 
-The current UI is still the original Pork Belly proof of concept, but recipe content and planning logic are now separated so the app can evolve toward:
+Current product flow:
+
+**recipe library → recipe configuration → scaled ingredients → active cook**
+
+Target flow remains:
 
 **illustrated recipe library → servings + desired meal time → shopping list → generated meal plan → active cook → journal**
 
 No server, runtime API or account is required. Active state is stored locally in the browser and the app is designed to work offline after its assets are cached.
 
-## Current reference meal
+## Current library
 
-- Pork Belly Burnt Ends
-- smashed grenaille potatoes
-- fresh lemon-yogurt sauce
+The library is driven by `recipes/index.json`.
 
-The meal now lives in `recipes/pork-belly-burnt-ends.json` rather than being hard-coded into `app.js`.
+Available now:
+- Pork Belly Burnt Ends + smashed grenaille potatoes + fresh lemon-yogurt sauce.
+
+Visible as future entries, but not executable until complete recipe JSON exists:
+- Poulet coréen sucré-salé;
+- Barbacoa de bœuf fumée.
+
+The executable meal lives in `recipes/pork-belly-burnt-ends.json` rather than being hard-coded into `app.js`.
+
+## Current user flow
+
+1. Open the recipe library.
+2. Select an available recipe.
+3. Review metadata, meal components and scaled ingredients.
+4. Choose number of servings.
+5. Choose serving time using an explicit 24-hour selector.
+6. Start the cook.
+7. Follow the planning checklist and temperature tracker.
+8. Return to the library without destroying the active cook; resume it from the library later.
 
 ## Run locally
 
-Do not open `index.html` directly with `file://` because recipe loading and the service worker require HTTP.
+Do not open `index.html` directly with `file://` because recipe/library loading and the service worker require HTTP.
 
 ```bash
 python -m http.server 8000
@@ -38,7 +58,7 @@ The project uses Node's built-in test runner and has no npm runtime dependency.
 npm test
 ```
 
-Tests currently cover recipe validation/scaling plus core planning/date/dependency/resource behavior.
+Tests cover recipe validation/scaling, planning/date/dependency/resource behavior, library-manifest validation, version consistency and the static DOM contract between `app.js` and `index.html`.
 
 ## GitHub Pages
 
@@ -61,12 +81,22 @@ In Safari:
 3. Choose **Sur l’écran d’accueil**.
 4. Tap **Ajouter**.
 
-After the first successful online load, the service worker caches the application shell, recipe modules and current recipe JSON for offline use.
+After the first successful online load, the service worker caches the application shell, library manifest, modules and executable recipe JSON for offline use.
 
 ## Current features
 
+### Library / recipe configuration
+- recipe-library manifest;
+- visual recipe cards;
+- available vs coming-soon status;
+- recipe metadata/components;
+- serving-size selector;
+- live scaled ingredient quantities;
+- 24-hour serving-time selector;
+- active-cook resume path.
+
 ### Planning
-- desired serving time, default 20:00;
+- desired serving time;
 - interactive checklist;
 - expandable step detail;
 - exact structured Woodfire configuration for relevant steps;
@@ -94,23 +124,23 @@ woodfire-companion/
 ├── manifest.webmanifest
 ├── package.json
 ├── js/
+│   ├── library.js          # recipe-library manifest loader/validation
 │   ├── planner.js          # pure planning functions
 │   ├── recipe.js           # validation/scaling/formatting
-│   └── recipe-loader.js    # JSON loader + validation
+│   └── recipe-loader.js    # recipe JSON loader + validation
 ├── recipes/
+│   ├── index.json
 │   └── pork-belly-burnt-ends.json
 ├── tests/
-│   ├── planner.test.js
-│   └── recipe.test.js
 ├── sources/                # product/technical source of truth
 └── icons/
 ```
 
 ## Planner status
 
-The schema already records durations, dependencies, resources, completion criteria and structured Woodfire state.
+The schema records durations, dependencies, resources, completion criteria and structured Woodfire state.
 
-The first refactor intentionally keeps `plan.preferredStartOffsetMin` as a compatibility placement hint so the existing POC timeline remains unchanged while architecture is separated and tested.
+The planner still keeps `plan.preferredStartOffsetMin` as a compatibility placement hint. The library/configuration increment intentionally does not change planner semantics at the same time as navigation/UI.
 
 The next planner iteration should increasingly derive timing from dependencies, buffers and resource constraints rather than preferred offsets.
 
@@ -122,6 +152,6 @@ See:
 
 ## Persistence
 
-The existing `woodfire-companion-v1` localStorage record is retained for compatibility. The recipe id/version are added without invalidating old records.
+The existing `woodfire-companion-v1` localStorage record is retained for compatibility. New view/serving/library fields are merged with old records rather than invalidating them.
 
-A later cook-journal implementation may justify schema migration and/or IndexedDB, but that is intentionally not part of this architecture refactor.
+A later cook-journal implementation may justify explicit storage schema migration and/or IndexedDB.
