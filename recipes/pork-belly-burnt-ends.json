@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "pork-belly-burnt-ends-meal",
-  "version": 2,
+  "version": 3,
   "title": "Pork Belly Burnt Ends",
   "description": "Poitrine de porc fumée puis confite et caramélisée, servie avec grenailles croustillantes et sauce fraîche citronnée.",
   "heroImage": null,
@@ -15,6 +15,21 @@
   "temperature": {
     "defaultTargetC": 93
   },
+  "advancePrep": [
+    {
+      "id": "rub-ahead",
+      "title": "Assaisonner le porc en avance",
+      "timing": "Idéalement la veille · sinon ≥ 30 min avant",
+      "details": "Découper la poitrine en cubes d’environ 40 mm, appliquer le rub puis conserver au frais. Si fait la veille, sortir le porc environ 30 min avant le fumage."
+    },
+    {
+      "id": "sauce-ahead",
+      "title": "Préparer la sauce fraîche",
+      "timing": "Possible quelques heures avant",
+      "details": "La sauce peut être préparée à l’avance et conservée au réfrigérateur. Remuer et rectifier l’assaisonnement au service.",
+      "optional": true
+    }
+  ],
   "components": [
     {
       "id": "pork",
@@ -63,7 +78,8 @@
     { "id": "foil", "name": "Papier aluminium" },
     { "id": "air-fry-basket", "name": "Panier Air Fry" },
     { "id": "stovetop-pot", "name": "Casserole" },
-    { "id": "thermometer", "name": "Thermomètre/sonde à cœur", "optional": true }
+    { "id": "thermometer", "name": "Thermomètre/sonde à cœur", "optional": true },
+    { "id": "pellets", "name": "Pellets Woodfire", "consumable": true, "displayQuantity": "1 dose" }
   ],
   "steps": [
     {
