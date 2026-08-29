@@ -56,6 +56,7 @@ function earliestTimestamp(state, fallback) {
   const candidates = [
     state.sessionStartedAt,
     state.cookStartedAt,
+    ...Object.values(state.started || {}),
     ...Object.values(state.completed || {})
   ]
     .map(value => safeIso(value))
@@ -93,6 +94,7 @@ export function buildJournalEntry({ state, recipe, schedule, now = new Date() })
   if (!servedAt) throw new Error(`Service step ${serviceStep.id} must be completed before archiving.`);
 
   const updatedAt = now.toISOString();
+  const started = { ...(state.started || {}) };
   const completed = { ...(state.completed || {}) };
   const measurements = (state.measurements || []).map(sample => ({ ...sample }));
   const observations = (state.observations || []).map(observation => ({ ...observation }));
@@ -113,6 +115,7 @@ export function buildJournalEntry({ state, recipe, schedule, now = new Date() })
     temperatureTarget: state.temperatureTarget,
     measurements,
     observations,
+    started,
     completed,
     taskShifts: { ...(state.taskShifts || {}) },
     totalSteps: recipe.steps.length,
