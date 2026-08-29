@@ -1,9 +1,9 @@
 # Woodfire Companion — Active Cook V1 Source
 
 ## Scope
-This increment connects the active-cooking checklist to Planner V1 without redesigning the interface.
+The active-cooking checklist is connected to Planner V1 and now also exposes structured observation/recheck controls for uncertain cooking checkpoints.
 
-The objective is behavioral: real progress becomes planner input, and delay controls stop shifting every unfinished task indiscriminately.
+The objective remains behavioral: real progress becomes planner input, delay/recheck controls change only what reality requires, and completed timestamps remain historical facts.
 
 ## Completion timestamps
 Checking a task complete records the current timestamp in the cook-session state.
@@ -15,21 +15,37 @@ That timestamp is historical fact. On every completion change the application:
 
 Completed timestamps must not be rewritten merely to make the remaining plan look tidy.
 
-Unchecking a step removes its recorded completion and recalculates the plan from the remaining known facts.
+Unchecking a step removes its recorded completion, clears any pending recheck for that step and recalculates the plan from the remaining known facts.
+
+## Structured observations
+A step declaring `recheck.notReadyMin` receives observation controls in its expanded detail.
+
+The UI derives labels from the existing completion semantics:
+- tenderness: `Encore ferme / Presque prêt / Très tendre`;
+- target-temperature/combined completion: `Sous X °C / Presque X °C / X °C atteint`;
+- generic fallback: `Pas prêt / Presque prêt / Prêt`.
+
+Choosing a not-ready state stores the observation and a future recheck timestamp. The step remains incomplete and its historical start is unchanged.
+
+Choosing a ready state stores the observation and completes the step at the current timestamp. Planner V1 then propagates that actual completion through dependencies/resources.
+
+This means a planning buffer can absorb a delayed readiness checkpoint before unrelated or downstream work is moved.
+
+See `sources/OBSERVATIONS_V1.md`.
 
 ## Delay controls
-The existing +5 / +10 / +15 minute controls remain for fast one-handed recovery during a cook, but their meaning changes.
+The +5 / +10 / +15 minute controls remain for fast one-handed recovery during a cook.
 
-They now mean:
+Normal meaning:
 
 **The next unfinished step is delayed by this amount.**
 
 The UI records the delay only against that step using `addStepDelay()`. Planner V1 then decides what else must move.
 
-This replaces the POC behavior that added the same delay to every unfinished task.
+If the next unfinished step is already waiting for an observation recheck, the same buttons move only that pending recheck deadline. They do not shift the underlying cooking step start or every downstream task.
 
 ## Propagation rules
-After a completion or delay:
+After a completion or explicit step delay:
 - hard dependencies remain satisfied;
 - a planning buffer may absorb some or all of a delay;
 - unrelated parallel work remains where it was when feasible;
@@ -37,35 +53,45 @@ After a completion or delay:
 - completed steps retain their actual timestamps;
 - service time may move if the remaining meal can no longer be completed feasibly by the original target.
 
+A scheduled recheck alone is an observation reminder, not an artificial planner delay. Downstream movement occurs when actual completion makes it necessary.
+
 Do not move unrelated tasks solely because another component is late.
 
 ## User-facing interpretation
-The active cook should continue answering:
+The active cook should answer:
 - what is the next action?;
 - when should I do it now?;
+- is the next action a normal task or a recheck?;
 - am I early/on-time/late?;
 - what Woodfire state is required?;
+- what completion criterion am I looking for?;
 
-The next-action countdown is calculated from the replanned schedule, not the original static timeline.
+The next-action countdown uses a pending recheck deadline when one exists; otherwise it uses the replanned task schedule.
 
 ## Current UI
-No major layout change is introduced in this increment.
+The checklist and expandable detail cards remain the primary interaction.
 
-The existing delay row is relabeled to clarify its semantics:
+Expanded details now show:
+- explicit Woodfire state when applicable;
+- the completion criterion;
+- observation buttons when the recipe step declares a recheck;
+- pending recheck time;
+- recent observation history;
+- actual completion timestamp.
+
+The delay row remains:
 
 `Retard sur la prochaine étape : +5 / +10 / +15 min`
 
-The existing checklist and expandable detail cards remain.
-
 ## Temperature logging
-Temperature logging remains independent and low-friction. This increment does not infer ETA from temperature data and does not automatically complete cooking steps from temperature samples.
+Temperature logging remains independent and low-friction.
 
-Temperature/observation-driven replanning is later work.
+The turkey completion observation can use the recipe’s 74 °C target in its button labels, but a logged temperature sample does not automatically complete the step. The cook explicitly confirms readiness.
 
-## Known limitations / next increment
-V1 still relies on manual completion/delay input. It does not yet expose structured observations such as:
-- `Encore ferme`;
-- `Presque prêt`;
-- `Très tendre`.
+No ETA is currently inferred from temperature slope.
 
-A later observation-driven increment can map those outcomes to rechecks, changed expected duration and planner updates without changing the fundamental completion/delay model defined here.
+## Current limitations / next work
+- No background/push notification fires when a recheck becomes due; the active screen updates while open.
+- No temperature sample automatically chooses an observation outcome.
+- Observation labels are derived rather than curated per recipe; extend the schema only if a real recipe demonstrates the need.
+- Predictive ETA remains later work and must expose uncertainty.
