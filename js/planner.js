@@ -143,8 +143,8 @@ function buildBaselineStarts(recipe, anchor) {
   }
 
   // V1 migration: old preferred offsets are soft "not later than" hints only.
-  // They preserve known buffers/parallel placement while the recipe schema moves
-  // toward explicit planningBuffer/window semantics.
+  // They preserve known buffers/parallel placement while recipe data moves toward
+  // explicit planningBuffer/window semantics.
   for (const step of ordered) {
     const preferred = legacyPreferredStartMs(step, anchor);
     if (preferred === null) continue;
@@ -189,13 +189,68 @@ function itemsFromStarts(recipe, starts) {
   return recipe.steps.map(step => {
     const start = new Date(starts.get(step.id));
     const end = new Date(start.getTime() + plannedDurationMin(step) * 60000);
-    return { step, start, end, shiftMin: 0, baselineStart: new Date(start), baselineEnd: new Date(end) };
+    return { step, start, end, shiftMin: 0 };
   });
 }
 
 function shiftItem(item, deltaMs) {
   item.start = new Date(item.start.getTime() + deltaMs);
   item.end = new Date(item.end.getTime() + deltaMs);
+}
+
+function pullItemEarlierWithAncestors(recipe, byId, sourceStepId, targetStartMs) {
+  const stepById = new Map(recipe.steps.map(step => [step.id, step]));
+  const queue = [[sourceStepId, targetStartMs]];
+
+  while (queue.length) {
+    const [id, requestedStart] = queue.shift();
+    const item = byId.get(id);
+    if (item.start.getTime() <= requestedStart) continue;
+    const delta = requestedStart - item.start.getTime();
+    shiftItem(item, delta);
+
+    for (const dependency of item.step.dependencies || []) {
+      const predecessor = stepById.get(dependency.stepId);
+      const predecessorTarget = predecessorLatestStartMs(item.start.getTime(), predecessor, dependency, true);
+      queue.push([predecessor.id, predecessorTarget]);
+    }
+  }
+}
+
+function resolveBaselineResourceConflicts(recipe, items) {
+  const byId = new Map(items.map(item => [item.step.id, item]));
+  const maxIterations = Math.max(8, recipe.steps.length * 4);
+
+  for (let iteration = 0; iteration < maxIterations; iteration++) {
+    let changed = false;
+    const reservations = items
+      .filter(item => (item.step.resources || []).includes('woodfire') && item.end > item.start)
+      .sort((a, b) => a.start - b.start || recipe.steps.indexOf(a.step) - recipe.steps.indexOf(b.step));
+
+    for (let i = 1; i < reservations.length; i++) {
+      const earlier = reservations[i - 1];
+      const later = reservations[i];
+      if (earlier.end <= later.start) continue;
+      if (earlier.step.plan?.anchor) {
+        throw new Error(`Anchored Woodfire step ${earlier.step.id} conflicts with ${later.step.id}.`);
+      }
+      const target = later.start.getTime() - plannedDurationMin(earlier.step) * 60000;
+      pullItemEarlierWithAncestors(recipe, byId, earlier.step.id, target);
+      changed = true;
+      break;
+    }
+
+    if (!changed) return;
+  }
+
+  throw new Error('Planner could not resolve baseline Woodfire resource conflicts.');
+}
+
+function freezeBaseline(items) {
+  for (const item of items) {
+    item.baselineStart = new Date(item.start);
+    item.baselineEnd = new Date(item.end);
+  }
 }
 
 function enforceRuntimeConstraints(recipe, items, completed = {}) {
@@ -219,23 +274,19 @@ function enforceRuntimeConstraints(recipe, items, completed = {}) {
       }
     }
 
-    const resourceNames = new Set(recipe.steps.flatMap(step => step.resources || []));
-    for (const resource of resourceNames) {
-      if (resource !== 'woodfire') continue;
-      const reservations = items
-        .filter(item => (item.step.resources || []).includes(resource) && item.end > item.start)
-        .sort((a, b) => a.start - b.start || recipe.steps.indexOf(a.step) - recipe.steps.indexOf(b.step));
+    const reservations = items
+      .filter(item => (item.step.resources || []).includes('woodfire') && item.end > item.start)
+      .sort((a, b) => a.start - b.start || recipe.steps.indexOf(a.step) - recipe.steps.indexOf(b.step));
 
-      for (let i = 1; i < reservations.length; i++) {
-        const previous = reservations[i - 1];
-        const current = reservations[i];
-        if (current.start >= previous.end) continue;
-        if (completed[current.step.id] && completed[previous.step.id]) continue;
+    for (let i = 1; i < reservations.length; i++) {
+      const previous = reservations[i - 1];
+      const current = reservations[i];
+      if (current.start >= previous.end) continue;
+      if (completed[current.step.id] && completed[previous.step.id]) continue;
 
-        if (!completed[current.step.id]) {
-          shiftItem(current, previous.end.getTime() - current.start.getTime());
-          changed = true;
-        }
+      if (!completed[current.step.id]) {
+        shiftItem(current, previous.end.getTime() - current.start.getTime());
+        changed = true;
       }
     }
 
@@ -249,8 +300,10 @@ export function buildSchedule(recipe, mealTime, referenceDate = new Date(), task
   const anchor = mealAnchorDate(mealTime, referenceDate);
   const starts = buildBaselineStarts(recipe, anchor);
   const items = itemsFromStarts(recipe, starts);
-  const actualCompletionTimes = options.actualCompletionTimes || {};
+  resolveBaselineResourceConflicts(recipe, items);
+  freezeBaseline(items);
 
+  const actualCompletionTimes = options.actualCompletionTimes || {};
   for (const item of items) {
     const shift = isFiniteNumber(taskShifts[item.step.id]) ? taskShifts[item.step.id] : 0;
     if (shift) shiftItem(item, shift * 60000);
@@ -336,7 +389,7 @@ export function addStepDelay(taskShifts, sourceStepId, minutes) {
 
 // Kept temporarily for compatibility with the current active-cook UI.
 // The next UI increment should delay one observed step and let buildSchedule()
-// propagate only the constraints that actually need to move.
+// propagate only constraints that actually need to move.
 export function shiftDependentTasks(recipe, taskShifts, completed, sourceStepId, minutes) {
   const next = { ...taskShifts };
   const ids = getDependentStepIds(recipe, sourceStepId);
