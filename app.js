@@ -1,6 +1,7 @@
 import { loadLibrary, findLibraryRecipe } from './js/library.js';
 import { loadRecipe } from './js/recipe-loader.js';
 import { formatWoodfireSummary, scaleIngredients } from './js/recipe.js';
+import { renderPreCook } from './js/prep-ui.js';
 import {
   buildSchedule,
   findDependencyIssues,
@@ -327,6 +328,8 @@ function renderScaledRecipeDetails() {
     row.append(left, quantity);
     ingredientPreview.appendChild(row);
   }
+
+  renderPreCook(selectedRecipe, configServings, formatIngredientQuantity);
 
   const elapsedRange = selectedRecipe.timing?.elapsedRangeMin || [0, 0];
   const planningElapsed = elapsedRange[1] ?? elapsedRange[0] ?? 0;

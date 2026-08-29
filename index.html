@@ -10,6 +10,7 @@
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="apple-touch-icon" href="./icons/icon-192.png" />
   <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="./prep.css" />
   <title>Woodfire Companion</title>
 </head>
 <body>
@@ -17,7 +18,7 @@
     <header class="topbar">
       <div class="brand-line">
         <span class="eyebrow">WOODFIRE COMPANION</span>
-        <span class="dev-badge">DEV · v0.3.0-dev.2</span>
+        <span class="dev-badge">DEV · v0.3.0-dev.3</span>
       </div>
       <div class="topbar-actions">
         <button id="settingsBtn" class="icon-btn" type="button" aria-label="Réglages">⚙︎</button>
@@ -88,7 +89,6 @@
           </div>
 
           <div id="startTimeHint" class="start-hint"></div>
-          <button id="startCookBtn" class="primary-btn wide-btn" type="button">Préparer ce repas</button>
         </section>
 
         <section class="detail-section">
@@ -110,6 +110,44 @@
           </div>
           <div id="ingredientPreview" class="ingredient-preview"></div>
         </section>
+
+        <section class="detail-section">
+          <div class="section-heading">
+            <div>
+              <span class="field-label">Courses</span>
+              <strong>Liste consolidée</strong>
+            </div>
+            <div class="shopping-heading-actions">
+              <span id="shoppingProgress" class="shopping-progress">0/0</span>
+              <button id="resetShoppingBtn" class="text-btn" type="button">Réinitialiser</button>
+            </div>
+          </div>
+          <div id="shoppingList" class="shopping-list"></div>
+        </section>
+
+        <section class="detail-section">
+          <div class="section-heading">
+            <div>
+              <span class="field-label">Avant de cuisiner</span>
+              <strong>Préparation & matériel</strong>
+            </div>
+          </div>
+          <div class="prep-grid">
+            <div class="prep-block">
+              <h3>À préparer en avance</h3>
+              <div id="advancePrepList" class="advance-prep-list"></div>
+            </div>
+            <div class="prep-block">
+              <h3>Matériel nécessaire</h3>
+              <div id="equipmentList" class="equipment-list"></div>
+            </div>
+          </div>
+        </section>
+
+        <div class="start-cook-footer">
+          <button id="startCookBtn" class="primary-btn wide-btn" type="button">Démarrer la cuisson</button>
+          <p>Les courses et la préparation restent disponibles en revenant sur la recette.</p>
+        </div>
       </article>
     </section>
 

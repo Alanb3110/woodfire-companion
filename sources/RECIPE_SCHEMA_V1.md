@@ -14,9 +14,10 @@ A recipe/meal contains:
 - `servings`: reference/min/max servings;
 - `timing`: active and elapsed estimates;
 - `temperature`: default logging target where useful;
+- optional `advancePrep`: pre-cook guidance that may be done before the active timeline;
 - `components`: main/side/sauce grouping;
 - `ingredients`: scalable ingredient definitions;
-- `equipment`: appliance/accessory requirements;
+- `equipment`: appliance/accessory/recipe-consumable requirements;
 - `steps`: executable planning units.
 
 ## Ingredients
@@ -43,6 +44,41 @@ Components group ingredients and steps into coherent meal parts such as:
 - sauce.
 
 V1 keeps components embedded in one meal JSON. Reusable component files may be extracted later when multiple recipes actually share them.
+
+## Equipment and consumables
+Reusable equipment/accessories are declared in `equipment` with at least:
+- stable `id`;
+- `name`;
+- optional flag where relevant.
+
+A recipe-specific non-food consumable can use:
+
+```json
+{
+  "id": "pellets",
+  "name": "Pellets Woodfire",
+  "consumable": true,
+  "displayQuantity": "1 dose"
+}
+```
+
+Consumables are included in the shopping list and excluded from the reusable equipment checklist. `displayQuantity` is display guidance rather than serving-scaled ingredient arithmetic.
+
+## Advance preparation
+Optional `advancePrep` records describe useful work that may happen before the active cooking timeline.
+
+Example:
+
+```json
+{
+  "id": "rub-ahead",
+  "title": "Assaisonner le porc en avance",
+  "timing": "Idéalement la veille · sinon ≥ 30 min avant",
+  "details": "Appliquer le rub puis conserver au frais."
+}
+```
+
+Current semantics are informational only. `advancePrep` does not yet create schedule nodes. If an item needs formal dependencies/resources/timing, migrate it into planner step semantics rather than duplicating scheduling logic.
 
 ## Steps
 A step contains, where applicable:
@@ -128,18 +164,22 @@ Do not add new recipe logic to UI code merely to preserve an offset. If a recipe
 - schema/content version basics;
 - unique ingredient and step IDs;
 - quantity/scaling structures;
+- equipment ids/names and optional consumable/display-quantity structures;
+- `advancePrep` ids/titles and optional text fields;
 - dependency references and cycles;
 - valid duration fields;
 - explicit Woodfire state and Woodfire resource reservation;
 - component references.
 
-Planning tests additionally verify:
+Planning and content tests additionally verify:
 - baseline times for the reference recipe;
 - schedules crossing midnight;
 - declared dependency order;
 - absence of Woodfire resource conflicts;
 - dependency-aware downstream shift primitives;
-- representative serving scaling.
+- representative serving scaling;
+- shopping grouping/consumables;
+- advance-prep exposure.
 
 ## Current reference recipe
 `recipes/pork-belly-burnt-ends.json` is the canonical V1 fixture and includes:
@@ -149,11 +189,13 @@ Planning tests additionally verify:
 - all current POC steps and details;
 - explicit Woodfire modes/accessories/smoke/cover state;
 - ingredient scaling semantics;
+- shopping consumable declaration;
+- advance-prep guidance;
 - completion and recheck semantics.
 
 ## Next schema/planner work
 1. Use dependencies/resource constraints to generate placement rather than only validate preferred offsets.
-2. Add serving selection to the UI and use `scaleIngredients()`.
-3. Add shopping-list aggregation/display.
-4. Add a recipe index/library manifest and at least one additional recipe to validate schema generality.
-5. Add richer planning windows/buffers only where a real recipe requires them.
+2. Add at least one additional complete executable recipe to validate schema generality.
+3. Add richer planning windows/buffers only where a real recipe requires them.
+4. Introduce cross-component duplicate aggregation when components become externally reusable.
+5. Promote only genuinely schedulable advance-prep work into planner steps when required.

@@ -71,6 +71,26 @@ export function validateRecipe(recipe) {
     }
   }
 
+  const equipmentIds = new Set();
+  for (const equipment of recipe.equipment || []) {
+    if (!equipment.id) errors.push('Every equipment item requires an id.');
+    else if (equipmentIds.has(equipment.id)) errors.push(`Duplicate equipment id: ${equipment.id}`);
+    else equipmentIds.add(equipment.id);
+    if (!equipment.name) errors.push(`Equipment ${equipment.id || '?'} requires a name.`);
+    if (equipment.consumable !== undefined && typeof equipment.consumable !== 'boolean') errors.push(`Equipment ${equipment.id || '?'} consumable must be boolean.`);
+    if (equipment.displayQuantity !== undefined && typeof equipment.displayQuantity !== 'string') errors.push(`Equipment ${equipment.id || '?'} displayQuantity must be a string.`);
+  }
+
+  const advancePrepIds = new Set();
+  for (const prep of recipe.advancePrep || []) {
+    if (!prep.id) errors.push('Every advancePrep item requires an id.');
+    else if (advancePrepIds.has(prep.id)) errors.push(`Duplicate advancePrep id: ${prep.id}`);
+    else advancePrepIds.add(prep.id);
+    if (!prep.title) errors.push(`advancePrep ${prep.id || '?'} requires a title.`);
+    if (prep.timing !== undefined && typeof prep.timing !== 'string') errors.push(`advancePrep ${prep.id || '?'} timing must be a string.`);
+    if (prep.details !== undefined && typeof prep.details !== 'string') errors.push(`advancePrep ${prep.id || '?'} details must be a string.`);
+  }
+
   const stepIds = new Set();
   for (const step of steps) {
     if (!step.id) errors.push('Every step requires an id.');
