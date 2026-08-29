@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "sweet-savory-turkey-zucchini-gratin",
-  "version": 1,
+  "version": 2,
   "serviceStepId": "serve",
   "title": "Roulé de dinde sucré-salé & gratin de courgettes",
   "description": "Roulé de dinde fumé puis rôti au Woodfire avec marinade soja-miel-paprika, servi avec un gratin de courgettes crémeux cuit au four en parallèle.",
@@ -56,7 +56,7 @@
     { "id": "cider-vinegar", "name": "Vinaigre de cidre", "quantity": { "min": 10, "max": 18 }, "unit": "g", "scale": { "type": "fixed" }, "category": "epicerie", "preparation": "10–15 g marinade extérieure + 2–3 g si injection" },
     { "id": "smoked-paprika", "name": "Paprika fumé", "quantity": { "min": 6, "max": 7 }, "unit": "g", "scale": { "type": "fixed" }, "category": "epicerie" },
     { "id": "garlic", "name": "Gousses d’ail", "quantity": 4, "unit": "piece", "scale": { "type": "step", "breakpoints": [{ "maxServings": 5, "quantity": 4 }, { "maxServings": 6, "quantity": 5 }] }, "category": "fruits-legumes", "preparation": "2 pour la marinade; 2 pour le gratin, 3 si 6 personnes" },
-    { "id": "black-pepper", "name": "Poivre", "quantity": null, "unit": "tsp", "scale": { "type": "to_taste" }, "category": "epicerie", "preparation": "Poivrer légèrement la marinade et le gratin" },
+    { "id": "black-pepper", "name": "Poivre", "quantity": 1, "unit": "tsp", "scale": { "type": "fixed" }, "category": "epicerie", "preparation": "Environ ½ c. à café marinade + ½ c. à café gratin" },
     { "id": "injection-liquid", "name": "Eau ou jus de pomme pour injection", "quantity": 25, "unit": "mL", "scale": { "type": "fixed" }, "category": "boissons-epicerie", "optional": true, "preparation": "Uniquement si l’option injection est utilisée" },
     { "id": "roast-liquid", "name": "Bouillon de volaille ou eau", "quantity": { "min": 50, "max": 100 }, "unit": "mL", "scale": { "type": "fixed" }, "category": "epicerie", "preparation": "Au fond du plat pendant le rôtissage; ne pas réutiliser la marinade crue" },
     { "id": "zucchini", "name": "Courgettes", "quantity": 1200, "unit": "g", "scale": { "type": "linear" }, "category": "fruits-legumes", "preparation": "En rondelles fines" },
@@ -64,8 +64,8 @@
     { "id": "eggs", "name": "Œufs", "quantity": 3, "unit": "piece", "scale": { "type": "step", "breakpoints": [{ "maxServings": 5, "quantity": 3 }, { "maxServings": 6, "quantity": 4 }] }, "category": "produits-frais" },
     { "id": "grated-cheese", "name": "Fromage râpé", "quantity": 100, "unit": "g", "scale": { "type": "linear" }, "category": "produits-frais", "preparation": "Comté, emmental ou gruyère" },
     { "id": "parmesan", "name": "Parmesan râpé", "quantity": 30, "unit": "g", "scale": { "type": "linear" }, "category": "produits-frais", "optional": true },
-    { "id": "salt", "name": "Sel", "quantity": null, "unit": "g", "scale": { "type": "to_taste" }, "category": "epicerie", "preparation": "Pour faire dégorger puis assaisonner le gratin; pas de sel ajouté dans la marinade soja" },
-    { "id": "nutmeg", "name": "Noix de muscade", "quantity": null, "unit": "tsp", "scale": { "type": "to_taste" }, "category": "epicerie", "optional": true }
+    { "id": "salt", "name": "Sel", "quantity": 8, "unit": "g", "scale": { "type": "linear" }, "category": "epicerie", "preparation": "Base pour 5 : ~5 g pour faire dégorger + ~3 g dans l’appareil; ajuster selon le fromage" },
+    { "id": "nutmeg", "name": "Noix de muscade", "quantity": 0.25, "unit": "tsp", "scale": { "type": "fixed" }, "category": "epicerie", "optional": true }
   ],
   "equipment": [
     { "id": "woodfire", "name": "Ninja Woodfire" },
@@ -87,7 +87,7 @@
       "durationMin": 5,
       "resources": [],
       "details": [
-        "Marinade extérieure : 20 g sauce soja, 25 g miel, 15 g huile, 10 g moutarde, 10–15 g vinaigre de cidre, 6–7 g paprika fumé, 2 gousses d’ail et poivre. Ne pas ajouter de sel.",
+        "Marinade extérieure : 20 g sauce soja, 25 g miel, 15 g huile, 10 g moutarde, 10–15 g vinaigre de cidre, 6–7 g paprika fumé, 2 gousses d’ail et ~½ c. à café de poivre. Ne pas ajouter de sel.",
         "Option injection (~60 mL) : 25 g sauce soja + 25 g eau ou jus de pomme + 8 g miel + 2–3 g vinaigre de cidre; filtrer finement et refroidir.",
         "Avant tout contact avec la dinde crue, réserver un peu de marinade extérieure propre pour le glaçage final."
       ],
@@ -229,8 +229,8 @@
       "resources": [],
       "details": [
         "Pour 5 personnes : environ 1,2 kg de courgettes, 300 mL de crème, 3 œufs, 2 gousses d’ail et 100 g de fromage râpé; parmesan facultatif.",
-        "Couper les courgettes en rondelles fines, saler légèrement et laisser dégorger 15–20 min, puis bien égoutter.",
-        "Mélanger crème, œufs, ail, poivre et éventuellement une pincée de muscade.",
+        "Couper les courgettes en rondelles fines, utiliser environ 5 g de sel pour les faire dégorger 15–20 min, puis bien égoutter.",
+        "Mélanger crème, œufs, ail, environ 3 g de sel, ~½ c. à café de poivre et éventuellement ¼ c. à café de muscade.",
         "Huiler légèrement le plat, disposer les courgettes, verser l’appareil et terminer par le fromage.",
         "Préchauffer le four à 180–185 °C chaleur tournante pendant la préparation."
       ],
