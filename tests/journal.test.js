@@ -33,6 +33,24 @@ function sessionState() {
       eat: '2026-08-29T20:04:00.000Z'
     },
     taskShifts: { 'first-check': 10 },
+    observations: [
+      {
+        stepId: 'first-check',
+        observationId: 'still-firm',
+        label: 'Encore ferme',
+        outcome: 'recheck',
+        timestamp: '2026-08-29T18:00:00.000Z',
+        recheckDueAt: '2026-08-29T18:20:00.000Z'
+      },
+      {
+        stepId: 'first-check',
+        observationId: 'tender',
+        label: 'Très tendre',
+        outcome: 'complete',
+        timestamp: '2026-08-29T18:18:00.000Z',
+        recheckDueAt: null
+      }
+    ],
     measurements: [
       { timestamp: '2026-08-29T18:00:00.000Z', temperature: 72.5, source: 'manual' },
       { timestamp: '2026-08-29T19:20:00.000Z', temperature: 91, source: 'manual' }
@@ -40,7 +58,7 @@ function sessionState() {
   };
 }
 
-test('journal entry snapshots recipe, actuals, temperatures and schedule', () => {
+test('journal entry snapshots recipe, actuals, observations, temperatures and schedule', () => {
   const state = sessionState();
   const reference = new Date(2026, 7, 29, 12, 0, 0, 0);
   const schedule = buildSchedule(recipe, '20:00', reference, state.taskShifts, { actualCompletionTimes: state.completed });
@@ -52,6 +70,9 @@ test('journal entry snapshots recipe, actuals, temperatures and schedule', () =>
   assert.equal(entry.targetServingAt, state.targetServingAt);
   assert.equal(entry.servedAt, state.completed.eat);
   assert.equal(entry.measurements.length, 2);
+  assert.equal(entry.observations.length, 2);
+  assert.equal(entry.observations[0].label, 'Encore ferme');
+  assert.notEqual(entry.observations, state.observations, 'Journal must snapshot the observation array.');
   assert.equal(entry.taskShifts['first-check'], 10);
   assert.equal(entry.schedule.length, recipe.steps.length);
   assert.ok(entry.schedule.every(item => item.baselineStart && item.finalStart));
@@ -70,6 +91,7 @@ test('journal upsert is idempotent per cook session', () => {
   const data = loadJournal(storage);
   assert.equal(data.entries.length, 1);
   assert.equal(data.entries[0].measurements.length, 3);
+  assert.equal(data.entries[0].observations.length, 2);
   assert.ok(storage.getItem(JOURNAL_KEY));
 });
 
