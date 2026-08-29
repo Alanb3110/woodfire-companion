@@ -10,6 +10,19 @@ test('reference recipe validates against schema v1 semantics', () => {
   assert.equal(result.valid, true, result.errors.join('\n'));
 });
 
+test('reference recipe is fully migrated away from preferred start offsets', () => {
+  const legacySteps = recipe.steps.filter(step => step.plan?.preferredStartOffsetMin !== undefined);
+  assert.deepEqual(legacySteps.map(step => step.id), []);
+  assert.ok(recipe.steps.some(step => step.plan?.anchor === 'serve'));
+});
+
+test('reference recipe exposes explicit planning buffers for uncertain pork and potato readiness', () => {
+  const finish = recipe.steps.find(step => step.id === 'finish-pork');
+  const airfry = recipe.steps.find(step => step.id === 'airfry-potatoes');
+  assert.equal(finish.dependencies.find(dep => dep.stepId === 'first-check').planningBufferMin, 35);
+  assert.equal(airfry.dependencies.find(dep => dep.stepId === 'potato-prep').planningBufferMin, 25);
+});
+
 test('linear ingredient ranges scale from 4 to 6 servings', () => {
   const scaled = scaleIngredients(recipe, 6);
   const pork = scaled.find(item => item.id === 'pork-belly');

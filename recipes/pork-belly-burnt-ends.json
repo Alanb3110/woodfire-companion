@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "pork-belly-burnt-ends-meal",
-  "version": 3,
+  "version": 4,
   "title": "Pork Belly Burnt Ends",
   "description": "Poitrine de porc fumée puis confite et caramélisée, servie avec grenailles croustillantes et sauce fraîche citronnée.",
   "heroImage": null,
@@ -88,7 +88,6 @@
       "title": "Sortir le porc",
       "summary": "Tempérer et vérifier le rub",
       "durationMin": 30,
-      "plan": { "preferredStartOffsetMin": -330 },
       "resources": [],
       "details": [
         "1,2 à 1,5 kg de poitrine de porc en cubes de ~40 mm.",
@@ -104,7 +103,6 @@
       "summary": "2 h à 2 h 30",
       "durationRangeMin": [120, 150],
       "durationPlanMin": 135,
-      "plan": { "preferredStartOffsetMin": -300 },
       "dependencies": [{ "stepId": "take-out-pork", "relation": "after_finish", "lagMin": 0 }],
       "resources": ["woodfire"],
       "woodfire": { "mode": "SMOKER", "temperatureC": 125, "smoke": true, "pellets": true, "support": "grill_surface", "covered": false, "placement": "Cubes bien espacés directement sur la grille/plaque; pas de plat ni de panier Air Fry." },
@@ -121,7 +119,6 @@
       "title": "Passage en cuisson couverte",
       "summary": "Plat compact, 1 à 2 couches",
       "durationMin": 60,
-      "plan": { "preferredStartOffsetMin": -165 },
       "dependencies": [{ "stepId": "smoke", "relation": "after_finish", "lagMin": 0 }],
       "resources": ["woodfire"],
       "woodfire": { "mode": "BAKE_ROAST", "temperatureC": 160, "temperatureRangeC": [155, 160], "smoke": false, "pellets": false, "support": "compact_dish", "covered": true, "placement": "Petit plat permettant 1 à 2 couches; les cubes peuvent se toucher légèrement." },
@@ -140,7 +137,7 @@
       "title": "Préparer la sauce fraîche",
       "summary": "Puis réserver au frais",
       "durationMin": 15,
-      "plan": { "preferredStartOffsetMin": -155 },
+      "plan": { "anchor": "serve", "anchorOffsetMin": -155 },
       "resources": ["fridge"],
       "details": [
         "250 g de yaourt grec.",
@@ -160,7 +157,6 @@
       "title": "Premier contrôle du porc",
       "summary": "Tester la tendreté",
       "durationMin": 0,
-      "plan": { "preferredStartOffsetMin": -105 },
       "dependencies": [{ "stepId": "covered", "relation": "after_finish", "lagMin": 0 }],
       "resources": [],
       "details": [
@@ -178,7 +174,6 @@
       "summary": "700–800 g · 8 à 10 min",
       "durationRangeMin": [8, 10],
       "durationPlanMin": 10,
-      "plan": { "preferredStartOffsetMin": -80 },
       "resources": ["stovetop"],
       "details": [
         "Cuire les pommes de terre grenaille dans une eau salée pendant 8–10 min après reprise de l’ébullition.",
@@ -192,7 +187,6 @@
       "title": "Écraser et assaisonner les pommes de terre",
       "summary": "Prêtes à passer en Air Fry",
       "durationMin": 10,
-      "plan": { "preferredStartOffsetMin": -70 },
       "dependencies": [{ "stepId": "potato-boil", "relation": "after_finish", "lagMin": 0 }],
       "resources": [],
       "details": [
@@ -210,8 +204,7 @@
       "summary": "20 à 30 min",
       "durationRangeMin": [20, 30],
       "durationPlanMin": 30,
-      "plan": { "preferredStartOffsetMin": -70 },
-      "dependencies": [{ "stepId": "first-check", "relation": "after_finish", "lagMin": 0 }],
+      "dependencies": [{ "stepId": "first-check", "relation": "after_finish", "lagMin": 0, "planningBufferMin": 35 }],
       "resources": ["woodfire"],
       "woodfire": { "mode": "BAKE_ROAST", "temperatureC": 180, "temperatureRangeC": [175, 180], "smoke": false, "pellets": false, "support": "compact_dish", "covered": false, "placement": "Même plat, aluminium retiré." },
       "details": [
@@ -228,7 +221,6 @@
       "title": "Sortir et laisser reposer le porc",
       "summary": "Repos pendant les pommes de terre",
       "durationMin": 5,
-      "plan": { "preferredStartOffsetMin": -40 },
       "dependencies": [{ "stepId": "finish-pork", "relation": "after_finish", "lagMin": 0 }],
       "resources": ["passive"],
       "details": [
@@ -244,9 +236,8 @@
       "summary": "18 à 22 min",
       "durationRangeMin": [18, 22],
       "durationPlanMin": 20,
-      "plan": { "preferredStartOffsetMin": -35 },
       "dependencies": [
-        { "stepId": "potato-prep", "relation": "after_finish", "lagMin": 0 },
+        { "stepId": "potato-prep", "relation": "after_finish", "lagMin": 0, "planningBufferMin": 25 },
         { "stepId": "rest-pork", "relation": "after_finish", "lagMin": 0 }
       ],
       "resources": ["woodfire"],
@@ -265,7 +256,6 @@
       "title": "Sortir les pommes de terre",
       "summary": "Vérifier le croustillant",
       "durationMin": 5,
-      "plan": { "preferredStartOffsetMin": -15 },
       "dependencies": [{ "stepId": "airfry-potatoes", "relation": "after_finish", "lagMin": 0 }],
       "resources": [],
       "details": [
@@ -280,7 +270,6 @@
       "title": "Dressage",
       "summary": "Porc + grenailles + sauce à part",
       "durationMin": 10,
-      "plan": { "preferredStartOffsetMin": -10 },
       "dependencies": [{ "stepId": "potatoes-out", "relation": "after_finish", "lagMin": 0 }],
       "resources": [],
       "details": [
@@ -297,10 +286,13 @@
       "title": "À table",
       "summary": "Bon appétit",
       "durationMin": 0,
-      "plan": { "preferredStartOffsetMin": 0, "anchor": "serve" },
-      "dependencies": [{ "stepId": "plate", "relation": "after_finish", "lagMin": 0 }],
+      "plan": { "anchor": "serve" },
+      "dependencies": [
+        { "stepId": "plate", "relation": "after_finish", "lagMin": 0 },
+        { "stepId": "sauce", "relation": "after_finish", "lagMin": 0 }
+      ],
       "resources": [],
-      "details": ["Service visé. Si nécessaire, décale les étapes restantes avec les boutons +5/+10/+15 min en haut du planning."],
+      "details": ["Service visé. En cas de retard, utilise +5/+10/+15 sur la prochaine étape : le planning recalculera uniquement ce qui doit réellement bouger."],
       "completion": { "type": "manual", "description": "Repas servi" }
     }
   ]
