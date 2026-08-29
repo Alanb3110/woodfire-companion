@@ -1,5 +1,7 @@
 const SCALE_TYPES = new Set(['linear', 'fixed', 'step', 'range', 'to_taste']);
 const DEPENDENCY_RELATIONS = new Set(['after_finish', 'after_start']);
+const PLAN_ANCHORS = new Set(['serve']);
+const PLAN_PLACEMENTS = new Set(['latest', 'earliest']);
 
 function isFiniteNumber(value) {
   return typeof value === 'number' && Number.isFinite(value);
@@ -98,7 +100,20 @@ export function validateRecipe(recipe) {
     else stepIds.add(step.id);
 
     if (!step.title) errors.push(`Step ${step.id || '?'} requires a title.`);
-    if (!isFiniteNumber(step.plan?.preferredStartOffsetMin)) errors.push(`Step ${step.id || '?'} requires plan.preferredStartOffsetMin in schema v1.`);
+
+    const plan = step.plan || {};
+    if (plan.preferredStartOffsetMin !== undefined && !isFiniteNumber(plan.preferredStartOffsetMin)) {
+      errors.push(`Invalid preferredStartOffsetMin for step ${step.id || '?'}.`);
+    }
+    if (plan.anchor !== undefined && !PLAN_ANCHORS.has(plan.anchor)) {
+      errors.push(`Invalid plan anchor for step ${step.id || '?'}: ${plan.anchor}`);
+    }
+    if (plan.anchorOffsetMin !== undefined && !isFiniteNumber(plan.anchorOffsetMin)) {
+      errors.push(`Invalid anchorOffsetMin for step ${step.id || '?'}.`);
+    }
+    if (plan.placement !== undefined && !PLAN_PLACEMENTS.has(plan.placement)) {
+      errors.push(`Invalid plan placement for step ${step.id || '?'}: ${plan.placement}`);
+    }
 
     const duration = step.durationMin ?? step.durationPlanMin ?? 0;
     if (!isFiniteNumber(duration) || duration < 0) errors.push(`Invalid duration for step ${step.id || '?'}.`);
@@ -112,6 +127,9 @@ export function validateRecipe(recipe) {
       if (!dependency.stepId) errors.push(`Dependency in ${step.id || '?'} is missing stepId.`);
       if (!DEPENDENCY_RELATIONS.has(dependency.relation)) errors.push(`Invalid dependency relation in ${step.id || '?'}: ${dependency.relation}`);
       if (dependency.lagMin !== undefined && !isFiniteNumber(dependency.lagMin)) errors.push(`Invalid dependency lag in ${step.id || '?'}.`);
+      if (dependency.planningBufferMin !== undefined && (!isFiniteNumber(dependency.planningBufferMin) || dependency.planningBufferMin < 0)) {
+        errors.push(`Invalid planningBufferMin in ${step.id || '?'}.`);
+      }
     }
 
     if (step.woodfire) {
@@ -133,6 +151,15 @@ export function validateRecipe(recipe) {
   }
 
   for (const cycle of detectCycles(steps)) errors.push(`Dependency cycle: ${cycle.join(' -> ')}`);
+
+  const hasServeAnchor = steps.some(step => step.plan?.anchor === 'serve');
+  const hasCompleteLegacyTiming = steps.length > 0 && steps.every(step => isFiniteNumber(step.plan?.preferredStartOffsetMin));
+  if (!hasServeAnchor && !hasCompleteLegacyTiming) {
+    errors.push('Recipe requires a serve anchor or complete legacy preferredStartOffsetMin timing.');
+  }
+  if (hasServeAnchor && steps.some(step => isFiniteNumber(step.plan?.preferredStartOffsetMin))) {
+    warnings.push('preferredStartOffsetMin is a migration hint; prefer dependencies, planning buffers and anchors for new recipes.');
+  }
 
   for (const component of recipe.components || []) {
     for (const ingredientId of component.ingredientIds || []) {
