@@ -17,9 +17,12 @@
     <header class="topbar">
       <div class="brand-line">
         <span class="eyebrow">WOODFIRE COMPANION</span>
-        <span class="dev-badge">DEV · v0.3.0-dev.1</span>
+        <span class="dev-badge">DEV · v0.3.0-dev.2</span>
       </div>
-      <button id="installHelpBtn" class="icon-btn" type="button" aria-label="Aide installation">i</button>
+      <div class="topbar-actions">
+        <button id="settingsBtn" class="icon-btn" type="button" aria-label="Réglages">⚙︎</button>
+        <button id="installHelpBtn" class="icon-btn" type="button" aria-label="Aide installation">i</button>
+      </div>
     </header>
 
     <div id="appError" class="app-error" hidden></div>
@@ -206,6 +209,58 @@
       </section>
     </section>
 
+    <dialog id="settingsDialog">
+      <form method="dialog" class="settings-form">
+        <div class="dialog-heading">
+          <div>
+            <span class="field-label">Apparence</span>
+            <h2>Couleur d’accent</h2>
+          </div>
+          <button class="dialog-close" value="close" aria-label="Fermer">×</button>
+        </div>
+
+        <p class="dialog-copy">Choisis une base rapide ou définis exactement la couleur utilisée pour les actions, horaires et états actifs.</p>
+
+        <div class="accent-presets" aria-label="Couleurs prédéfinies">
+          <button type="button" class="accent-swatch" data-accent="#F97316" style="--swatch:#F97316" aria-label="Orange Woodfire"></button>
+          <button type="button" class="accent-swatch" data-accent="#F59E0B" style="--swatch:#F59E0B" aria-label="Ambre"></button>
+          <button type="button" class="accent-swatch" data-accent="#EF4444" style="--swatch:#EF4444" aria-label="Rouge"></button>
+          <button type="button" class="accent-swatch" data-accent="#D946EF" style="--swatch:#D946EF" aria-label="Magenta"></button>
+          <button type="button" class="accent-swatch" data-accent="#8B5CF6" style="--swatch:#8B5CF6" aria-label="Violet"></button>
+          <button type="button" class="accent-swatch" data-accent="#3B82F6" style="--swatch:#3B82F6" aria-label="Bleu"></button>
+          <button type="button" class="accent-swatch" data-accent="#06B6D4" style="--swatch:#06B6D4" aria-label="Cyan"></button>
+          <button type="button" class="accent-swatch" data-accent="#22C55E" style="--swatch:#22C55E" aria-label="Vert"></button>
+        </div>
+
+        <div class="color-custom-grid">
+          <label class="color-picker-field">
+            <span class="field-label">Sélecteur</span>
+            <input id="accentColorInput" type="color" value="#F97316" aria-label="Sélecteur de couleur" />
+          </label>
+
+          <label class="hex-field">
+            <span class="field-label">HEX</span>
+            <input id="accentHexInput" type="text" value="#F97316" inputmode="text" autocomplete="off" spellcheck="false" maxlength="7" aria-label="Couleur HEX" />
+          </label>
+        </div>
+
+        <fieldset class="rgb-fieldset">
+          <legend>RGB</legend>
+          <label><span>R</span><input id="accentRedInput" type="number" min="0" max="255" step="1" value="249" inputmode="numeric" /></label>
+          <label><span>G</span><input id="accentGreenInput" type="number" min="0" max="255" step="1" value="115" inputmode="numeric" /></label>
+          <label><span>B</span><input id="accentBlueInput" type="number" min="0" max="255" step="1" value="22" inputmode="numeric" /></label>
+        </fieldset>
+
+        <div id="accentPreview" class="accent-preview">#F97316</div>
+        <p id="accentValidation" class="validation" role="alert"></p>
+
+        <div class="dialog-actions">
+          <button id="resetAccentBtn" class="secondary-btn" type="button">Orange Woodfire</button>
+          <button class="primary-btn" value="close">Terminé</button>
+        </div>
+      </form>
+    </dialog>
+
     <dialog id="installDialog">
       <form method="dialog">
         <h2>Installer sur l’iPhone</h2>
@@ -216,6 +271,7 @@
     </dialog>
   </main>
 
+  <script type="module" src="./js/settings.js"></script>
   <script type="module" src="./app.js"></script>
 </body>
 </html>
