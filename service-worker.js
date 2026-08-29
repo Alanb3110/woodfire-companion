@@ -1,4 +1,4 @@
-const APP_VERSION = '0.3.0-dev.5';
+const APP_VERSION = '0.3.0-dev.4';
 const CACHE_NAME = `woodfire-companion-${APP_VERSION}`;
 const APP_ASSETS = [
   './',
