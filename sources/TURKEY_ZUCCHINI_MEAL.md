@@ -1,7 +1,7 @@
 # Woodfire Companion — Roulé de dinde + gratin de courgettes
 
 ## Status
-Second executable reference meal, reconstructed from the meal cooked/discussed on 2026-08-26/28 and encoded as `recipes/sweet-savory-turkey-zucchini-gratin.json`.
+Second executable reference meal, reconstructed from the meal cooked/discussed on 2026-08-26/28 and encoded as `recipes/sweet-savory-turkey-zucchini-gratin.json`, content version 2.
 
 This source records the culinary intent and reference timeline. The executable JSON remains the machine-readable source of truth.
 
@@ -21,7 +21,7 @@ External marinade for the 1 kg turkey:
 - 10–15 g cider vinegar;
 - 6–7 g smoked paprika;
 - 2 garlic cloves;
-- pepper;
+- approximately 1/2 tsp black pepper;
 - no added salt because of the soy sauce.
 
 ### Optional injection
@@ -51,7 +51,7 @@ References checked 2026-08-29:
 - https://ask.fsis.usda.gov/article/What-is-a-safe-internal-temperature-for-cooking-turkey-parts
 
 ## Zucchini gratin
-Reference recipe for approximately 4–6 people:
+Reference recipe for approximately 5 people:
 - 1.2 kg zucchini;
 - 300 mL full-fat cream;
 - 3 eggs;
@@ -59,13 +59,16 @@ Reference recipe for approximately 4–6 people:
 - 100 g grated cheese (Comté, Emmental or Gruyère);
 - 30 g Parmesan optional;
 - approximately 1 tbsp olive oil;
-- salt and pepper;
-- nutmeg optional.
+- approximately 8 g salt total: about 5 g to drain the zucchini + about 3 g in the cream/egg mixture, then adjust for cheese saltiness;
+- approximately 1/2 tsp black pepper in the gratin;
+- approximately 1/4 tsp nutmeg optional.
+
+These are first-cook baselines rather than immutable seasoning limits. The structured recipe scales the gratin quantities across 4–6 servings where appropriate.
 
 Preparation pattern:
 - slice zucchini thinly;
-- salt lightly and drain 15–20 min;
-- combine cream, eggs, garlic and seasoning;
+- use about 5 g salt and drain 15–20 min, then drain thoroughly;
+- combine cream, eggs, garlic, about 3 g salt, pepper and optional nutmeg;
 - lightly oil the gratin dish;
 - assemble and top with cheese;
 - bake uncovered in a fan oven around 180–185 °C until the centre is set, zucchini tender and top browned;
