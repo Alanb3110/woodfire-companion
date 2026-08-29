@@ -1,147 +1,155 @@
 # Woodfire Companion — Project Instructions
 
-## 1. Mission
-Woodfire Companion is a mobile-first cooking companion for the Ninja Woodfire. Its primary job is to help execute a meal reliably and on time, not merely display recipes.
+## Mission
+Woodfire Companion is a mobile-first cooking copilot for the Ninja Woodfire. It must turn a chosen meal into an executable plan that gets the whole meal ready near the desired serving time.
 
-The product should combine:
-- recipe guidance;
-- a dynamically scheduled cooking checklist built around the desired serving time;
-- explicit Ninja Woodfire operating instructions (mode, temperature, smoke on/off, pellets, grill plate/basket/tray, covered/uncovered);
-- very fast manual temperature logging;
-- later, adaptive timing based on actual progress and temperature evolution.
+The product is not primarily a recipe reader. Its differentiator is the orchestration layer between recipe content and real cooking.
 
-The application is currently a static PWA hosted on GitHub Pages. Prefer simple client-side solutions unless a backend clearly creates enough value to justify the added complexity.
+Canonical flow:
 
-## 2. Product principles
-1. **Execution first.** During cooking, the next action, its time, and the exact Woodfire setup must be more visible than explanatory prose.
-2. **Few taps.** Common actions should take 1–3 taps. Temperature logging in particular must be extremely fast.
-3. **Mobile first.** iPhone/PWA use is the reference UX; desktop is secondary.
-4. **Offline capable.** Core recipe execution, checklist state, and temperature logging must continue without network access.
-5. **One source of truth.** Recipes and cooking plans should live in structured data rather than being hard-coded into UI logic.
-6. **Relative scheduling.** Plans should normally be defined relative to a target serving time, then recalculated automatically.
-7. **Adaptive rather than brittle.** Durations are estimates. Where possible, use state/temperature/tenderness criteria and allow remaining steps to shift without rewriting completed history.
-8. **Explicit hardware instructions.** Never write only “cook at 180 °C” when the Woodfire configuration matters. State mode, setpoint, smoke, pellets, support, covering, and placement.
-9. **Food quality over exact clock time.** The schedule should contain buffers and distinguish hard deadlines from flexible windows.
-10. **No unnecessary complexity.** Avoid frameworks, servers, accounts, databases, or APIs until they solve an identified problem.
+**recipe library → meal configuration → shopping list → generated plan → active cook → cook journal**
 
-## 3. Current V1 scope
-The existing proof of concept contains:
-- a serving-time-driven checklist;
-- expandable task details;
-- completion state with timestamps;
-- +5/+10/+15 min shift of unfinished tasks;
-- next-task countdown;
-- manual temperature entry with automatic timestamp;
-- temperature target and chart;
-- CSV export;
-- local persistence via `localStorage`;
-- PWA/offline support through a service worker.
+## Product principles
+1. **Execution first.** During cooking, show what to do now, what happens next, and the exact Woodfire configuration.
+2. **Whole-meal planning.** Include meat, sides, sauces, stovetop work, chilling, resting, plating and advance preparation—not only appliance time.
+3. **Few taps.** Frequent actions should take 1–3 taps. Temperature logging must remain extremely fast.
+4. **Mobile first.** iPhone/PWA is the reference UX; desktop is secondary.
+5. **Offline capable.** Recipe viewing, planning, active cooking and logging must work without network access once assets are cached.
+6. **Structured content.** Recipes must live in reusable structured data, not UI code.
+7. **Dependency-aware scheduling.** Plans are generated from durations, dependencies, resource constraints and serving time rather than a fixed list of offsets.
+8. **Adaptive rather than brittle.** Cooking durations are estimates. User observations, temperature and actual completion times may change the remaining plan.
+9. **Explicit hardware state.** For Woodfire steps specify mode, setpoint, smoke on/off, pellets, support/accessory, covered/uncovered and relevant placement.
+10. **Food quality over false punctuality.** Use buffers and completion criteria; do not sacrifice doneness to preserve an arbitrary timestamp.
+11. **Simple architecture first.** Keep the static GitHub Pages/PWA model until a backend solves a demonstrated need.
 
-The initial demo meal is Pork Belly Burnt Ends + smashed grenaille potatoes + fresh sauce.
+## Reference user journey
+### 1. Library
+Show illustrated recipe/meal cards with useful summary metadata such as total time, active preparation time, difficulty, serving range and major Woodfire modes.
 
-## 4. Near-term architecture direction
-Refactor toward this conceptual separation:
+Allow lightweight filtering later (quick, long cook, beef, poultry, fish, smoked, entertaining, etc.).
 
-- `recipes/`: structured recipe definitions and default plans;
-- planning engine: converts relative steps and dependencies into actual times;
-- cook session state: target serving time, completed tasks, shifts, temperatures, notes;
-- UI: renders the plan and captures user actions;
-- persistence: local-first storage, with import/export before any cloud sync.
+### 2. Meal configuration
+User selects:
+- number of servings;
+- desired serving time;
+- optional meal components when supported (side, sauce, garnish, etc.).
 
-Recipe content must not remain embedded in `app.js` long term.
+Recipes may be modular. A main dish, side and sauce can be reusable components while still being presented as one coherent meal.
 
-A recipe step should be able to express, where relevant:
-- stable `id`;
-- title and short instruction;
-- relative timing or dependency on another step;
-- expected duration/window;
-- blocking/non-blocking status;
-- Woodfire mode and temperature;
-- smoke/pellet state;
-- required support/accessory;
-- covered/uncovered state;
-- ingredient quantities involved in that step;
-- completion criterion (time, temperature, tenderness, appearance, etc.);
-- optional buffer;
-- whether downstream steps should move if it is delayed.
+### 3. Pre-cook output
+Generate:
+- scaled ingredients;
+- consolidated shopping list;
+- advance-preparation requirements;
+- equipment/accessory list;
+- calculated start time;
+- full schedule.
 
-## 5. Planning behaviour
-Default logic:
-- user selects a desired serving time;
-- the app computes all planned times backwards/forwards from that target;
-- completed steps keep their actual completion timestamps;
-- delaying the cook should normally move only unfinished dependent steps;
-- parallel tasks (e.g. sauce preparation while meat cooks) must remain parallel when possible;
-- the UI should highlight the critical path and the next useful action;
-- if a cooking criterion is reached early/late, future timing should be recalculated rather than forcing the original schedule.
+A later pantry feature may mark staples as already available, but it is not required for the first reusable version.
 
-Future adaptive planning may use temperature slope and historical cook sessions, but predictions must clearly show uncertainty and must never imply false precision.
+### 4. Planning
+Each planned step has:
+- scheduled time or time window;
+- concise collapsed summary;
+- expandable detailed instructions;
+- expected duration;
+- dependencies;
+- resource requirements;
+- completion criterion;
+- optional buffer/flexibility.
 
-## 6. Recipe-writing rules
-For every recipe intended for the app:
-- use metric quantities by default;
-- give ingredient quantities for the stated serving size;
-- include approximate dimensional cues when useful (e.g. 40 mm cubes);
-- distinguish preparation, cooking, resting, finishing and service;
-- state internal-temperature targets only where they are meaningful;
-- include sensory criteria when temperature alone is insufficient;
-- specify whether meat/potatoes should be spaced, stacked, placed in a compact dish, covered with foil, etc.;
-- explicitly state whether liquid should surround, partially cover, or merely wet the bottom of the food;
-- state whether smoke is actually desired during each phase rather than assuming it;
-- avoid contradictory instructions between recipe text, timeline, and UI cards.
+The planner must permit parallel work where resources allow it and resolve conflicts where they do not.
 
-House style/preferences currently known:
-- generous sauces are preferred;
-- sweet-savoury profiles are welcome;
-- thyme is generally not a preferred flavour;
-- avoid alcohol/flambé unless explicitly requested;
-- practical Woodfire-specific guidance is more useful than generic oven instructions.
+The Ninja Woodfire is initially a single exclusive cooking resource. Stovetop/pot work, fridge time, passive resting and user-attention constraints may coexist when feasible.
 
-## 7. Data and evidence
-Separate three kinds of information:
-1. **User preference** — subjective and should be configurable where reasonable.
-2. **Recipe choice** — a deliberate culinary decision that may have alternatives.
-3. **Food-safety / equipment fact** — should be based on reliable guidance and not invented.
+### 5. Active cook
+Prioritize:
+1. next action + countdown;
+2. current active step;
+3. exact Woodfire configuration;
+4. completion/observation controls;
+5. rapid temperature entry;
+6. detailed instructions on demand;
+7. upcoming steps.
 
-When uncertain about Ninja Woodfire behaviour or a safety-critical cooking claim, verify against current official documentation or authoritative food-safety guidance before encoding it as a fixed rule.
+Some cooking phases should end by observation rather than timer alone. Example responses may include `Encore ferme`, `Presque prêt`, `Très tendre`; the planner can schedule the next check or recompute downstream timing.
 
-## 8. UX rules
-During an active cook, prioritize:
-1. next action and countdown;
-2. current Woodfire state/configuration;
-3. completion control;
-4. temperature entry;
-5. expanded details only on demand.
+### 6. Journal
+Retain completed cook sessions locally with recipe/version, servings, planned vs actual timing, temperature samples and freeform notes/rating where useful.
 
-Avoid dense recipe pages during execution. Large touch targets, readable contrast, and one-handed use are preferred.
+Future sessions may surface previous notes such as ingredient adjustments or observed cooking duration.
 
-Do not reset or destroy an active session accidentally. Destructive actions such as “new cook” should require an explicit confirmation or an easy undo path.
+## Recipe/content strategy
+Use a hybrid model:
+- ship a curated base library in the repository;
+- add recipes progressively as structured repo content;
+- allow recipes to be authored externally (including with ChatGPT) and imported/committed in the same validated schema.
 
-## 9. Development rules
-- Keep the app deployable on GitHub Pages.
-- Prefer vanilla HTML/CSS/JS while the product remains small; introduce a framework only when complexity justifies it.
-- Preserve PWA paths so deployment under `/woodfire-companion/` works.
-- Avoid breaking existing local data without a migration path when storage schemas change.
-- Keep recipe data separate from rendering code.
-- Add small automated tests for planning/date calculations once the planning engine is extracted.
-- Test on an actual iPhone/Safari/PWA flow for meaningful UX changes.
-- Update documentation when data format or user-visible behaviour changes.
+The application must not require AI/API access to execute a recipe.
 
-## 10. Current priorities
-1. Define the product and recipe data model.
-2. Move the demo recipe out of `app.js`.
-3. Support multiple recipes/meals.
-4. Improve planning from simple offsets toward dependencies and flexible durations.
-5. Keep temperature logging extremely fast.
-6. Add session import/export/backup before considering cloud accounts.
+## Planning maturity
+### V1
+- dependencies;
+- durations/windows;
+- resource conflicts;
+- buffers;
+- serving-time back-planning;
+- dependency-aware delay propagation;
+- manual temperature logging;
+- local persistence.
 
-## 11. Out of scope unless explicitly promoted
-- social/community features;
-- public recipe marketplace;
-- user accounts;
-- cloud backend;
+### V1.5
+- observation-driven checkpoints;
+- adaptive rechecks;
+- improved cook journal/history;
+- reusable meal components.
+
+### V2+
+- ETA estimation from temperature evolution and historical sessions;
+- uncertainty ranges rather than false precision;
+- optional richer pantry/history intelligence;
+- hardware/probe integration only if it creates clear value.
+
+## Recipe-writing rules
+For every recipe:
+- metric units by default;
+- defined reference serving size and scalable quantities;
+- preparation, cooking, resting, finishing and service separated;
+- Woodfire settings explicit for every relevant phase;
+- internal-temperature targets only where meaningful;
+- sensory/tenderness criteria where time or temperature alone is insufficient;
+- placement/spacing/covering/liquid-level instructions when relevant;
+- no contradiction between overview, ingredient quantities, task timeline and active-cook cards.
+
+Known house preferences should be treated as defaults, not universal recipe facts: generous sauces, sweet-savoury profiles welcome, thyme generally avoided, alcohol/flambé avoided unless explicitly wanted.
+
+## Development rules
+- Keep deployment compatible with GitHub Pages and the `/woodfire-companion/` subpath.
+- Prefer vanilla HTML/CSS/JS while complexity remains manageable.
+- Separate recipe data, planner, session state/persistence and UI.
+- Planner logic should be pure/testable without DOM access.
+- Version storage schemas and migrate existing local data where practical.
+- Preserve offline support.
+- Test meaningful UX changes on iPhone/Safari/PWA.
+- Use focused branches/PRs for non-trivial changes.
+- Update sources when product semantics or data models change.
+
+## Current priorities
+1. Freeze a usable recipe/meal/component data model.
+2. Extract the demo meal from `app.js`.
+3. Build an illustrated multi-recipe library.
+4. Add servings + serving-time configuration.
+5. Generate consolidated ingredients/shopping list.
+6. Replace fixed offsets with dependency/resource-aware planning.
+7. Rebuild active-cook UX on top of the planner while preserving fast temperature logging.
+8. Add local cook history/journal.
+
+## Out of scope for the initial product
+- accounts/cloud backend;
+- social/community recipe marketplace;
+- AI calls required at runtime;
 - paid APIs;
-- direct smart-probe integration;
-- ESP32/IoT hardware integration.
+- direct smart-probe/ESP32 integration;
+- broad support for every cooking appliance.
 
-These can be revisited after the core cooking workflow is proven useful.
+The architecture may generalize to ovens, cooktops or other grills later, but the product remains Woodfire-focused until its core workflow is proven.
