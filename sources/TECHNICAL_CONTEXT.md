@@ -5,45 +5,13 @@ Woodfire Companion is a zero-backend static PWA intended for GitHub Pages and iP
 
 The application uses vanilla HTML/CSS/JavaScript with native ES modules. No runtime framework, backend or external API is required.
 
-Current structure:
+Current conceptual layers remain:
+1. recipe/content data;
+2. pure/testable planning engine;
+3. session state + persistence/migrations;
+4. UI.
 
-```text
-woodfire-companion/
-├── index.html
-├── styles.css
-├── prep.css
-├── journal.css
-├── app.js
-├── manifest.webmanifest
-├── service-worker.js
-├── package.json
-├── .github/workflows/tests.yml
-├── js/
-│   ├── journal.js
-│   ├── journal-ui.js
-│   ├── library.js
-│   ├── planner.js
-│   ├── prep-ui.js
-│   ├── recipe.js
-│   ├── recipe-loader.js
-│   ├── settings.js
-│   └── shopping.js
-├── recipes/
-│   ├── index.json
-│   └── pork-belly-burnt-ends.json
-├── tests/
-│   ├── active-cook-replan.test.js
-│   ├── journal-integration.test.js
-│   ├── journal.test.js
-│   ├── library.test.js
-│   ├── planner.test.js
-│   ├── recipe.test.js
-│   ├── shopping.test.js
-│   ├── ui-contract.test.js
-│   └── version.test.js
-├── sources/
-└── icons/
-```
+Independent local settings, shopping and journal stores may remain separate when their lifecycles differ from the active session.
 
 ## Application flow
 The UI has three top-level views:
@@ -54,20 +22,36 @@ The UI has three top-level views:
 State remains local-first/offline.
 
 ## Recipe/content layer
-`recipes/index.json` is the library manifest. Only complete validated recipes may be executable.
+`recipes/index.json` is the library manifest. Only complete validated recipes may be marked `available`.
 
-Canonical executable recipe: `recipes/pork-belly-burnt-ends.json`, content version `4`.
+The canonical reference recipe remains `recipes/pork-belly-burnt-ends.json`, content version `4`. Its baseline is derived from service anchors, dependencies, durations and planning buffers; it contains no `preferredStartOffsetMin`.
 
-Version 4 contains no `preferredStartOffsetMin`. Its baseline is derived from service anchor, dependencies, durations and explicit planning buffers.
+`js/recipe.js` owns recipe validation, ingredient scaling and Woodfire summary formatting. `js/recipe-loader.js` loads and validates executable JSON content.
 
-`js/recipe.js` provides validation, serving scaling and Woodfire summary formatting.
+Every `available` recipe is now covered by a generic CI acceptance contract. See `sources/MULTI_RECIPE_CONTRACT.md`.
 
-See:
+Relevant source contracts:
 - `sources/RECIPE_SCHEMA_V1.md`;
 - `sources/SHOPPING_PREP.md`;
 - `sources/PLANNER_V1.md`;
 - `sources/ACTIVE_COOK_V1.md`;
-- `sources/COOK_JOURNAL_V1.md`.
+- `sources/COOK_JOURNAL_V1.md`;
+- `sources/MULTI_RECIPE_CONTRACT.md`.
+
+## Multi-recipe acceptance
+Tests must not enumerate executable recipe ids.
+
+For each manifest entry with `status: "available"`, CI verifies at least:
+- the recipe JSON can be read;
+- manifest id/title/servings match recipe content;
+- recipe validation succeeds;
+- scaling and shopping generation work at min/reference/max servings;
+- Planner V1 produces a complete schedule;
+- no declared dependency violation remains;
+- no baseline Woodfire conflict remains;
+- an unambiguous real service milestone can be resolved for journal semantics.
+
+Planner V1 does not yet create additional batches from serving count. Until batching/capacity semantics exist, each recipe's `servings.max` must stay within a quantity that can use the same declared execution structure.
 
 ## Serving configuration and pre-cook
 Changing servings updates the same scaled data used by the user-facing `Ingrédients & courses` checklist.
@@ -76,57 +60,27 @@ Changing servings updates the same scaled data used by the user-facing `Ingrédi
 
 Shopping state uses `woodfire-companion-shopping-v1` and is independent from cook history, active progress and visual settings.
 
+Components currently provide grouping inside one meal JSON; they are not yet independently swappable modules and shopping does not yet aggregate external component files.
+
 ## Cook-session state
-Active cook state remains under:
+Active cook state remains under `woodfire-companion-v1`.
 
-`woodfire-companion-v1`
-
-Logical fields now include:
-- `view`;
-- `mealTime`;
-- `servings`;
-- `completed`;
-- `taskShifts`;
-- `temperatureTarget`;
-- `measurements`;
-- `cookStartedAt`;
-- `sessionId`;
-- `sessionStartedAt`;
-- `sessionServedAt`;
-- `targetServingAt`;
-- `activeTab`;
-- `recipeId`;
-- `recipeVersion`;
-- `activeRecipeUrl`.
+Logical fields include `view`, `mealTime`, `servings`, `completed`, `taskShifts`, `temperatureTarget`, `measurements`, `cookStartedAt`, `sessionId`, `sessionStartedAt`, `sessionServedAt`, `targetServingAt`, `activeTab`, `recipeId`, `recipeVersion` and `activeRecipeUrl`.
 
 `sessionId` remains stable for one meal. `targetServingAt` stores an absolute date/time so a resumed cook does not silently move to another calendar day.
 
-Older active records without these fields remain readable; compatible metadata is created from existing progress where possible.
+Older active records without newer fields remain readable; compatible metadata is created from existing progress where possible.
 
 `completed[stepId]` stores actual completion timestamps. `taskShifts[stepId]` stores explicit manual delay attached to a step.
 
 ## Cook Journal V1
-Completed meal sessions are stored separately under:
+Completed meal sessions are stored separately under `woodfire-companion-journal-v1` with an explicit journal schema version.
 
-`woodfire-companion-journal-v1`
-
-The stored object has `schemaVersion: 1` and an `entries` array.
-
-`js/journal.js` owns the versioned journal model/store and can:
-- generate session ids;
-- build immutable-ish cook snapshots from current recipe/state/schedule;
-- load/save the versioned journal;
-- upsert by session id;
-- remove one session;
-- clear the journal without touching other local storage keys.
+`js/journal.js` owns journal serialization/store and service-milestone resolution. A recipe may define an explicit `serviceStepId`; otherwise exactly one zero-offset `serve` anchor can act as the real service milestone. Tasks merely positioned relative to `serve` must not be confused with the actual meal-service event.
 
 A journal entry includes recipe identity/version/title, servings, target/actual service timestamps, temperature samples, actual step completions, explicit delays, and baseline/final schedule timestamps.
 
-The recipe `serve` anchor is the archive trigger. Repeated edits after service update the same entry rather than creating duplicates.
-
-`js/journal-ui.js` renders compact `<details>` cards in the library. Cards expose target vs actual service, servings, completed steps, measurements, step timing history and recent temperature samples.
-
-A served session is no longer presented as `CUISSON EN COURS` in the library.
+`js/journal-ui.js` renders compact history cards in the library. A served session is no longer presented as `CUISSON EN COURS`.
 
 ## UI preferences
 Visual preferences remain separate under `woodfire-companion-settings-v1`.
@@ -142,24 +96,28 @@ The engine works backwards for baseline planning. The Woodfire is one exclusive 
 
 Planner V1 supports dependency-only recipes with no fixed offsets, midnight crossing, buffer absorption, actual-completion propagation and service slippage when reality can no longer meet the target.
 
+The current planner API still does not consume serving count for batching/capacity-dependent scheduling; that is a known future contract extension.
+
 ## Active-cook replanning
 Checking a task complete stores its actual timestamp, saves state, rebuilds the schedule using `actualCompletionTimes`, and rerenders remaining actions.
 
-The +5/+10/+15 controls delay only the next unfinished step using `addStepDelay()`. Planner V1 decides what downstream work truly moves.
-
-Completed timestamps remain historical facts.
+The +5/+10/+15 controls delay only the next unfinished step using `addStepDelay()`. Planner V1 decides what downstream work truly moves. Completed timestamps remain historical facts.
 
 ## Temperature tracking
 Manual logging remains fast and independent. A measurement records timestamp, °C value and source.
 
+Temperature tracking is still session-level and defaults to the reference recipe behavior. It should become explicitly optional before promoting recipes that do not benefit from core-temperature tracking.
+
 No ETA is currently inferred from temperature slope and no step is automatically completed from a sample.
 
 ## PWA/offline
-The service worker uses a versioned network-first cache with offline fallback.
+The service worker uses a network-first cache with offline fallback.
 
 Current dev version: `0.3.0-dev.4`.
 
-Cached assets include the shell, recipe/planner/settings/shopping/journal modules, CSS, library manifest, current recipe JSON, manifest and icons.
+Static shell/modules are listed in `APP_ASSETS`, but executable recipe JSON is no longer enumerated by filename. During service-worker installation, `recipes/index.json` is read and every entry with `status === "available"` and a `recipeUrl` is preloaded automatically.
+
+`recipes/index.json` is therefore the source of truth for recipe discovery and recipe-JSON offline preloading.
 
 Assets must remain compatible with the `/woodfire-companion/` GitHub Pages subpath and installed iPhone/Safari PWA behavior.
 
@@ -172,23 +130,18 @@ npm test
 
 GitHub Actions runs the suite on `main`, feature pushes and pull requests.
 
-Coverage includes recipe validation/scaling, library resolution, shopping/pre-cook, version consistency, DOM contracts, dependency planner behavior, resource conflicts, buffer/service slippage, actual completion propagation, active-cook wiring, journal serialization/upsert/removal and session/journal integration.
-
-## Target architecture
-Keep four primary layers separate:
-1. recipe/content data;
-2. pure/testable planning engine;
-3. session state + persistence/migrations;
-4. UI.
-
-Independent local settings/shopping/journal stores may remain separate when their lifecycles differ from the active session.
+Coverage includes recipe validation/scaling, generic available-recipe acceptance, library resolution, shopping/pre-cook, manifest-driven offline caching, version consistency, DOM contracts, dependency planner behavior, resource conflicts, buffer/service slippage, actual completion propagation, active-cook wiring, journal serialization/upsert/removal, service-milestone resolution and session/journal integration.
 
 ## Current technical debt / next work
-1. Add at least one second complete executable recipe to validate planner/schema generality.
-2. Add structured observation/recheck controls for uncertain cooks.
-3. Add a flexible planning-window concept when a real recipe demonstrates the need; sauce prep currently uses a pre-service anchor.
-4. Reduce scaling-sensitive quantities duplicated inside step prose by referencing structured ingredient usage where useful.
-5. Add journal notes/rating and JSON backup/import when useful.
-6. Replace temporary CSS/emoji covers with local illustrated assets when visual direction is finalized.
-7. Add richer resources such as user attention only when real meal plans demonstrate the need.
-8. Add predictive ETA later from temperature/history with uncertainty, never false precision.
+1. Strengthen `validateRecipe()` for serving bounds, component identity/references, completion/recheck semantics and graph connectivity.
+2. Pass serving/configuration context into the planner so future recipes can express capacity/batch-dependent timing without changing its public API again.
+3. Derive the recipe-page recommended start time from the planner rather than `timing.elapsedRangeMin`.
+4. Make temperature tracking explicitly optional per recipe.
+5. Reduce scaling-sensitive quantities duplicated inside step prose by referencing structured ingredient usage.
+6. Add a second complete executable recipe to validate the architecture with genuinely different cooking semantics.
+7. Add structured observation/recheck controls for uncertain cooks.
+8. Add a flexible planning-window concept when a real recipe demonstrates the need.
+9. Add journal notes/rating and JSON backup/import when useful.
+10. Replace temporary CSS/emoji covers with local illustrated assets when visual direction is finalized.
+11. Add richer resources such as user attention only when real meal plans demonstrate the need.
+12. Add predictive ETA later from temperature/history with uncertainty, never false precision.
