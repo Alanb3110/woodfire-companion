@@ -1,13 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { buildSchedule, findDependencyIssues, findResourceConflicts } from '../js/planner.js';
+import { buildMealSchedule } from '../js/meal-planner.js';
+import { findDependencyIssues, findResourceConflicts } from '../js/planner.js';
 import { validateRecipe, scaleIngredients } from '../js/recipe.js';
 import { buildShoppingGroups } from '../js/shopping.js';
 import { resolveServiceStep } from '../js/journal.js';
 
 const library = JSON.parse(await readFile(new URL('../recipes/index.json', import.meta.url), 'utf8'));
-const referenceDate = new Date(2026, 7, 29, 12, 0, 0, 0);
+const targetServingAt = new Date(2026, 7, 29, 20, 0, 0, 0);
 
 function recipeFileUrl(recipeUrl) {
   const relative = recipeUrl.replace(/^\.\//, '');
@@ -32,14 +33,15 @@ for (const entry of library.recipes.filter(item => item.status === 'available'))
       assert.equal(scaled.length, recipe.ingredients.length);
       const groups = buildShoppingGroups(recipe, servings);
       assert.ok(groups.flatMap(group => group.items).length >= recipe.ingredients.length);
+
+      const schedule = buildMealSchedule(recipe, { servings, targetServingAt });
+      assert.equal(schedule.length, recipe.steps.length);
+      assert.deepEqual(findDependencyIssues(recipe, schedule), []);
+      assert.deepEqual(findResourceConflicts(schedule, 'woodfire'), []);
     }
 
-    const schedule = buildSchedule(recipe, '20:00', referenceDate);
-    assert.equal(schedule.length, recipe.steps.length);
-    assert.deepEqual(findDependencyIssues(recipe, schedule), []);
-    assert.deepEqual(findResourceConflicts(schedule, 'woodfire'), []);
-
+    const referenceSchedule = buildMealSchedule(recipe, { servings: reference, targetServingAt });
     const serviceStep = resolveServiceStep(recipe);
-    assert.ok(schedule.some(item => item.step.id === serviceStep.id));
+    assert.ok(referenceSchedule.some(item => item.step.id === serviceStep.id));
   });
 }

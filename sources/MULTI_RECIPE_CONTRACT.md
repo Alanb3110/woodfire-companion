@@ -10,12 +10,32 @@ The automated suite must verify that:
 - `validateRecipe()` accepts the recipe;
 - ingredient scaling works at minimum, reference and maximum servings;
 - shopping/pre-cook generation succeeds for those serving counts;
-- the planner can generate a schedule from a normal service-time anchor;
+- `buildMealSchedule()` can generate a schedule at minimum, reference and maximum servings;
 - declared dependencies are satisfied;
 - the baseline has no unresolved Woodfire conflict;
 - one unambiguous service milestone can be resolved for journal/session semantics.
 
 Adding a second recipe must not require changing a test that enumerates recipe ids.
+
+## Meal planning context API
+New recipe-facing planning integrations should use:
+
+`buildMealSchedule(recipe, context)`
+
+rather than adding more positional arguments to the low-level solver.
+
+The context currently normalizes:
+- `servings`;
+- `mealTime` or absolute `targetServingAt`;
+- `referenceDate` fallback;
+- `taskShifts`;
+- `actualCompletionTimes`;
+- reserved future `selectedComponents`;
+- reserved future `variants`.
+
+When `targetServingAt` is supplied it is canonical and supplies both calendar date and local service time. This avoids day ambiguity for long/resumed cooks.
+
+`buildSchedule()` remains the low-level/compatibility solver API. Capacity/batching logic may later be inserted behind `buildMealSchedule()` without forcing another application-wide signature migration.
 
 ## Offline contract
 `recipes/index.json` is the source of truth for executable recipe discovery.
@@ -29,7 +49,7 @@ Do not add individual recipe filenames to the static service-worker asset list.
 A newly available recipe should therefore require only its recipe content plus its manifest entry for JSON offline availability.
 
 ## V1 serving-capacity rule
-Ingredient quantities may scale within `servings.min..max`, but Planner V1 does not yet create additional cooking batches from serving count.
+Ingredient quantities may scale within `servings.min..max`, and the meal-planning context now carries the selected serving count, but Planner V1 does not yet create additional cooking batches or alter duration from servings.
 
 Therefore, for V1, `servings.max` must only advertise a quantity that can follow the same declared step/resource structure on the supported Woodfire setup. If increasing servings requires another batch, another vessel cycle or materially different timings, restrict the supported range until batching/capacity semantics are implemented.
 
