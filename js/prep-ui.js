@@ -35,6 +35,20 @@ function resetRecipeShopping(recipeId) {
   saveShoppingState(state);
 }
 
+function mergeIngredientAndShoppingSections(servings) {
+  const ingredientPreview = $('ingredientPreview');
+  const ingredientSection = ingredientPreview?.closest('.detail-section');
+  if (ingredientSection) ingredientSection.hidden = true;
+
+  const shoppingSection = $('shoppingList')?.closest('.detail-section');
+  const headingCopy = shoppingSection?.querySelector('.section-heading > div:first-child');
+  const label = headingCopy?.querySelector('.field-label');
+  const title = headingCopy?.querySelector('strong');
+
+  if (label) label.textContent = 'Ingrédients & courses';
+  if (title) title.textContent = `Pour ${servings} personne${servings > 1 ? 's' : ''}`;
+}
+
 function updateProgress(recipeId, groups) {
   const progress = $('shoppingProgress');
   if (!progress) return;
@@ -149,6 +163,7 @@ function renderAdvancePrep(recipe) {
 
 export function renderPreCook(recipe, servings, formatQuantity) {
   if (!recipe) return;
+  mergeIngredientAndShoppingSections(servings);
   renderShopping(recipe, servings, formatQuantity);
   renderEquipment(recipe);
   renderAdvancePrep(recipe);
