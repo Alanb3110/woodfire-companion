@@ -1,116 +1,127 @@
-# Woodfire Companion — POC
+# Woodfire Companion
 
-Mini PWA statique, pensée pour iPhone, avec deux modules :
+Mobile-first static PWA for planning and executing complete Ninja Woodfire meals.
 
-- **Planning** : checklist horaire interactive pour la recette Pork Belly Burnt Ends + grenailles + sauce fraîche.
-- **Température** : saisie manuelle en 2–3 actions, horodatage automatique, courbe, cible et export CSV.
+The current UI is still the original Pork Belly proof of concept, but recipe content and planning logic are now separated so the app can evolve toward:
 
-Aucun serveur, aucune API et aucun compte n'est nécessaire. Les données sont stockées localement dans Safari via `localStorage`.
+**illustrated recipe library → servings + desired meal time → shopping list → generated meal plan → active cook → journal**
 
-## 1. Tester rapidement sur PC/Mac
+No server, runtime API or account is required. Active state is stored locally in the browser and the app is designed to work offline after its assets are cached.
 
-Ne pas ouvrir simplement `index.html` en `file://` si tu veux tester le mode hors-ligne/service worker. Lance un petit serveur local :
+## Current reference meal
+
+- Pork Belly Burnt Ends
+- smashed grenaille potatoes
+- fresh lemon-yogurt sauce
+
+The meal now lives in `recipes/pork-belly-burnt-ends.json` rather than being hard-coded into `app.js`.
+
+## Run locally
+
+Do not open `index.html` directly with `file://` because recipe loading and the service worker require HTTP.
 
 ```bash
 python -m http.server 8000
 ```
 
-Puis ouvre :
+Then open:
 
 ```text
 http://localhost:8000
 ```
 
-## 2. Publier sur GitHub Pages
+## Tests
 
-### Nouveau dépôt
-
-Crée un dépôt GitHub, par exemple :
-
-```text
-woodfire-companion
-```
-
-Puis dans le dossier du projet :
+The project uses Node's built-in test runner and has no npm runtime dependency.
 
 ```bash
-git init
-git add .
-git commit -m "Initial Woodfire Companion POC"
-git branch -M main
-git remote add origin git@github.com:TON-UTILISATEUR/woodfire-companion.git
-git push -u origin main
+npm test
 ```
 
-### Activer GitHub Pages
+Tests currently cover recipe validation/scaling plus core planning/date/dependency/resource behavior.
 
-Dans GitHub :
+## GitHub Pages
 
-1. **Settings**
-2. **Pages**
-3. Source : **Deploy from a branch**
-4. Branch : **main**
-5. Folder : **/(root)**
-6. Save
+Deploy from the `main` branch and repository root.
 
-L'URL aura généralement la forme :
+Typical URL:
 
 ```text
-https://TON-UTILISATEUR.github.io/woodfire-companion/
+https://<username>.github.io/woodfire-companion/
 ```
 
-## 3. Installer comme mini-app sur iPhone
+All app paths are relative so deployment from the repository subpath remains supported.
 
-Dans **Safari** :
+## Install on iPhone
 
-1. Ouvre l'URL GitHub Pages.
-2. Touche **Partager**.
-3. Choisis **Sur l'écran d'accueil**.
-4. Touche **Ajouter**.
+In Safari:
 
-L'icône `Woodfire` apparaît comme une app. Après une première ouverture en ligne, le service worker met les fichiers en cache pour un usage hors connexion.
+1. Open the GitHub Pages URL.
+2. Tap **Partager**.
+3. Choose **Sur l’écran d’accueil**.
+4. Tap **Ajouter**.
 
-## Fonctionnement du planning
+After the first successful online load, the service worker caches the application shell, recipe modules and current recipe JSON for offline use.
 
-- Heure du repas par défaut : **20:00**.
-- Tous les horaires sont calculés relativement à cette heure.
-- Chaque tâche peut être cochée.
-- Le bouton `›` affiche les instructions détaillées.
-- Les boutons `+5 / +10 / +15 min` décalent uniquement les tâches encore non terminées.
-- L'app affiche la prochaine tâche et le temps restant / retard.
+## Current features
 
-## Fonctionnement du suivi température
+### Planning
+- desired serving time, default 20:00;
+- interactive checklist;
+- expandable step detail;
+- exact structured Woodfire configuration for relevant steps;
+- +5/+10/+15 min compatibility shift for unfinished tasks;
+- next-task countdown;
+- actual completion timestamps.
 
-1. Ouvre l'onglet **Température**.
-2. Saisis uniquement la température.
-3. Touche **Ajouter** (ou Entrée).
-4. L'heure est enregistrée automatiquement.
-5. La courbe se met à jour immédiatement.
+### Temperature tracking
+- very fast manual entry;
+- automatic timestamps;
+- adjustable target;
+- chart;
+- undo last sample;
+- CSV export;
+- persistent local state.
 
-Fonctions incluses :
-
-- cible réglable ;
-- suppression de la dernière mesure ;
-- nouvelle cuisson ;
-- historique court des mesures ;
-- export CSV ;
-- stockage persistant sur l'iPhone.
-
-## Fichiers
+## Architecture
 
 ```text
 woodfire-companion/
 ├── index.html
 ├── styles.css
-├── app.js
-├── manifest.webmanifest
+├── app.js                  # UI/session orchestration
 ├── service-worker.js
-├── README.md
+├── manifest.webmanifest
+├── package.json
+├── js/
+│   ├── planner.js          # pure planning functions
+│   ├── recipe.js           # validation/scaling/formatting
+│   └── recipe-loader.js    # JSON loader + validation
+├── recipes/
+│   └── pork-belly-burnt-ends.json
+├── tests/
+│   ├── planner.test.js
+│   └── recipe.test.js
+├── sources/                # product/technical source of truth
 └── icons/
-    ├── icon-192.png
-    └── icon-512.png
 ```
 
-## Limitation du POC
+## Planner status
 
-Les données sont locales au navigateur/appareil. Si Safari efface les données du site, l'historique disparaît. Une future V2 pourra ajouter import/export JSON, synchronisation iCloud ou une source ESP32/sonde sans changer la structure générale de l'interface.
+The schema already records durations, dependencies, resources, completion criteria and structured Woodfire state.
+
+The first refactor intentionally keeps `plan.preferredStartOffsetMin` as a compatibility placement hint so the existing POC timeline remains unchanged while architecture is separated and tested.
+
+The next planner iteration should increasingly derive timing from dependencies, buffers and resource constraints rather than preferred offsets.
+
+See:
+- `sources/PRODUCT_SPEC.md`
+- `sources/RECIPE_MODEL.md`
+- `sources/RECIPE_SCHEMA_V1.md`
+- `sources/TECHNICAL_CONTEXT.md`
+
+## Persistence
+
+The existing `woodfire-companion-v1` localStorage record is retained for compatibility. The recipe id/version are added without invalidating old records.
+
+A later cook-journal implementation may justify schema migration and/or IndexedDB, but that is intentionally not part of this architecture refactor.
