@@ -24,9 +24,6 @@ function temperatureTarget(step, recipe) {
 }
 
 export function getObservationOptions(step, recipe = null) {
-  const explicit = step?.recheck?.observations;
-  if (Array.isArray(explicit) && explicit.length) return explicit;
-
   const bounds = recheckBounds(step);
   if (!bounds) return [];
   const [soonest, latest] = bounds;
