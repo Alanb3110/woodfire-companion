@@ -1,0 +1,28 @@
+.shopping-heading-actions { display:flex; align-items:center; gap:8px; }
+.shopping-progress { min-width:46px; text-align:center; padding:6px 9px; border-radius:999px; background:var(--accent-soft); color:var(--accent-strong); font-weight:850; font-size:12px; }
+.shopping-list { display:grid; gap:16px; margin-top:14px; }
+.shopping-group { display:grid; gap:2px; }
+.shopping-group h3 { margin:0 0 5px; color:var(--accent-strong); font-size:12px; letter-spacing:.08em; text-transform:uppercase; }
+.shopping-row { display:grid; grid-template-columns:28px minmax(0,1fr) auto; gap:10px; align-items:center; min-height:52px; padding:8px 0; border-top:1px solid var(--border); }
+.shopping-row input { width:22px; height:22px; accent-color:var(--accent); }
+.shopping-copy { min-width:0; display:grid; gap:2px; }
+.shopping-copy strong { font-size:14px; }
+.shopping-copy small { color:var(--muted); line-height:1.35; }
+.shopping-quantity { white-space:nowrap; font-weight:800; color:#ddd9d5; }
+.shopping-row.checked { opacity:.5; }
+.shopping-row.checked .shopping-copy strong { text-decoration:line-through; }
+.prep-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:14px; }
+.prep-block { min-width:0; }
+.prep-block h3 { margin:0 0 10px; font-size:14px; }
+.equipment-list { display:grid; gap:7px; }
+.equipment-row { display:grid; grid-template-columns:22px 1fr; gap:7px; color:#d9d6d3; font-size:14px; }
+.equipment-row > span:first-child { color:var(--accent-strong); font-weight:900; }
+.advance-prep-list { display:grid; gap:8px; }
+.advance-prep-card { display:grid; gap:4px; padding:11px; border:1px solid var(--border); border-radius:12px; background:var(--surface-2); }
+.advance-prep-card strong { font-size:14px; }
+.advance-prep-card p, .empty-prep { margin:0; color:var(--muted); font-size:13px; line-height:1.4; }
+.prep-timing { color:var(--accent-strong); font-size:10px; font-weight:900; letter-spacing:.06em; text-transform:uppercase; }
+.start-cook-footer { display:grid; gap:8px; }
+.start-cook-footer p { margin:0; text-align:center; color:var(--muted); font-size:12px; }
+@media (max-width:620px) { .prep-grid { grid-template-columns:1fr; } }
+@media (max-width:390px) { .shopping-row { grid-template-columns:26px minmax(0,1fr); } .shopping-quantity { grid-column:2; justify-self:start; } }
