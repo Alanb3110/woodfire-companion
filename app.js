@@ -12,13 +12,15 @@ import {
   upsertJournalEntry
 } from './js/journal.js';
 import { renderJournalEntries } from './js/journal-ui.js';
+import { buildMealSchedule } from './js/meal-planner.js';
 import {
   addStepDelay,
-  buildSchedule,
+  closestMealAnchorDate,
   findDependencyIssues,
   findResourceConflicts,
   getNextScheduledTask,
-  mealAnchorDate
+  mealAnchorDate,
+  nextMealAnchorDate
 } from './js/planner.js';
 import {
   applyObservation,
@@ -140,7 +142,10 @@ function loadState() {
       merged.sessionId = createSessionId(new Date(merged.sessionStartedAt));
     }
     if (hasProgress && !merged.sessionStartedAt) merged.sessionStartedAt = firstKnownSessionTimestamp(merged);
-    if (hasProgress && !merged.targetServingAt) merged.targetServingAt = mealAnchorDate(merged.mealTime || '20:00', new Date()).toISOString();
+    if (hasProgress && !merged.targetServingAt) {
+      const reference = new Date(firstKnownSessionTimestamp(merged));
+      merged.targetServingAt = closestMealAnchorDate(merged.mealTime || '20:00', reference).toISOString();
+    }
     return merged;
   } catch (error) {
     console.warn('État local illisible, réinitialisation.', error);
@@ -417,12 +422,14 @@ function ensureSessionMetadata(resetSession) {
     state.sessionId = createSessionId(now);
     state.sessionStartedAt = now.toISOString();
     state.sessionServedAt = null;
-    state.targetServingAt = mealAnchorDate(configMealTime, now).toISOString();
+    state.targetServingAt = nextMealAnchorDate(configMealTime, now).toISOString();
     return;
   }
   if (!state.sessionStartedAt) state.sessionStartedAt = firstKnownSessionTimestamp(state);
   if (!state.sessionId) state.sessionId = createSessionId(new Date(state.sessionStartedAt));
-  if (!state.targetServingAt) state.targetServingAt = mealAnchorDate(configMealTime, now).toISOString();
+  if (!state.targetServingAt) {
+    state.targetServingAt = closestMealAnchorDate(configMealTime, new Date(state.sessionStartedAt)).toISOString();
+  }
 }
 
 async function activateRecipe(entry, loadedRecipe, resetSession) {
@@ -491,9 +498,12 @@ function renderCookShell() {
 
 function recomputeSchedule() {
   if (!recipe) return;
-  const referenceDate = state.targetServingAt ? new Date(state.targetServingAt) : new Date();
-  schedule = buildSchedule(recipe, state.mealTime, referenceDate, state.taskShifts, {
-    actualCompletionTimes: state.completed
+  schedule = buildMealSchedule(recipe, {
+    servings: state.servings,
+    targetServingAt: state.targetServingAt,
+    taskShifts: state.taskShifts,
+    actualCompletionTimes: state.completed,
+    expectedCompletionTimes: state.rechecks
   });
   const dependencyIssues = findDependencyIssues(recipe, schedule);
   const woodfireConflicts = findResourceConflicts(schedule, 'woodfire');
@@ -708,7 +718,7 @@ function renderTasks() {
 
 function updateNextTask() {
   if (!recipe) return;
-  const next = getNextScheduledTask(schedule, state.completed);
+  const next = getNextScheduledTask(schedule, state.completed, state.rechecks);
   if (!next) {
     nextTaskName.textContent = 'Checklist terminée';
     nextTaskCountdown.textContent = 'Tout est prêt.';
@@ -734,7 +744,7 @@ function updateNextTask() {
 }
 
 function shiftRemainingTasks(minutes) {
-  const nextTask = getNextScheduledTask(schedule, state.completed);
+  const nextTask = getNextScheduledTask(schedule, state.completed, state.rechecks);
   if (!nextTask) return;
 
   const pending = pendingRecheckDate(state.rechecks, nextTask.step.id);
@@ -759,7 +769,7 @@ function switchTab(tabName, persist = true) {
 function updateCookTime() {
   const reference = state.targetServingAt ? new Date(state.targetServingAt) : new Date();
   state.mealTime = readTimePicker(cookMealHour, cookMealMinute);
-  state.targetServingAt = mealAnchorDate(state.mealTime, reference).toISOString();
+  state.targetServingAt = closestMealAnchorDate(state.mealTime, reference).toISOString();
   saveState();
   renderCookShell();
   recomputeSchedule();
