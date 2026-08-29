@@ -64,14 +64,33 @@ function earliestTimestamp(state, fallback) {
   return candidates[0] || fallback;
 }
 
+export function resolveServiceStep(recipe) {
+  const steps = Array.isArray(recipe?.steps) ? recipe.steps : [];
+
+  if (recipe?.serviceStepId) {
+    const explicit = steps.find(step => step.id === recipe.serviceStepId);
+    if (!explicit) throw new Error(`serviceStepId references missing step ${recipe.serviceStepId}.`);
+    return explicit;
+  }
+
+  const zeroOffsetServeAnchors = steps.filter(step =>
+    step.plan?.anchor === 'serve' && (step.plan?.anchorOffsetMin ?? 0) === 0
+  );
+
+  if (zeroOffsetServeAnchors.length === 1) return zeroOffsetServeAnchors[0];
+  if (!zeroOffsetServeAnchors.length) {
+    throw new Error('Recipe requires serviceStepId or exactly one zero-offset serve anchor.');
+  }
+  throw new Error('Recipe has multiple zero-offset serve anchors; define serviceStepId explicitly.');
+}
+
 export function buildJournalEntry({ state, recipe, schedule, now = new Date() }) {
   if (!state?.sessionId) throw new Error('A sessionId is required to archive a cook.');
   if (!recipe) throw new Error('A recipe is required to archive a cook.');
 
-  const serveStep = recipe.steps.find(step => step.plan?.anchor === 'serve');
-  if (!serveStep) throw new Error('The recipe has no serve anchor.');
-  const servedAt = safeIso(state.completed?.[serveStep.id]);
-  if (!servedAt) throw new Error('The serve step must be completed before archiving.');
+  const serviceStep = resolveServiceStep(recipe);
+  const servedAt = safeIso(state.completed?.[serviceStep.id]);
+  if (!servedAt) throw new Error(`Service step ${serviceStep.id} must be completed before archiving.`);
 
   const updatedAt = now.toISOString();
   const completed = { ...(state.completed || {}) };
@@ -83,6 +102,7 @@ export function buildJournalEntry({ state, recipe, schedule, now = new Date() })
     recipeId: recipe.id,
     recipeVersion: recipe.version,
     recipeTitle: recipe.title,
+    serviceStepId: serviceStep.id,
     servings: state.servings,
     targetMealTime: state.mealTime,
     targetServingAt: safeIso(state.targetServingAt),
