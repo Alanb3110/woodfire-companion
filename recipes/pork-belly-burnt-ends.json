@@ -1,0 +1,291 @@
+{
+  "schemaVersion": 1,
+  "id": "pork-belly-burnt-ends-meal",
+  "version": 1,
+  "title": "Pork Belly Burnt Ends",
+  "description": "Poitrine de porc fumée puis confite et caramélisée, servie avec grenailles croustillantes et sauce fraîche citronnée.",
+  "heroImage": null,
+  "tags": ["porc", "fumé", "longue-cuisson", "repas-complet"],
+  "difficulty": "facile",
+  "servings": { "reference": 4, "min": 2, "max": 8 },
+  "timing": {
+    "activePrepMin": 45,
+    "elapsedRangeMin": [300, 360]
+  },
+  "temperature": {
+    "defaultTargetC": 93
+  },
+  "components": [
+    {
+      "id": "pork",
+      "type": "main",
+      "title": "Pork Belly Burnt Ends",
+      "ingredientIds": ["pork-belly", "salt", "smoked-paprika", "garlic-powder", "black-pepper", "brown-sugar", "bbq-sauce", "honey", "apple-juice", "butter"],
+      "stepIds": ["take-out-pork", "smoke", "covered", "first-check", "finish-pork", "rest-pork"]
+    },
+    {
+      "id": "potatoes",
+      "type": "side",
+      "title": "Grenailles croustillantes",
+      "ingredientIds": ["potatoes", "olive-oil", "salt", "smoked-paprika", "garlic-powder", "black-pepper"],
+      "stepIds": ["potato-boil", "potato-prep", "airfry-potatoes", "potatoes-out"]
+    },
+    {
+      "id": "fresh-sauce",
+      "type": "sauce",
+      "title": "Sauce fraîche citronnée",
+      "ingredientIds": ["greek-yogurt", "creme-fraiche", "lemon", "garlic-powder", "fresh-herbs", "salt", "black-pepper", "olive-oil"],
+      "stepIds": ["sauce"]
+    }
+  ],
+  "ingredients": [
+    { "id": "pork-belly", "name": "Poitrine de porc", "quantity": { "min": 1200, "max": 1500 }, "unit": "g", "scale": { "type": "linear" }, "category": "viande", "preparation": "En cubes d’environ 40 mm" },
+    { "id": "potatoes", "name": "Pommes de terre grenaille", "quantity": { "min": 700, "max": 800 }, "unit": "g", "scale": { "type": "linear" }, "category": "fruits-legumes" },
+    { "id": "greek-yogurt", "name": "Yaourt grec", "quantity": 250, "unit": "g", "scale": { "type": "linear" }, "category": "produits-frais" },
+    { "id": "creme-fraiche", "name": "Crème fraîche", "quantity": { "min": 60, "max": 80 }, "unit": "g", "scale": { "type": "linear" }, "category": "produits-frais" },
+    { "id": "lemon", "name": "Citron", "quantity": 1, "unit": "piece", "scale": { "type": "step", "breakpoints": [{ "maxServings": 4, "quantity": 1 }, { "maxServings": 8, "quantity": 2 }] }, "category": "fruits-legumes", "preparation": "Zeste + 20–30 mL de jus" },
+    { "id": "salt", "name": "Sel", "quantity": null, "unit": null, "scale": { "type": "to_taste" }, "category": "epicerie", "preparation": "Rub : 18–22 g pour 4 personnes, puis ajuster sauce et pommes de terre" },
+    { "id": "smoked-paprika", "name": "Paprika fumé", "quantity": null, "unit": null, "scale": { "type": "to_taste" }, "category": "epicerie" },
+    { "id": "garlic-powder", "name": "Ail en poudre", "quantity": null, "unit": null, "scale": { "type": "to_taste" }, "category": "epicerie" },
+    { "id": "black-pepper", "name": "Poivre", "quantity": null, "unit": null, "scale": { "type": "to_taste" }, "category": "epicerie" },
+    { "id": "brown-sugar", "name": "Cassonade", "quantity": { "min": 1, "max": 2 }, "unit": "tbsp", "scale": { "type": "linear" }, "category": "epicerie" },
+    { "id": "bbq-sauce", "name": "Sauce BBQ", "quantity": { "min": 2, "max": 3 }, "unit": "tbsp", "scale": { "type": "linear" }, "category": "epicerie" },
+    { "id": "honey", "name": "Miel", "quantity": 1, "unit": "tbsp", "scale": { "type": "linear" }, "category": "epicerie" },
+    { "id": "apple-juice", "name": "Jus de pomme", "quantity": 50, "unit": "mL", "scale": { "type": "linear" }, "category": "boissons-epicerie" },
+    { "id": "butter", "name": "Beurre", "quantity": { "min": 10, "max": 15 }, "unit": "g", "scale": { "type": "linear" }, "category": "produits-frais", "optional": true },
+    { "id": "fresh-herbs", "name": "Ciboulette ou persil", "quantity": { "min": 1, "max": 2 }, "unit": "tbsp", "scale": { "type": "linear" }, "category": "fruits-legumes" },
+    { "id": "olive-oil", "name": "Huile d’olive", "quantity": null, "unit": null, "scale": { "type": "to_taste" }, "category": "epicerie", "preparation": "1½–2 c. à soupe pour les pommes de terre + 1 c. à soupe facultative dans la sauce" }
+  ],
+  "equipment": [
+    { "id": "woodfire", "name": "Ninja Woodfire" },
+    { "id": "grill-surface", "name": "Grille/plaque de cuisson Woodfire" },
+    { "id": "compact-dish", "name": "Plat compact allant au Woodfire" },
+    { "id": "foil", "name": "Papier aluminium" },
+    { "id": "air-fry-basket", "name": "Panier Air Fry" },
+    { "id": "stovetop-pot", "name": "Casserole" },
+    { "id": "thermometer", "name": "Thermomètre/sonde à cœur", "optional": true }
+  ],
+  "steps": [
+    {
+      "id": "take-out-pork",
+      "component": "pork",
+      "title": "Sortir le porc",
+      "summary": "Tempérer et vérifier le rub",
+      "durationMin": 30,
+      "plan": { "preferredStartOffsetMin": -330 },
+      "resources": [],
+      "details": [
+        "1,2 à 1,5 kg de poitrine de porc en cubes de ~40 mm.",
+        "Rub indicatif : 18–22 g de sel, 2 c. à café de paprika fumé, 2 c. à café d’ail en poudre, 1 c. à café de poivre, 1–2 c. à soupe de cassonade.",
+        "Si le rub a été appliqué la veille, ne rien ajouter : laisser simplement tempérer."
+      ],
+      "completion": { "type": "manual", "description": "Porc prêt à être fumé" }
+    },
+    {
+      "id": "smoke",
+      "component": "pork",
+      "title": "Début fumage",
+      "summary": "2 h à 2 h 30",
+      "durationRangeMin": [120, 150],
+      "durationPlanMin": 135,
+      "plan": { "preferredStartOffsetMin": -300 },
+      "dependencies": [{ "stepId": "take-out-pork", "relation": "after_finish", "lagMin": 0 }],
+      "resources": ["woodfire"],
+      "woodfire": { "mode": "SMOKER", "temperatureC": 125, "smoke": true, "pellets": true, "support": "grill_surface", "covered": false, "placement": "Cubes bien espacés directement sur la grille/plaque; pas de plat ni de panier Air Fry." },
+      "details": [
+        "Déposer les cubes bien espacés directement sur la grille.",
+        "Pas de plat et pas de panier Air Fry.",
+        "Objectif : belle croûte fumée, surface brun-rouge et sèche."
+      ],
+      "completion": { "type": "appearance", "description": "Belle croûte brun-rouge et surface sèche" }
+    },
+    {
+      "id": "covered",
+      "component": "pork",
+      "title": "Passage en cuisson couverte",
+      "summary": "Plat compact, 1 à 2 couches",
+      "durationMin": 60,
+      "plan": { "preferredStartOffsetMin": -165 },
+      "dependencies": [{ "stepId": "smoke", "relation": "after_finish", "lagMin": 0 }],
+      "resources": ["woodfire"],
+      "woodfire": { "mode": "BAKE_ROAST", "temperatureC": 160, "temperatureRangeC": [155, 160], "smoke": false, "pellets": false, "support": "compact_dish", "covered": true, "placement": "Petit plat permettant 1 à 2 couches; les cubes peuvent se toucher légèrement." },
+      "details": [
+        "Prendre le plus petit plat permettant de garder les cubes sur 1 à 2 couches. Ils peuvent se toucher légèrement.",
+        "Ajouter 2–3 c. à soupe de sauce BBQ, 1 c. à soupe de miel, 50 mL de jus de pomme et 10–15 g de beurre (facultatif).",
+        "Le liquide ne doit pas noyer les cubes.",
+        "Couvrir très hermétiquement avec de l’aluminium.",
+        "Durée indicative : ~1 h avant le premier contrôle."
+      ],
+      "completion": { "type": "checkpoint", "description": "Atteindre le premier contrôle de tendreté" }
+    },
+    {
+      "id": "sauce",
+      "component": "fresh-sauce",
+      "title": "Préparer la sauce fraîche",
+      "summary": "Puis réserver au frais",
+      "durationMin": 15,
+      "plan": { "preferredStartOffsetMin": -155 },
+      "resources": ["fridge"],
+      "details": [
+        "250 g de yaourt grec.",
+        "60–80 g de crème fraîche.",
+        "Zeste de 1 citron + 20–30 mL de jus de citron.",
+        "½ c. à café d’ail en poudre.",
+        "1–2 c. à soupe de ciboulette ou persil haché.",
+        "½ c. à café de sel + poivre.",
+        "1 c. à soupe d’huile d’olive facultative.",
+        "Mélanger, goûter, ajuster, puis garder au frais. Servir à part pour conserver le croustillant des pommes de terre."
+      ],
+      "completion": { "type": "manual", "description": "Sauce assaisonnée et placée au frais" }
+    },
+    {
+      "id": "first-check",
+      "component": "pork",
+      "title": "Premier contrôle du porc",
+      "summary": "Tester la tendreté",
+      "durationMin": 0,
+      "plan": { "preferredStartOffsetMin": -105 },
+      "dependencies": [{ "stepId": "covered", "relation": "after_finish", "lagMin": 0 }],
+      "resources": [],
+      "details": [
+        "Ouvrir rapidement et tester plusieurs cubes.",
+        "S’ils sont encore fermes : refermer et poursuivre à 160 °C par tranches de 15–20 min.",
+        "Ils sont prêts pour la finition lorsqu’une sonde/pique entre facilement et que le gras/collagène est très tendre."
+      ],
+      "completion": { "type": "tenderness", "description": "La sonde/pique entre facilement dans plusieurs cubes" },
+      "recheck": { "notReadyMin": [15, 20] }
+    },
+    {
+      "id": "potato-boil",
+      "component": "potatoes",
+      "title": "Précuire les grenailles",
+      "summary": "700–800 g · 8 à 10 min",
+      "durationRangeMin": [8, 10],
+      "durationPlanMin": 10,
+      "plan": { "preferredStartOffsetMin": -80 },
+      "resources": ["stovetop"],
+      "details": [
+        "Cuire les pommes de terre grenaille dans une eau salée pendant 8–10 min après reprise de l’ébullition.",
+        "Elles doivent commencer à s’attendrir sans se désagréger."
+      ],
+      "completion": { "type": "appearance", "description": "Pommes de terre juste attendries sans se désagréger" }
+    },
+    {
+      "id": "potato-prep",
+      "component": "potatoes",
+      "title": "Écraser et assaisonner les pommes de terre",
+      "summary": "Prêtes à passer en Air Fry",
+      "durationMin": 10,
+      "plan": { "preferredStartOffsetMin": -70 },
+      "dependencies": [{ "stepId": "potato-boil", "relation": "after_finish", "lagMin": 0 }],
+      "resources": [],
+      "details": [
+        "Égoutter puis laisser sécher 3–5 min.",
+        "Écraser légèrement chaque pomme de terre.",
+        "Ajouter 1½–2 c. à soupe d’huile, sel, paprika fumé, ail en poudre et poivre.",
+        "Elles peuvent attendre ainsi pendant que le porc termine."
+      ],
+      "completion": { "type": "manual", "description": "Pommes de terre écrasées et assaisonnées" }
+    },
+    {
+      "id": "finish-pork",
+      "component": "pork",
+      "title": "Finition du porc à découvert",
+      "summary": "20 à 30 min",
+      "durationRangeMin": [20, 30],
+      "durationPlanMin": 30,
+      "plan": { "preferredStartOffsetMin": -70 },
+      "dependencies": [{ "stepId": "first-check", "relation": "after_finish", "lagMin": 0 }],
+      "resources": ["woodfire"],
+      "woodfire": { "mode": "BAKE_ROAST", "temperatureC": 180, "temperatureRangeC": [175, 180], "smoke": false, "pellets": false, "support": "compact_dish", "covered": false, "placement": "Même plat, aluminium retiré." },
+      "details": [
+        "Retirer l’aluminium lorsque les cubes sont tendres.",
+        "Mélanger pour bien les enrober de sauce.",
+        "Caraméliser 20–30 min à découvert en remuant une fois à mi-cuisson.",
+        "Objectif : extérieur collant et légèrement caramélisé, intérieur très tendre."
+      ],
+      "completion": { "type": "combined", "description": "Extérieur collant/caramélisé et intérieur très tendre" }
+    },
+    {
+      "id": "rest-pork",
+      "component": "pork",
+      "title": "Sortir et laisser reposer le porc",
+      "summary": "Repos pendant les pommes de terre",
+      "durationMin": 5,
+      "plan": { "preferredStartOffsetMin": -40 },
+      "dependencies": [{ "stepId": "finish-pork", "relation": "after_finish", "lagMin": 0 }],
+      "resources": ["passive"],
+      "details": [
+        "Sortir le plat et couvrir assez lâchement.",
+        "Profiter du repos pour libérer immédiatement le Woodfire pour les pommes de terre."
+      ],
+      "completion": { "type": "time", "description": "Repos initial de 5 min avant lancement des pommes de terre" }
+    },
+    {
+      "id": "airfry-potatoes",
+      "component": "potatoes",
+      "title": "Pommes de terre au Woodfire",
+      "summary": "18 à 22 min",
+      "durationRangeMin": [18, 22],
+      "durationPlanMin": 20,
+      "plan": { "preferredStartOffsetMin": -35 },
+      "dependencies": [
+        { "stepId": "potato-prep", "relation": "after_finish", "lagMin": 0 },
+        { "stepId": "rest-pork", "relation": "after_finish", "lagMin": 0 }
+      ],
+      "resources": ["woodfire"],
+      "woodfire": { "mode": "AIR_FRY", "temperatureC": 210, "temperatureRangeC": [205, 210], "smoke": false, "pellets": false, "support": "air_fry_basket", "covered": false, "placement": "Couche assez aérée dans le panier Air Fry." },
+      "details": [
+        "Installer les grenailles dans le panier Air Fry, idéalement en couche assez aérée.",
+        "Cuire 18–22 min.",
+        "Secouer/remuer vers 10 min.",
+        "Objectif : arêtes franchement croustillantes et cœur fondant."
+      ],
+      "completion": { "type": "appearance", "description": "Arêtes franchement croustillantes et cœur fondant" }
+    },
+    {
+      "id": "potatoes-out",
+      "component": "potatoes",
+      "title": "Sortir les pommes de terre",
+      "summary": "Vérifier le croustillant",
+      "durationMin": 5,
+      "plan": { "preferredStartOffsetMin": -15 },
+      "dependencies": [{ "stepId": "airfry-potatoes", "relation": "after_finish", "lagMin": 0 }],
+      "resources": [],
+      "details": [
+        "Goûter et corriger le sel si nécessaire.",
+        "Ne pas napper de sauce avant le service : servir la sauce fraîche à part."
+      ],
+      "completion": { "type": "manual", "description": "Croustillant validé et assaisonnement corrigé" }
+    },
+    {
+      "id": "plate",
+      "component": "meal",
+      "title": "Dressage",
+      "summary": "Porc + grenailles + sauce à part",
+      "durationMin": 10,
+      "plan": { "preferredStartOffsetMin": -10 },
+      "dependencies": [{ "stepId": "potatoes-out", "relation": "after_finish", "lagMin": 0 }],
+      "resources": [],
+      "details": [
+        "Burnt ends dans un plat chaud.",
+        "Pommes de terre dans un plat séparé.",
+        "Bol généreux de sauce fraîche à table.",
+        "Option : ciboulette/persil sur les pommes de terre."
+      ],
+      "completion": { "type": "manual", "description": "Tous les éléments sont dressés et prêts à servir" }
+    },
+    {
+      "id": "eat",
+      "component": "meal",
+      "title": "À table",
+      "summary": "Bon appétit",
+      "durationMin": 0,
+      "plan": { "preferredStartOffsetMin": 0, "anchor": "serve" },
+      "dependencies": [{ "stepId": "plate", "relation": "after_finish", "lagMin": 0 }],
+      "resources": [],
+      "details": ["Service visé. Si nécessaire, décale les étapes restantes avec les boutons +5/+10/+15 min en haut du planning."],
+      "completion": { "type": "manual", "description": "Repas servi" }
+    }
+  ]
+}
