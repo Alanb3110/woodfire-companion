@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "pork-belly-burnt-ends-meal",
-  "version": 1,
+  "version": 2,
   "title": "Pork Belly Burnt Ends",
   "description": "Poitrine de porc fumée puis confite et caramélisée, servie avec grenailles croustillantes et sauce fraîche citronnée.",
   "heroImage": null,
@@ -44,17 +44,17 @@
     { "id": "greek-yogurt", "name": "Yaourt grec", "quantity": 250, "unit": "g", "scale": { "type": "linear" }, "category": "produits-frais" },
     { "id": "creme-fraiche", "name": "Crème fraîche", "quantity": { "min": 60, "max": 80 }, "unit": "g", "scale": { "type": "linear" }, "category": "produits-frais" },
     { "id": "lemon", "name": "Citron", "quantity": 1, "unit": "piece", "scale": { "type": "step", "breakpoints": [{ "maxServings": 4, "quantity": 1 }, { "maxServings": 8, "quantity": 2 }] }, "category": "fruits-legumes", "preparation": "Zeste + 20–30 mL de jus" },
-    { "id": "salt", "name": "Sel", "quantity": null, "unit": null, "scale": { "type": "to_taste" }, "category": "epicerie", "preparation": "Rub : 18–22 g pour 4 personnes, puis ajuster sauce et pommes de terre" },
-    { "id": "smoked-paprika", "name": "Paprika fumé", "quantity": null, "unit": null, "scale": { "type": "to_taste" }, "category": "epicerie" },
-    { "id": "garlic-powder", "name": "Ail en poudre", "quantity": null, "unit": null, "scale": { "type": "to_taste" }, "category": "epicerie" },
-    { "id": "black-pepper", "name": "Poivre", "quantity": null, "unit": null, "scale": { "type": "to_taste" }, "category": "epicerie" },
+    { "id": "salt", "name": "Sel", "quantity": { "min": 26, "max": 32 }, "unit": "g", "scale": { "type": "range" }, "category": "epicerie", "preparation": "Base pour 4 : 18–22 g rub + ~3 g sauce + 5–7 g pommes de terre; ajuster ensuite si nécessaire" },
+    { "id": "smoked-paprika", "name": "Paprika fumé", "quantity": 3, "unit": "tsp", "scale": { "type": "linear" }, "category": "epicerie", "preparation": "2 c. à café pour le rub + 1 c. à café pour les pommes de terre" },
+    { "id": "garlic-powder", "name": "Ail en poudre", "quantity": 3.5, "unit": "tsp", "scale": { "type": "linear" }, "category": "epicerie", "preparation": "2 c. à café rub + ½ sauce + 1 pommes de terre" },
+    { "id": "black-pepper", "name": "Poivre", "quantity": { "min": 1.75, "max": 2 }, "unit": "tsp", "scale": { "type": "range" }, "category": "epicerie", "preparation": "1 c. à café rub + ¼ sauce + ½–¾ pommes de terre" },
     { "id": "brown-sugar", "name": "Cassonade", "quantity": { "min": 1, "max": 2 }, "unit": "tbsp", "scale": { "type": "linear" }, "category": "epicerie" },
     { "id": "bbq-sauce", "name": "Sauce BBQ", "quantity": { "min": 2, "max": 3 }, "unit": "tbsp", "scale": { "type": "linear" }, "category": "epicerie" },
     { "id": "honey", "name": "Miel", "quantity": 1, "unit": "tbsp", "scale": { "type": "linear" }, "category": "epicerie" },
     { "id": "apple-juice", "name": "Jus de pomme", "quantity": 50, "unit": "mL", "scale": { "type": "linear" }, "category": "boissons-epicerie" },
     { "id": "butter", "name": "Beurre", "quantity": { "min": 10, "max": 15 }, "unit": "g", "scale": { "type": "linear" }, "category": "produits-frais", "optional": true },
     { "id": "fresh-herbs", "name": "Ciboulette ou persil", "quantity": { "min": 1, "max": 2 }, "unit": "tbsp", "scale": { "type": "linear" }, "category": "fruits-legumes" },
-    { "id": "olive-oil", "name": "Huile d’olive", "quantity": null, "unit": null, "scale": { "type": "to_taste" }, "category": "epicerie", "preparation": "1½–2 c. à soupe pour les pommes de terre + 1 c. à soupe facultative dans la sauce" }
+    { "id": "olive-oil", "name": "Huile d’olive", "quantity": { "min": 1.5, "max": 3 }, "unit": "tbsp", "scale": { "type": "range" }, "category": "epicerie", "preparation": "1½–2 c. à soupe pommes de terre + jusqu’à 1 c. à soupe facultative dans la sauce" }
   ],
   "equipment": [
     { "id": "woodfire", "name": "Ninja Woodfire" },
@@ -132,7 +132,7 @@
         "Zeste de 1 citron + 20–30 mL de jus de citron.",
         "½ c. à café d’ail en poudre.",
         "1–2 c. à soupe de ciboulette ou persil haché.",
-        "½ c. à café de sel + poivre.",
+        "½ c. à café de sel (~3 g) + ¼ c. à café de poivre.",
         "1 c. à soupe d’huile d’olive facultative.",
         "Mélanger, goûter, ajuster, puis garder au frais. Servir à part pour conserver le croustillant des pommes de terre."
       ],
@@ -182,7 +182,7 @@
       "details": [
         "Égoutter puis laisser sécher 3–5 min.",
         "Écraser légèrement chaque pomme de terre.",
-        "Ajouter 1½–2 c. à soupe d’huile, sel, paprika fumé, ail en poudre et poivre.",
+        "Ajouter 1½–2 c. à soupe d’huile d’olive, 5–7 g de sel, 1 c. à café de paprika fumé, 1 c. à café d’ail en poudre et ½–¾ c. à café de poivre.",
         "Elles peuvent attendre ainsi pendant que le porc termine."
       ],
       "completion": { "type": "manual", "description": "Pommes de terre écrasées et assaisonnées" }

@@ -37,6 +37,8 @@ Use metric units by default:
 
 Spoon measures may be shown for convenience, but important quantities should preferably also have metric equivalents when precision matters.
 
+For the user-facing ingredient overview, do not display only `au goût` / `to taste`. Always provide a practical indicative baseline quantity or range for a first cook, then state that seasoning may be adjusted after tasting. The schema may still retain broader scaling semantics where useful, but the rendered guidance should remain actionable.
+
 ### Meat
 Where applicable, distinguish:
 - seasoning/marinade quantities;
@@ -74,12 +76,12 @@ The scheduler should exploit passive meat phases to prepare sides in parallel.
 For crispy potatoes, avoid applying wet sauce before serving if it would destroy the desired crispness. Sauce can be served separately.
 
 ## Reference demo meal
-The current POC is based on:
+The current reference meal is based on:
 - Pork Belly Burnt Ends;
 - smashed grenaille potatoes;
 - generous fresh yogurt/crème fraîche lemon-herb sauce.
 
-The current hard-coded implementation uses approximately:
+The current structured implementation uses approximately:
 - pork belly: 1.2–1.5 kg, ~40 mm cubes;
 - smoking: `SMOKER`, 125 °C, smoke on, pellets, directly on grill surface;
 - covered phase: compact dish, 1–2 layers, 155–160 °C, smoke off, tightly covered;
