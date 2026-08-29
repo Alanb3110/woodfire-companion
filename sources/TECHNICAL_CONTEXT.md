@@ -26,7 +26,7 @@ State remains local-first/offline.
 
 Executable meals now include:
 - `recipes/pork-belly-burnt-ends.json`, content version 4;
-- `recipes/sweet-savory-turkey-zucchini-gratin.json`, content version 1.
+- `recipes/sweet-savory-turkey-zucchini-gratin.json`, content version 2.
 
 The Pork Belly meal remains the long-cook reference. The turkey + zucchini-gratin meal is the first genuinely different multi-recipe case: a temperature-driven poultry cook on the Woodfire runs in parallel with a conventional-oven side dish and both chains converge on one service milestone.
 
@@ -120,7 +120,7 @@ Current dev version: `0.3.0-dev.4`.
 
 Static shell/modules are listed in `APP_ASSETS`, including the meal-planner facade. Executable recipe JSON is discovered from `recipes/index.json` and preloaded automatically for every `available` entry.
 
-`recipes/index.json` is therefore the source of truth for recipe discovery and recipe-JSON offline preloading. A service-worker file change accompanies the second executable recipe so existing installations run the install/preload path again.
+`recipes/index.json` is therefore the source of truth for recipe discovery and recipe-JSON offline preloading. A service-worker file change accompanied the second executable recipe so existing installations ran the install/preload path again.
 
 Assets must remain compatible with the `/woodfire-companion/` GitHub Pages subpath and installed iPhone/Safari PWA behavior.
 
