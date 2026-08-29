@@ -1,0 +1,111 @@
+.task-card.awaiting-recheck {
+  box-shadow: inset 0 0 0 1px var(--accent-border);
+}
+
+.task-card.awaiting-recheck .task-time {
+  color: var(--accent-strong);
+}
+
+.completion-criterion {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 11px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.4;
+  font-weight: 720;
+}
+
+.observation-panel {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.observation-heading {
+  display: grid;
+  gap: 3px;
+}
+
+.observation-heading strong {
+  color: var(--accent-strong);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+}
+
+.observation-heading span {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.observation-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.observation-btn {
+  min-height: 48px;
+  padding: 8px 9px;
+  border: 1px solid var(--accent-border);
+  border-radius: 11px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.observation-btn.observation-ready {
+  border-color: color-mix(in srgb, var(--success) 45%, transparent);
+  background: color-mix(in srgb, var(--success) 13%, transparent);
+  color: color-mix(in srgb, var(--success) 70%, white 30%);
+}
+
+.recheck-due {
+  padding: 9px 11px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.observation-history {
+  display: grid;
+  border-top: 1px solid var(--border);
+}
+
+.observation-history > div {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+
+.observation-history > div span:first-child {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.observation-history > div span:last-child {
+  color: var(--text);
+}
+
+@media (max-width: 520px) {
+  .observation-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .observation-btn {
+    min-height: 46px;
+    text-align: left;
+  }
+}
