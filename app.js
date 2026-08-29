@@ -12,7 +12,7 @@ import {
   upsertJournalEntry
 } from './js/journal.js';
 import { renderJournalEntries } from './js/journal-ui.js';
-import { buildMealSchedule } from './js/meal-planner.js';
+import { buildMealSchedule, resolveSessionServingTarget } from './js/meal-planner.js';
 import {
   addStepDelay,
   closestMealAnchorDate,
@@ -134,7 +134,8 @@ function loadState() {
       || (parsed.measurements || []).length > 0
       || (parsed.observations || []).length > 0
       || Object.keys(parsed.rechecks || {}).length > 0
-      || Boolean(parsed.cookStartedAt);
+      || Boolean(parsed.cookStartedAt)
+      || Boolean(parsed.sessionStartedAt && parsed.recipeId);
     if (!parsed.view) merged.view = hasProgress ? 'cook' : 'library';
 
     if (hasProgress && !merged.sessionId) {
@@ -142,9 +143,12 @@ function loadState() {
       merged.sessionId = createSessionId(new Date(merged.sessionStartedAt));
     }
     if (hasProgress && !merged.sessionStartedAt) merged.sessionStartedAt = firstKnownSessionTimestamp(merged);
-    if (hasProgress && !merged.targetServingAt) {
-      const reference = new Date(firstKnownSessionTimestamp(merged));
-      merged.targetServingAt = closestMealAnchorDate(merged.mealTime || '20:00', reference).toISOString();
+    if (hasProgress && merged.sessionStartedAt) {
+      merged.targetServingAt = resolveSessionServingTarget({
+        mealTime: merged.mealTime || '20:00',
+        targetServingAt: merged.targetServingAt,
+        sessionStartedAt: merged.sessionStartedAt
+      }).toISOString();
     }
     return merged;
   } catch (error) {
@@ -422,14 +426,19 @@ function ensureSessionMetadata(resetSession) {
     state.sessionId = createSessionId(now);
     state.sessionStartedAt = now.toISOString();
     state.sessionServedAt = null;
-    state.targetServingAt = nextMealAnchorDate(configMealTime, now).toISOString();
+    state.targetServingAt = resolveSessionServingTarget({
+      mealTime: configMealTime,
+      sessionStartedAt: state.sessionStartedAt
+    }).toISOString();
     return;
   }
   if (!state.sessionStartedAt) state.sessionStartedAt = firstKnownSessionTimestamp(state);
   if (!state.sessionId) state.sessionId = createSessionId(new Date(state.sessionStartedAt));
-  if (!state.targetServingAt) {
-    state.targetServingAt = closestMealAnchorDate(configMealTime, new Date(state.sessionStartedAt)).toISOString();
-  }
+  state.targetServingAt = resolveSessionServingTarget({
+    mealTime: configMealTime,
+    targetServingAt: state.targetServingAt,
+    sessionStartedAt: state.sessionStartedAt
+  }).toISOString();
 }
 
 async function activateRecipe(entry, loadedRecipe, resetSession) {
@@ -767,9 +776,13 @@ function switchTab(tabName, persist = true) {
 }
 
 function updateCookTime() {
-  const reference = state.targetServingAt ? new Date(state.targetServingAt) : new Date();
+  const reference = state.targetServingAt;
   state.mealTime = readTimePicker(cookMealHour, cookMealMinute);
-  state.targetServingAt = closestMealAnchorDate(state.mealTime, reference).toISOString();
+  state.targetServingAt = resolveSessionServingTarget({
+    mealTime: state.mealTime,
+    targetServingAt: reference,
+    sessionStartedAt: state.sessionStartedAt || new Date().toISOString()
+  }).toISOString();
   saveState();
   renderCookShell();
   recomputeSchedule();
