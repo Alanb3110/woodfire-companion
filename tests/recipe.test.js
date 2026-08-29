@@ -21,3 +21,10 @@ test('step-scaled lemon rounds to two for 6 servings', () => {
   const lemon = scaled.find(item => item.id === 'lemon');
   assert.equal(lemon.quantity, 2);
 });
+
+test('reference recipe exposes indicative quantities for every displayed ingredient', () => {
+  const missingGuidance = recipe.ingredients
+    .filter(item => item.quantity === null)
+    .map(item => item.id);
+  assert.deepEqual(missingGuidance, []);
+});
