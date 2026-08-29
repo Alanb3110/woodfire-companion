@@ -26,9 +26,11 @@ State remains local-first/offline.
 
 The canonical reference recipe remains `recipes/pork-belly-burnt-ends.json`, content version `4`. Its baseline is derived from service anchors, dependencies, durations and planning buffers; it contains no `preferredStartOffsetMin`.
 
-`js/recipe.js` owns recipe validation, ingredient scaling and Woodfire summary formatting. `js/recipe-loader.js` loads and validates executable JSON content.
+`js/recipe.js` owns recipe validation, ingredient scaling and Woodfire summary formatting. Validation now protects serving bounds, component ownership, duration ranges, completion/recheck semantics, dependency connectivity, service milestones and Woodfire configuration consistency in addition to the earlier schema checks.
 
-Every `available` recipe is now covered by a generic CI acceptance contract. See `sources/MULTI_RECIPE_CONTRACT.md`.
+`js/recipe-loader.js` loads and validates executable JSON content before UI use.
+
+Every `available` recipe is covered by the generic CI contract in `sources/MULTI_RECIPE_CONTRACT.md`.
 
 Relevant source contracts:
 - `sources/RECIPE_SCHEMA_V1.md`;
@@ -41,15 +43,7 @@ Relevant source contracts:
 ## Multi-recipe acceptance
 Tests must not enumerate executable recipe ids.
 
-For each manifest entry with `status: "available"`, CI verifies at least:
-- the recipe JSON can be read;
-- manifest id/title/servings match recipe content;
-- recipe validation succeeds;
-- scaling and shopping generation work at min/reference/max servings;
-- Planner V1 produces a complete schedule;
-- no declared dependency violation remains;
-- no baseline Woodfire conflict remains;
-- an unambiguous real service milestone can be resolved for journal semantics.
+For each manifest entry with `status: "available"`, CI verifies recipe loading/validation, manifest identity, serving metadata, scaling/shopping at min/reference/max, complete schedule generation, dependency validity, baseline Woodfire conflict freedom and an unambiguous service milestone.
 
 Planner V1 does not yet create additional batches from serving count. Until batching/capacity semantics exist, each recipe's `servings.max` must stay within a quantity that can use the same declared execution structure.
 
@@ -76,7 +70,7 @@ Older active records without newer fields remain readable; compatible metadata i
 ## Cook Journal V1
 Completed meal sessions are stored separately under `woodfire-companion-journal-v1` with an explicit journal schema version.
 
-`js/journal.js` owns journal serialization/store and service-milestone resolution. A recipe may define an explicit `serviceStepId`; otherwise exactly one zero-offset `serve` anchor can act as the real service milestone. Tasks merely positioned relative to `serve` must not be confused with the actual meal-service event.
+`js/journal.js` owns journal serialization/store and service-milestone resolution. A recipe may define an explicit `serviceStepId`; otherwise exactly one zero-offset `serve` anchor can act as the real service milestone. Tasks merely positioned relative to `serve` are not treated as the meal-service event.
 
 A journal entry includes recipe identity/version/title, servings, target/actual service timestamps, temperature samples, actual step completions, explicit delays, and baseline/final schedule timestamps.
 
@@ -115,7 +109,7 @@ The service worker uses a network-first cache with offline fallback.
 
 Current dev version: `0.3.0-dev.4`.
 
-Static shell/modules are listed in `APP_ASSETS`, but executable recipe JSON is no longer enumerated by filename. During service-worker installation, `recipes/index.json` is read and every entry with `status === "available"` and a `recipeUrl` is preloaded automatically.
+Static shell/modules are listed in `APP_ASSETS`, while executable recipe JSON is discovered from `recipes/index.json` and preloaded automatically for every `available` entry.
 
 `recipes/index.json` is therefore the source of truth for recipe discovery and recipe-JSON offline preloading.
 
@@ -130,18 +124,17 @@ npm test
 
 GitHub Actions runs the suite on `main`, feature pushes and pull requests.
 
-Coverage includes recipe validation/scaling, generic available-recipe acceptance, library resolution, shopping/pre-cook, manifest-driven offline caching, version consistency, DOM contracts, dependency planner behavior, resource conflicts, buffer/service slippage, actual completion propagation, active-cook wiring, journal serialization/upsert/removal, service-milestone resolution and session/journal integration.
+Coverage includes hardened recipe-contract fixtures, generic available-recipe acceptance, library resolution, shopping/pre-cook, manifest-driven offline caching, version consistency, DOM contracts, dependency planner behavior, resource conflicts, buffer/service slippage, actual completion propagation, active-cook wiring, journal serialization/upsert/removal, service-milestone resolution and session/journal integration.
 
 ## Current technical debt / next work
-1. Strengthen `validateRecipe()` for serving bounds, component identity/references, completion/recheck semantics and graph connectivity.
-2. Pass serving/configuration context into the planner so future recipes can express capacity/batch-dependent timing without changing its public API again.
-3. Derive the recipe-page recommended start time from the planner rather than `timing.elapsedRangeMin`.
-4. Make temperature tracking explicitly optional per recipe.
-5. Reduce scaling-sensitive quantities duplicated inside step prose by referencing structured ingredient usage.
-6. Add a second complete executable recipe to validate the architecture with genuinely different cooking semantics.
-7. Add structured observation/recheck controls for uncertain cooks.
-8. Add a flexible planning-window concept when a real recipe demonstrates the need.
-9. Add journal notes/rating and JSON backup/import when useful.
-10. Replace temporary CSS/emoji covers with local illustrated assets when visual direction is finalized.
-11. Add richer resources such as user attention only when real meal plans demonstrate the need.
-12. Add predictive ETA later from temperature/history with uncertainty, never false precision.
+1. Pass serving/configuration context into the planner so future recipes can express capacity/batch-dependent timing without another public-API break.
+2. Derive the recipe-page recommended start time from the planner rather than `timing.elapsedRangeMin`.
+3. Make temperature tracking explicitly optional per recipe.
+4. Reduce scaling-sensitive quantities duplicated inside step prose by referencing structured ingredient usage.
+5. Add a second complete executable recipe to validate the architecture with genuinely different cooking semantics.
+6. Add structured observation/recheck controls for uncertain cooks.
+7. Add a flexible planning-window concept when a real recipe demonstrates the need.
+8. Add journal notes/rating and JSON backup/import when useful.
+9. Replace temporary CSS/emoji covers with local illustrated assets when visual direction is finalized.
+10. Add richer resources such as user attention only when real meal plans demonstrate the need.
+11. Add predictive ETA later from temperature/history with uncertainty, never false precision.
