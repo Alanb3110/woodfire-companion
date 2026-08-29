@@ -17,6 +17,15 @@ Completed timestamps must not be rewritten merely to make the remaining plan loo
 
 Unchecking a step removes its recorded completion, clears any pending recheck for that step and recalculates the plan from the remaining known facts.
 
+## Absolute serving date
+An active cook stores `targetServingAt` as an absolute date/time, not only a clock string such as `05:30`.
+
+The session start is also absolute. A service occurrence is never allowed to predate `sessionStartedAt`. This matters around midnight: a cook started at 23:50 for a 05:30 meal must target 05:30 the following day, not the already-passed 05:30 of the current day.
+
+Older persisted sessions are repaired when loaded/resumed. If their stored service occurrence predates the session start, the application selects the next matching occurrence of the configured meal time. Legitimate lateness is preserved when the target is after session start but has subsequently passed.
+
+Editing the meal clock keeps the calendar-day occurrence closest to the previous target, subject to the same session-start lower bound.
+
 ## Structured observations
 A step declaring `recheck.notReadyMin` receives observation controls in its expanded detail.
 
@@ -27,9 +36,9 @@ The UI derives labels from the existing completion semantics:
 
 Choosing a not-ready state stores the observation and a future recheck timestamp. The step remains incomplete and its historical start is unchanged.
 
-Choosing a ready state stores the observation and completes the step at the current timestamp. Planner V1 then propagates that actual completion through dependencies/resources.
+The pending recheck timestamp is also passed to Planner V1 as an `expectedCompletionTime` for that step. This represents a temporary runtime expectation, not a historical fact. Existing planning buffer may absorb it; if the recheck extends beyond the remaining buffer, dependent work moves accordingly.
 
-This means a planning buffer can absorb a delayed readiness checkpoint before unrelated or downstream work is moved.
+Choosing a ready state stores the observation and completes the step at the current timestamp. The pending expected completion disappears and the real completion becomes the planner input.
 
 See `sources/OBSERVATIONS_V1.md`.
 
@@ -42,18 +51,16 @@ Normal meaning:
 
 The UI records the delay only against that step using `addStepDelay()`. Planner V1 then decides what else must move.
 
-If the next unfinished step is already waiting for an observation recheck, the same buttons move only that pending recheck deadline. They do not shift the underlying cooking step start or every downstream task.
+If the next actionable item is an observation recheck, the same buttons move only that pending recheck deadline. Planner V1 then reevaluates whether the additional wait still fits inside available buffer.
 
 ## Propagation rules
-After a completion or explicit step delay:
+After a completion, recheck expectation or explicit step delay:
 - hard dependencies remain satisfied;
 - a planning buffer may absorb some or all of a delay;
 - unrelated parallel work remains where it was when feasible;
 - an exclusive Woodfire conflict moves unfinished competing work as required;
 - completed steps retain their actual timestamps;
 - service time may move if the remaining meal can no longer be completed feasibly by the original target.
-
-A scheduled recheck alone is an observation reminder, not an artificial planner delay. Downstream movement occurs when actual completion makes it necessary.
 
 Do not move unrelated tasks solely because another component is late.
 
@@ -66,7 +73,7 @@ The active cook should answer:
 - what Woodfire state is required?;
 - what completion criterion am I looking for?;
 
-The next-action countdown uses a pending recheck deadline when one exists; otherwise it uses the replanned task schedule.
+The next-action selector compares the effective actionable times: a pending recheck uses its recheck deadline; other unfinished steps use their replanned start. This prevents a stale checkpoint start from incorrectly staying at the top of the list.
 
 ## Current UI
 The checklist and expandable detail cards remain the primary interaction.
