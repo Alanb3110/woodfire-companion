@@ -1,0 +1,286 @@
+{
+  "schemaVersion": 1,
+  "id": "sweet-savory-turkey-zucchini-gratin",
+  "version": 1,
+  "serviceStepId": "serve",
+  "title": "Roulé de dinde sucré-salé & gratin de courgettes",
+  "description": "Roulé de dinde fumé puis rôti au Woodfire avec marinade soja-miel-paprika, servi avec un gratin de courgettes crémeux cuit au four en parallèle.",
+  "heroImage": null,
+  "tags": ["dinde", "fumé", "sucré-salé", "repas-complet"],
+  "difficulty": "facile",
+  "servings": { "reference": 5, "min": 4, "max": 6 },
+  "timing": {
+    "activePrepMin": 60,
+    "elapsedRangeMin": [210, 240]
+  },
+  "temperature": {
+    "defaultTargetC": 74
+  },
+  "advancePrep": [
+    {
+      "id": "marinade-ahead",
+      "title": "Mariner la dinde en avance",
+      "timing": "Planning de référence : 1 h 40 au frais · possible plus tôt",
+      "details": "Le planning laisse environ 100 min entre la mise en marinade et la sortie du réfrigérateur. Une marinade plus longue est possible si elle est préparée en avance."
+    },
+    {
+      "id": "optional-injection",
+      "title": "Injection facultative",
+      "timing": "Juste avant la marinade extérieure",
+      "details": "Pour ~60 mL : 25 g de sauce soja, 25 g d’eau ou de jus de pomme, 8 g de miel et 2–3 g de vinaigre de cidre. Mélanger, filtrer finement et laisser refroidir avant d’injecter en plusieurs petits points.",
+      "optional": true
+    }
+  ],
+  "components": [
+    {
+      "id": "turkey",
+      "type": "main",
+      "title": "Roulé de dinde sucré-salé",
+      "ingredientIds": ["turkey-roll", "soy-sauce", "honey", "olive-oil", "mustard", "cider-vinegar", "smoked-paprika", "garlic", "black-pepper", "injection-liquid", "roast-liquid"],
+      "stepIds": ["prepare-marinade", "coat-inject-turkey", "take-out-turkey", "preheat-smoker", "smoke-turkey", "roast-turkey", "glaze-turkey", "finish-turkey", "rest-turkey"]
+    },
+    {
+      "id": "zucchini-gratin",
+      "type": "side",
+      "title": "Gratin de courgettes crémeux",
+      "ingredientIds": ["zucchini", "cream", "eggs", "garlic", "grated-cheese", "parmesan", "olive-oil", "salt", "black-pepper", "nutmeg"],
+      "stepIds": ["prep-gratin", "bake-gratin", "rest-gratin"]
+    }
+  ],
+  "ingredients": [
+    { "id": "turkey-roll", "name": "Roulé de dinde", "quantity": 1000, "unit": "g", "scale": { "type": "fixed" }, "category": "viande", "preparation": "Roulé d’environ 1 kg" },
+    { "id": "soy-sauce", "name": "Sauce soja", "quantity": { "min": 20, "max": 45 }, "unit": "g", "scale": { "type": "fixed" }, "category": "epicerie", "preparation": "20 g marinade extérieure + 25 g si injection" },
+    { "id": "honey", "name": "Miel", "quantity": { "min": 25, "max": 33 }, "unit": "g", "scale": { "type": "fixed" }, "category": "epicerie", "preparation": "25 g marinade extérieure + 8 g si injection" },
+    { "id": "olive-oil", "name": "Huile d’olive", "quantity": 30, "unit": "mL", "scale": { "type": "fixed" }, "category": "epicerie", "preparation": "Environ 15 g pour la marinade + 1 c. à soupe pour le gratin" },
+    { "id": "mustard", "name": "Moutarde", "quantity": 10, "unit": "g", "scale": { "type": "fixed" }, "category": "epicerie" },
+    { "id": "cider-vinegar", "name": "Vinaigre de cidre", "quantity": { "min": 10, "max": 18 }, "unit": "g", "scale": { "type": "fixed" }, "category": "epicerie", "preparation": "10–15 g marinade extérieure + 2–3 g si injection" },
+    { "id": "smoked-paprika", "name": "Paprika fumé", "quantity": { "min": 6, "max": 7 }, "unit": "g", "scale": { "type": "fixed" }, "category": "epicerie" },
+    { "id": "garlic", "name": "Gousses d’ail", "quantity": 4, "unit": "piece", "scale": { "type": "step", "breakpoints": [{ "maxServings": 5, "quantity": 4 }, { "maxServings": 6, "quantity": 5 }] }, "category": "fruits-legumes", "preparation": "2 pour la marinade; 2 pour le gratin, 3 si 6 personnes" },
+    { "id": "black-pepper", "name": "Poivre", "quantity": null, "unit": "tsp", "scale": { "type": "to_taste" }, "category": "epicerie", "preparation": "Poivrer légèrement la marinade et le gratin" },
+    { "id": "injection-liquid", "name": "Eau ou jus de pomme pour injection", "quantity": 25, "unit": "mL", "scale": { "type": "fixed" }, "category": "boissons-epicerie", "optional": true, "preparation": "Uniquement si l’option injection est utilisée" },
+    { "id": "roast-liquid", "name": "Bouillon de volaille ou eau", "quantity": { "min": 50, "max": 100 }, "unit": "mL", "scale": { "type": "fixed" }, "category": "epicerie", "preparation": "Au fond du plat pendant le rôtissage; ne pas réutiliser la marinade crue" },
+    { "id": "zucchini", "name": "Courgettes", "quantity": 1200, "unit": "g", "scale": { "type": "linear" }, "category": "fruits-legumes", "preparation": "En rondelles fines" },
+    { "id": "cream", "name": "Crème liquide entière", "quantity": 300, "unit": "mL", "scale": { "type": "linear" }, "category": "produits-frais" },
+    { "id": "eggs", "name": "Œufs", "quantity": 3, "unit": "piece", "scale": { "type": "step", "breakpoints": [{ "maxServings": 5, "quantity": 3 }, { "maxServings": 6, "quantity": 4 }] }, "category": "produits-frais" },
+    { "id": "grated-cheese", "name": "Fromage râpé", "quantity": 100, "unit": "g", "scale": { "type": "linear" }, "category": "produits-frais", "preparation": "Comté, emmental ou gruyère" },
+    { "id": "parmesan", "name": "Parmesan râpé", "quantity": 30, "unit": "g", "scale": { "type": "linear" }, "category": "produits-frais", "optional": true },
+    { "id": "salt", "name": "Sel", "quantity": null, "unit": "g", "scale": { "type": "to_taste" }, "category": "epicerie", "preparation": "Pour faire dégorger puis assaisonner le gratin; pas de sel ajouté dans la marinade soja" },
+    { "id": "nutmeg", "name": "Noix de muscade", "quantity": null, "unit": "tsp", "scale": { "type": "to_taste" }, "category": "epicerie", "optional": true }
+  ],
+  "equipment": [
+    { "id": "woodfire", "name": "Ninja Woodfire" },
+    { "id": "grill-surface", "name": "Grille/plaque de cuisson Woodfire" },
+    { "id": "roasting-dish", "name": "Plat de cuisson compact allant au Woodfire" },
+    { "id": "thermometer", "name": "Thermomètre/sonde à cœur" },
+    { "id": "oven", "name": "Four" },
+    { "id": "gratin-dish", "name": "Plat à gratin" },
+    { "id": "mixing-bowl", "name": "Saladier" },
+    { "id": "meat-syringe", "name": "Seringue à viande", "optional": true },
+    { "id": "pellets", "name": "Pellets Woodfire", "consumable": true, "displayQuantity": "1 dose" }
+  ],
+  "steps": [
+    {
+      "id": "prepare-marinade",
+      "component": "turkey",
+      "title": "Préparer marinade et éventuelle injection",
+      "summary": "Soja · miel · moutarde · paprika fumé",
+      "durationMin": 5,
+      "resources": [],
+      "details": [
+        "Marinade extérieure : 20 g sauce soja, 25 g miel, 15 g huile, 10 g moutarde, 10–15 g vinaigre de cidre, 6–7 g paprika fumé, 2 gousses d’ail et poivre. Ne pas ajouter de sel.",
+        "Option injection (~60 mL) : 25 g sauce soja + 25 g eau ou jus de pomme + 8 g miel + 2–3 g vinaigre de cidre; filtrer finement et refroidir.",
+        "Avant tout contact avec la dinde crue, réserver un peu de marinade extérieure propre pour le glaçage final."
+      ],
+      "completion": { "type": "manual", "description": "Marinade prête et portion propre réservée pour le glaçage" }
+    },
+    {
+      "id": "coat-inject-turkey",
+      "component": "turkey",
+      "title": "Injecter puis mariner la dinde",
+      "summary": "Injection facultative · puis au frais",
+      "durationMin": 5,
+      "dependencies": [{ "stepId": "prepare-marinade", "relation": "after_finish", "lagMin": 0 }],
+      "resources": ["fridge"],
+      "details": [
+        "Si tu injectes : répartir ~60 mL en plusieurs petits points dans le roulé sans chercher à le saturer.",
+        "Enduire ensuite toute la surface avec la marinade extérieure.",
+        "Placer immédiatement au réfrigérateur. Le planning prévoit environ 1 h 40 de marinade avant la sortie au frais."
+      ],
+      "completion": { "type": "manual", "description": "Dinde marinée et placée au réfrigérateur" }
+    },
+    {
+      "id": "take-out-turkey",
+      "component": "turkey",
+      "title": "Sortir la dinde du réfrigérateur",
+      "summary": "Égoutter légèrement et placer la sonde",
+      "durationMin": 25,
+      "dependencies": [{ "stepId": "coat-inject-turkey", "relation": "after_finish", "lagMin": 100 }],
+      "resources": ["passive"],
+      "details": [
+        "Sortir le roulé environ 25 min avant le fumage.",
+        "Égoutter seulement l’excès de marinade : ne pas rincer.",
+        "Placer la sonde au centre de la partie la plus épaisse."
+      ],
+      "completion": { "type": "manual", "description": "Dinde égouttée, tempérée et sonde correctement placée" }
+    },
+    {
+      "id": "preheat-smoker",
+      "component": "turkey",
+      "title": "Préchauffer le Woodfire",
+      "summary": "SMOKER 125 °C · pellets",
+      "durationMin": 15,
+      "resources": ["woodfire"],
+      "woodfire": { "mode": "SMOKER", "temperatureC": 125, "temperatureRangeC": [120, 130], "smoke": true, "pellets": true, "support": "grill_surface", "covered": false, "placement": "Grille en place, appareil vide pendant le préchauffage." },
+      "details": [
+        "Mode SMOKER, consigne 125 °C, fumée activée et pellets chargés.",
+        "Laisser la grille/plaque en place; aucun plat de marinade dans le Woodfire."
+      ],
+      "completion": { "type": "checkpoint", "description": "Woodfire prêt à recevoir la dinde" }
+    },
+    {
+      "id": "smoke-turkey",
+      "component": "turkey",
+      "title": "Fumer la dinde",
+      "summary": "25 min · directement sur la grille",
+      "durationMin": 25,
+      "dependencies": [
+        { "stepId": "take-out-turkey", "relation": "after_finish", "lagMin": 0 },
+        { "stepId": "preheat-smoker", "relation": "after_finish", "lagMin": 0 }
+      ],
+      "resources": ["woodfire"],
+      "woodfire": { "mode": "SMOKER", "temperatureC": 125, "temperatureRangeC": [120, 130], "smoke": true, "pellets": true, "support": "grill_surface", "covered": false, "placement": "Roulé directement sur la grille, sans plat et sans fond de marinade." },
+      "details": [
+        "Déposer le roulé directement sur la grille.",
+        "Fumer découvert 25 min. Ne pas mettre de marinade liquide sous ou autour de la viande pendant cette phase.",
+        "Objectif : prendre la fumée et commencer à colorer la surface."
+      ],
+      "completion": { "type": "appearance", "description": "Surface légèrement colorée et fumée après environ 25 min" }
+    },
+    {
+      "id": "roast-turkey",
+      "component": "turkey",
+      "title": "Passer en rôtissage",
+      "summary": "BAKE/ROAST 170 °C · découvert",
+      "durationMin": 40,
+      "dependencies": [{ "stepId": "smoke-turkey", "relation": "after_finish", "lagMin": 0 }],
+      "resources": ["woodfire"],
+      "woodfire": { "mode": "BAKE_ROAST", "temperatureC": 170, "smoke": false, "pellets": false, "support": "roasting_dish", "covered": false, "placement": "Dinde dans un plat compact; 50–100 mL de bouillon ou d’eau au fond, sans couvrir la viande." },
+      "details": [
+        "Transférer la dinde dans un plat compact allant au Woodfire.",
+        "Ajouter 50–100 mL de bouillon de volaille ou d’eau au fond du plat. Le liquide ne doit pas recouvrir la viande.",
+        "Ne pas réutiliser la marinade ayant touché la dinde crue.",
+        "Cuire à 170 °C, fumée coupée, plat découvert."
+      ],
+      "completion": { "type": "checkpoint", "description": "Environ 40 min de rôtissage écoulées; prêt pour le glaçage" }
+    },
+    {
+      "id": "glaze-turkey",
+      "component": "turkey",
+      "title": "Glacer la dinde",
+      "summary": "Fine couche de marinade réservée",
+      "durationMin": 0,
+      "dependencies": [{ "stepId": "roast-turkey", "relation": "after_finish", "lagMin": 0 }],
+      "resources": ["woodfire"],
+      "woodfire": { "mode": "BAKE_ROAST", "temperatureC": 170, "smoke": false, "pellets": false, "support": "roasting_dish", "covered": false, "placement": "Même plat, découvert; ouvrir brièvement pour badigeonner." },
+      "details": [
+        "Badigeonner une fine couche de la marinade propre réservée avant contact avec la viande crue.",
+        "Refermer immédiatement pour limiter la perte de chaleur."
+      ],
+      "completion": { "type": "manual", "description": "Dinde glacée et remise en cuisson" }
+    },
+    {
+      "id": "finish-turkey",
+      "component": "turkey",
+      "title": "Finir la cuisson de la dinde",
+      "summary": "Jusqu’à 74 °C à cœur",
+      "durationRangeMin": [10, 20],
+      "durationPlanMin": 15,
+      "dependencies": [{ "stepId": "glaze-turkey", "relation": "after_finish", "lagMin": 0 }],
+      "resources": ["woodfire"],
+      "woodfire": { "mode": "BAKE_ROAST", "temperatureC": 170, "smoke": false, "pellets": false, "support": "roasting_dish", "covered": false, "placement": "Même plat, découvert, sonde au centre du roulé." },
+      "details": [
+        "Poursuivre à 170 °C jusqu’à 74 °C au centre du roulé.",
+        "La durée dépend de l’épaisseur et de la température réelle après le fumage : la sonde est prioritaire sur le chronomètre.",
+        "Si 74 °C n’est pas atteint au contrôle, poursuivre par tranches de 5–10 min."
+      ],
+      "completion": { "type": "combined", "description": "74 °C à cœur et glaçage pris en surface" },
+      "recheck": { "notReadyMin": [5, 10] }
+    },
+    {
+      "id": "rest-turkey",
+      "component": "turkey",
+      "title": "Laisser reposer la dinde",
+      "summary": "10 min · aluminium seulement posé si besoin",
+      "durationMin": 10,
+      "dependencies": [{ "stepId": "finish-turkey", "relation": "after_finish", "lagMin": 0 }],
+      "resources": ["passive"],
+      "details": [
+        "Sortir la dinde à 74 °C et laisser reposer 10 min avant de trancher.",
+        "Ne pas l’enfermer dans l’aluminium : au besoin, poser simplement une feuille très lâche pendant le repos."
+      ],
+      "completion": { "type": "time", "description": "10 min de repos écoulées" }
+    },
+    {
+      "id": "prep-gratin",
+      "component": "zucchini-gratin",
+      "title": "Préparer et monter le gratin",
+      "summary": "Courgettes · crème · œufs · fromage",
+      "durationMin": 45,
+      "resources": [],
+      "details": [
+        "Pour 5 personnes : environ 1,2 kg de courgettes, 300 mL de crème, 3 œufs, 2 gousses d’ail et 100 g de fromage râpé; parmesan facultatif.",
+        "Couper les courgettes en rondelles fines, saler légèrement et laisser dégorger 15–20 min, puis bien égoutter.",
+        "Mélanger crème, œufs, ail, poivre et éventuellement une pincée de muscade.",
+        "Huiler légèrement le plat, disposer les courgettes, verser l’appareil et terminer par le fromage.",
+        "Préchauffer le four à 180–185 °C chaleur tournante pendant la préparation."
+      ],
+      "completion": { "type": "manual", "description": "Gratin monté et four chaud" }
+    },
+    {
+      "id": "bake-gratin",
+      "component": "zucchini-gratin",
+      "title": "Cuire le gratin de courgettes",
+      "summary": "Four 180–185 °C · ~50 min",
+      "durationMin": 50,
+      "dependencies": [{ "stepId": "prep-gratin", "relation": "after_finish", "lagMin": 0 }],
+      "resources": ["oven"],
+      "details": [
+        "Enfourner le gratin découvert à 180–185 °C chaleur tournante.",
+        "Cuire environ 50 min : le centre doit être pris et le dessus bien doré.",
+        "Si le dessus colore trop vite, protéger seulement la surface en fin de cuisson."
+      ],
+      "completion": { "type": "appearance", "description": "Centre pris, courgettes tendres et dessus bien doré" }
+    },
+    {
+      "id": "rest-gratin",
+      "component": "zucchini-gratin",
+      "title": "Laisser poser le gratin",
+      "summary": "15 min avant service",
+      "durationMin": 15,
+      "dependencies": [{ "stepId": "bake-gratin", "relation": "after_finish", "lagMin": 0 }],
+      "resources": ["passive"],
+      "details": [
+        "Sortir le gratin et le laisser poser environ 15 min : il se tiendra mieux au service tout en restant chaud."
+      ],
+      "completion": { "type": "time", "description": "15 min de repos écoulées" }
+    },
+    {
+      "id": "serve",
+      "component": "meal",
+      "title": "À table",
+      "summary": "Trancher la dinde et servir avec le gratin",
+      "durationMin": 0,
+      "plan": { "anchor": "serve" },
+      "dependencies": [
+        { "stepId": "rest-turkey", "relation": "after_finish", "lagMin": 0 },
+        { "stepId": "rest-gratin", "relation": "after_finish", "lagMin": 0 }
+      ],
+      "resources": [],
+      "details": [
+        "Trancher le roulé après son repos et servir immédiatement avec le gratin de courgettes.",
+        "La température à cœur est le critère final de la dinde : si elle prend du retard, décaler le service plutôt que de la sortir insuffisamment cuite."
+      ],
+      "completion": { "type": "manual", "description": "Repas servi" }
+    }
+  ]
+}
