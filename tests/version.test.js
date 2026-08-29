@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-const expectedVersion = '0.2.1-dev.1';
+const expectedVersion = '0.3.0-dev.1';
 
 test('development version is consistent across package, UI and service worker cache', async () => {
   const [packageText, indexHtml, serviceWorker] = await Promise.all([
@@ -10,7 +10,6 @@ test('development version is consistent across package, UI and service worker ca
     readFile(new URL('../index.html', import.meta.url), 'utf8'),
     readFile(new URL('../service-worker.js', import.meta.url), 'utf8')
   ]);
-
   const packageJson = JSON.parse(packageText);
   assert.equal(packageJson.version, expectedVersion);
   assert.match(indexHtml, new RegExp(`v${expectedVersion.replaceAll('.', '\\.')}`));

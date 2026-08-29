@@ -1,4 +1,4 @@
-const APP_VERSION = '0.2.1-dev.1';
+const APP_VERSION = '0.3.0-dev.1';
 const CACHE_NAME = `woodfire-companion-${APP_VERSION}`;
 const APP_ASSETS = [
   './',
@@ -8,6 +8,8 @@ const APP_ASSETS = [
   './js/planner.js',
   './js/recipe.js',
   './js/recipe-loader.js',
+  './js/library.js',
+  './recipes/index.json',
   './recipes/pork-belly-burnt-ends.json',
   './manifest.webmanifest',
   './icons/icon-192.png',
@@ -28,7 +30,6 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
-
   const requestUrl = new URL(event.request.url);
   if (requestUrl.origin !== self.location.origin) return;
 

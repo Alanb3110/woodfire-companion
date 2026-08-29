@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#0a0a0b" />
+  <meta name="theme-color" content="#090909" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Woodfire" />
@@ -15,93 +15,195 @@
 <body>
   <main class="app-shell">
     <header class="topbar">
-      <div>
-        <div class="brand-line">
-          <p class="eyebrow">WOODFIRE COMPANION</p>
-          <span class="version-badge" aria-label="Version de développement">DEV · v0.2.1-dev.1</span>
-        </div>
-        <h1 id="cookTitle">Chargement…</h1>
+      <div class="brand-line">
+        <span class="eyebrow">WOODFIRE COMPANION</span>
+        <span class="dev-badge">DEV · v0.3.0-dev.1</span>
       </div>
       <button id="installHelpBtn" class="icon-btn" type="button" aria-label="Aide installation">i</button>
     </header>
 
-    <nav class="tabs" aria-label="Navigation principale">
-      <button class="tab active" data-tab="planning" type="button">Planning</button>
-      <button class="tab" data-tab="temperature" type="button">Température</button>
-    </nav>
+    <div id="appError" class="app-error" hidden></div>
 
-    <section id="planning" class="tab-panel active" aria-labelledby="planning-tab">
-      <div class="panel controls-panel">
-        <label class="field-label" for="mealTime">Heure du repas</label>
-        <div class="time-row">
-          <input id="mealTime" type="time" value="20:00" />
-          <button id="resetChecklistBtn" class="secondary-btn" type="button">Réinitialiser</button>
-        </div>
-
-        <div class="status-card" aria-live="polite">
-          <span class="status-label">Prochaine étape</span>
-          <strong id="nextTaskName">—</strong>
-          <span id="nextTaskCountdown" class="status-meta">—</span>
-        </div>
-
-        <div class="shift-row" aria-label="Décaler les étapes restantes">
-          <span>Retard ? Décaler la suite :</span>
-          <button class="chip-btn" data-shift="5" type="button">+5 min</button>
-          <button class="chip-btn" data-shift="10" type="button">+10 min</button>
-          <button class="chip-btn" data-shift="15" type="button">+15 min</button>
-        </div>
+    <section id="libraryView" class="app-view">
+      <div class="page-heading">
+        <p class="kicker">BIBLIOTHÈQUE</p>
+        <h1>Qu’est-ce qu’on cuisine ?</h1>
+        <p>Choisis un repas. Woodfire Companion calculera ensuite les quantités et le déroulé à partir de ton heure de service.</p>
       </div>
 
-      <div id="taskList" class="task-list"></div>
+      <button id="resumeCookBtn" class="resume-card" type="button" hidden>
+        <span class="resume-label">CUISSON EN COURS</span>
+        <strong id="resumeCookTitle">Reprendre la cuisson</strong>
+        <span id="resumeCookMeta">›</span>
+      </button>
+
+      <div id="recipeGrid" class="recipe-grid" aria-live="polite"></div>
     </section>
 
-    <section id="temperature" class="tab-panel" aria-labelledby="temperature-tab">
-      <div class="panel temperature-entry">
-        <label class="field-label" for="temperatureInput">Température à cœur</label>
-        <div class="temperature-input-row">
-          <input id="temperatureInput" inputmode="decimal" type="number" min="0" max="150" step="0.1" placeholder="93" aria-describedby="tempValidation" />
-          <span class="unit">°C</span>
-          <button id="addTemperatureBtn" class="primary-btn" type="button">Ajouter</button>
-        </div>
-        <p id="tempValidation" class="validation" role="alert"></p>
-      </div>
+    <section id="recipeView" class="app-view" hidden>
+      <button id="backToLibraryBtn" class="back-btn" type="button">‹ Bibliothèque</button>
 
-      <div class="metric-grid">
-        <div class="metric-card">
-          <span>Dernière mesure</span>
-          <strong id="lastTemperature">—</strong>
+      <article class="recipe-detail">
+        <div id="recipeHero" class="recipe-hero theme-embers">
+          <span id="recipeHeroSymbol" class="hero-symbol">🔥</span>
+          <span id="recipeHeroEyebrow" class="hero-eyebrow">WOODFIRE</span>
         </div>
-        <div class="metric-card">
-          <span>Heure</span>
-          <strong id="lastTemperatureTime">—</strong>
-        </div>
-        <div class="metric-card">
-          <label for="targetTemperature">Cible</label>
-          <div><input id="targetTemperature" type="number" min="30" max="120" step="1" value="93" /><span> °C</span></div>
-        </div>
-      </div>
 
-      <div class="panel chart-panel">
-        <div class="chart-header">
-          <div>
-            <span class="field-label">Courbe de cuisson</span>
-            <p id="measurementCount">0 mesure</p>
+        <div class="recipe-copy">
+          <div id="recipeTags" class="tag-row"></div>
+          <h1 id="recipeTitle">Chargement…</h1>
+          <p id="recipeDescription" class="recipe-description"></p>
+          <div id="recipeMeta" class="recipe-meta"></div>
+        </div>
+
+        <section class="panel config-panel">
+          <div class="section-heading compact-heading">
+            <div>
+              <span class="field-label">Configurer le repas</span>
+              <strong>Pour combien, et à quelle heure ?</strong>
+            </div>
           </div>
-          <div class="chart-actions">
-            <button id="undoMeasurementBtn" class="secondary-btn" type="button">Annuler</button>
-            <button id="newCookBtn" class="secondary-btn danger" type="button">Nouvelle cuisson</button>
+
+          <div class="config-grid">
+            <div class="config-field">
+              <span class="field-label">Personnes</span>
+              <div class="stepper" aria-label="Nombre de personnes">
+                <button id="servingsMinusBtn" type="button" aria-label="Réduire le nombre de personnes">−</button>
+                <strong id="servingsValue">4</strong>
+                <button id="servingsPlusBtn" type="button" aria-label="Augmenter le nombre de personnes">+</button>
+              </div>
+            </div>
+
+            <div class="config-field">
+              <span class="field-label">Heure du repas</span>
+              <div class="time-picker" aria-label="Heure du repas au format 24 heures">
+                <select id="configMealHour" aria-label="Heure"></select>
+                <span>:</span>
+                <select id="configMealMinute" aria-label="Minutes"></select>
+              </div>
+            </div>
           </div>
+
+          <div id="startTimeHint" class="start-hint"></div>
+          <button id="startCookBtn" class="primary-btn wide-btn" type="button">Préparer ce repas</button>
+        </section>
+
+        <section class="detail-section">
+          <div class="section-heading">
+            <div>
+              <span class="field-label">Repas</span>
+              <strong>Ce qui est prévu</strong>
+            </div>
+          </div>
+          <div id="componentList" class="component-list"></div>
+        </section>
+
+        <section class="detail-section">
+          <div class="section-heading">
+            <div>
+              <span class="field-label">Ingrédients</span>
+              <strong id="ingredientsHeading">Pour 4 personnes</strong>
+            </div>
+          </div>
+          <div id="ingredientPreview" class="ingredient-preview"></div>
+        </section>
+      </article>
+    </section>
+
+    <section id="cookView" class="app-view" hidden>
+      <div class="cook-heading">
+        <button id="cookHomeBtn" class="back-btn" type="button">‹ Recettes</button>
+        <div>
+          <p class="kicker">CUISSON EN COURS</p>
+          <h1 id="cookTitle">Chargement…</h1>
+          <p id="cookSubtitle" class="cook-subtitle"></p>
         </div>
-        <div id="chartContainer" class="chart-container" aria-label="Courbe de température"></div>
       </div>
 
-      <div class="panel measurements-panel">
-        <div class="section-heading">
-          <strong>Mesures</strong>
-          <button id="exportCsvBtn" class="text-btn" type="button">Exporter CSV</button>
+      <nav class="tabs" aria-label="Navigation cuisson">
+        <button class="tab active" data-tab="planning" type="button">Planning</button>
+        <button class="tab" data-tab="temperature" type="button">Température</button>
+      </nav>
+
+      <section id="planning" class="tab-panel active">
+        <div class="panel controls-panel">
+          <div class="cook-time-row">
+            <div>
+              <span class="field-label">Heure du repas</span>
+              <div class="time-picker compact-time-picker" aria-label="Heure du repas au format 24 heures">
+                <select id="cookMealHour" aria-label="Heure"></select>
+                <span>:</span>
+                <select id="cookMealMinute" aria-label="Minutes"></select>
+              </div>
+            </div>
+            <button id="resetChecklistBtn" class="secondary-btn" type="button">Réinitialiser</button>
+          </div>
+
+          <div class="status-card" aria-live="polite">
+            <span class="status-label">Prochaine étape</span>
+            <strong id="nextTaskName">—</strong>
+            <span id="nextTaskCountdown" class="status-meta">—</span>
+          </div>
+
+          <div class="shift-row" aria-label="Décaler les étapes restantes">
+            <span>Retard ? Décaler la suite :</span>
+            <button class="chip-btn" data-shift="5" type="button">+5 min</button>
+            <button class="chip-btn" data-shift="10" type="button">+10 min</button>
+            <button class="chip-btn" data-shift="15" type="button">+15 min</button>
+          </div>
         </div>
-        <div id="measurementList" class="measurement-list"></div>
-      </div>
+
+        <div id="taskList" class="task-list"></div>
+      </section>
+
+      <section id="temperature" class="tab-panel">
+        <div class="panel temperature-entry">
+          <label class="field-label" for="temperatureInput">Température à cœur</label>
+          <div class="temperature-input-row">
+            <input id="temperatureInput" inputmode="decimal" type="number" min="0" max="150" step="0.1" placeholder="93" aria-describedby="tempValidation" />
+            <span class="unit">°C</span>
+            <button id="addTemperatureBtn" class="primary-btn" type="button">Ajouter</button>
+          </div>
+          <p id="tempValidation" class="validation" role="alert"></p>
+        </div>
+
+        <div class="metric-grid">
+          <div class="metric-card">
+            <span>Dernière mesure</span>
+            <strong id="lastTemperature">—</strong>
+          </div>
+          <div class="metric-card">
+            <span>Heure</span>
+            <strong id="lastTemperatureTime">—</strong>
+          </div>
+          <div class="metric-card">
+            <label for="targetTemperature">Cible</label>
+            <div><input id="targetTemperature" type="number" min="30" max="120" step="1" value="93" /><span> °C</span></div>
+          </div>
+        </div>
+
+        <div class="panel chart-panel">
+          <div class="chart-header">
+            <div>
+              <span class="field-label">Courbe de cuisson</span>
+              <p id="measurementCount">0 mesure</p>
+            </div>
+            <div class="chart-actions">
+              <button id="undoMeasurementBtn" class="secondary-btn" type="button">Annuler</button>
+              <button id="newCookBtn" class="secondary-btn danger" type="button">Nouvelle cuisson</button>
+            </div>
+          </div>
+          <div id="chartContainer" class="chart-container" aria-label="Courbe de température"></div>
+        </div>
+
+        <div class="panel measurements-panel">
+          <div class="section-heading">
+            <strong>Mesures</strong>
+            <button id="exportCsvBtn" class="text-btn" type="button">Exporter CSV</button>
+          </div>
+          <div id="measurementList" class="measurement-list"></div>
+        </div>
+      </section>
     </section>
 
     <dialog id="installDialog">
