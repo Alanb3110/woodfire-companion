@@ -1,6 +1,6 @@
 {
   "name": "woodfire-companion",
-  "version": "0.3.0-dev.1",
+  "version": "0.3.0-dev.2",
   "private": true,
   "type": "module",
   "scripts": {
