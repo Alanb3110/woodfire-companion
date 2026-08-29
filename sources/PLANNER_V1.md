@@ -3,7 +3,7 @@
 ## Scope
 Planner V1 replaces direct fixed-offset placement as the primary scheduling mechanism. It is a pure/testable scheduling layer: recipe data defines durations, dependencies, serving anchors and resources; the engine produces timestamps around the desired serving time.
 
-The active-cook UI is migrated separately so planner semantics can be validated without mixing them with visual changes.
+The active-cook UI feeds real progress and pending rechecks back into the same planner rather than maintaining a second timing model.
 
 ## Primary anchor
 The desired serving time is represented by a step with:
@@ -15,6 +15,8 @@ The desired serving time is represented by a step with:
 Optional `anchorOffsetMin` may place an anchored step relative to service.
 
 Planner V1 works backwards from anchored steps to place their prerequisites as late as practical while respecting durations and declared planning gaps.
+
+The active session stores `targetServingAt` as an absolute timestamp. Editing only the meal clock time chooses the closest calendar-day occurrence to the previous target, so a change such as 20:00 → 05:00 near midnight does not silently jump to 05:00 on the wrong day. A newly started cook targets the next future occurrence of the selected clock time.
 
 ## Dependencies
 Supported relations remain:
@@ -46,6 +48,8 @@ A planning buffer is deliberately different from a hard lag:
 - downstream tasks move only after the buffer has been exhausted.
 
 This is the mechanism for protecting uncertain checkpoints without blindly moving unrelated work.
+
+For example, the Pork Belly meal has 35 minutes of margin after its first tenderness check. An `Encore ferme` observation that requests a 20 minute recheck can therefore be absorbed without changing later timestamps when the cook is otherwise on plan. A later recheck that exceeds the remaining margin propagates through dependent work and may move service.
 
 ## Migration from fixed offsets
 `preferredStartOffsetMin` remains accepted during migration, but it is no longer the primary placement algorithm.
@@ -86,6 +90,7 @@ Baseline:
 Real cook:
 - completed timestamps are historical facts and are never rewritten;
 - explicit delays move the affected task;
+- pending rechecks extend the expected finish of the affected step until the next observation deadline;
 - hard dependencies propagate only when violated;
 - planning buffers may absorb delay;
 - Woodfire conflicts push unfinished work later when necessary;
@@ -93,23 +98,22 @@ Real cook:
 
 This follows the project rule that food quality must not be sacrificed solely to preserve the planned clock time.
 
-## Actual completion timestamps
-`buildSchedule()` accepts `actualCompletionTimes` for completed steps.
+## Actual vs expected completion timestamps
+`buildSchedule()` accepts two distinct runtime maps:
 
-For a completed step:
-- its actual end time replaces its planned end for downstream constraint evaluation;
-- subsequent unfinished steps are moved only if hard dependencies/resources require it;
-- the original baseline remains available on schedule items as `baselineStart` / `baselineEnd`.
+- `actualCompletionTimes` — historical facts for completed steps;
+- `expectedCompletionTimes` — temporary not-before finish expectations, currently used by pending observation rechecks.
 
-## Current UI compatibility
-The existing active-cook UI still uses the older global shift behavior. Planner V1 retains `shiftDependentTasks()` temporarily for compatibility.
+For a completed step, its actual end time replaces its planned end for downstream constraint evaluation.
 
-The next active-cook increment should:
-- record a delay/observation against the affected next/current step;
-- use `addStepDelay()` for that step only;
-- call `buildSchedule()` with actual completion times;
-- let the planner determine what downstream work truly moves;
-- stop blindly adding the same shift to every unfinished task.
+For a pending recheck, the planned end is extended to the recheck deadline when that deadline is later. The step remains incomplete. This lets downstream dependencies react to continued cooking without pretending that the food is already done.
+
+`buildMealSchedule(recipe, context)` forwards both maps so UI code does not bypass the stable meal-planner facade.
+
+## Next-action ordering
+The schedule remains chronologically sorted by actual planner timestamps. The active-cook next-action selector may additionally receive `nextActionTimes`, such as pending recheck deadlines.
+
+This matters for parallel work: a checkpoint that started earlier but is waiting until 18:35 must not hide an independent task genuinely due at 18:20.
 
 ## Validation/tests
 Planner V1 tests cover:
@@ -121,12 +125,13 @@ Planner V1 tests cover:
 - planning-buffer absorption;
 - service slippage once a buffer is exhausted;
 - actual completion propagation;
-- compatibility with existing downstream-shift utilities.
+- pending recheck propagation beyond remaining buffer;
+- pending recheck absorption inside remaining buffer;
+- cross-midnight meal-time edits;
+- next-action ordering with recheck deadlines.
 
 ## Not yet in V1
 Deferred to subsequent increments:
-- observation buttons (`Encore ferme`, `Presque prêt`, `Très tendre`);
-- automatic recheck generation;
 - temperature-slope ETA;
 - historical-session learning;
 - multiple capacity-limited resources beyond the single exclusive Woodfire;

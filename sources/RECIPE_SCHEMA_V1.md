@@ -93,7 +93,11 @@ The planned duration supports scheduling; the completion criterion remains autho
 ### Recheck
 When a step declares `recheck.notReadyMin`, it must be a positive duration or positive `[min, max]` range.
 
-The active observation/recheck UI is still future work; validation protects the data contract now.
+The active-cook UI now promotes such steps into structured observation controls. V1 derives the user-facing choices from the existing completion type, completion description, recipe temperature target and recheck interval rather than adding a second observation-label schema.
+
+A not-ready observation schedules a future recheck while leaving the step incomplete. A ready observation records the actual completion timestamp. This preserves the distinction between estimated duration and real cooking state, allowing Planner V1 buffers/dependencies to decide what downstream work actually moves.
+
+See `sources/OBSERVATIONS_V1.md`.
 
 ## Dependencies
 Supported relations:
@@ -163,12 +167,14 @@ Critical appliance state must not live only in prose.
 ## Testing
 The repository contains both reference-recipe tests and synthetic contract fixtures. In addition, the multi-recipe acceptance suite applies the executable contract automatically to every library entry marked `available`.
 
-See `sources/MULTI_RECIPE_CONTRACT.md`.
+Observation tests cover label derivation, scheduled rechecks, actual completion and persistence helpers for both tenderness-driven Pork Belly and temperature-driven turkey.
+
+See `sources/MULTI_RECIPE_CONTRACT.md` and `sources/OBSERVATIONS_V1.md`.
 
 ## Next schema work
 1. Pass serving/configuration context into the planner for capacity/batch-dependent timing.
 2. Add structured ingredient usage by step to eliminate scaling-sensitive quantities duplicated in prose.
 3. Make temperature tracking explicitly optional per recipe.
 4. Add a flexible planning-window concept when a real recipe requires it.
-5. Promote observation/recheck outcomes into active-cook controls.
+5. Add curated observation labels only if a real recipe cannot be represented clearly by V1-derived controls.
 6. Add richer resources such as user attention only when real meal plans demonstrate the need.

@@ -8,17 +8,28 @@ import {
   createSessionId,
   loadJournal,
   removeJournalEntry,
+  resolveServiceStep,
   upsertJournalEntry
 } from './js/journal.js';
 import { renderJournalEntries } from './js/journal-ui.js';
+import { buildMealSchedule, resolveSessionServingTarget } from './js/meal-planner.js';
 import {
   addStepDelay,
-  buildSchedule,
+  closestMealAnchorDate,
   findDependencyIssues,
   findResourceConflicts,
   getNextScheduledTask,
-  mealAnchorDate
+  mealAnchorDate,
+  nextMealAnchorDate
 } from './js/planner.js';
+import {
+  applyObservation,
+  clearPendingRecheck,
+  getObservationOptions,
+  observationsForStep,
+  pendingRecheckDate,
+  resolveObservationDelayMin
+} from './js/observations.js';
 
 const STORAGE_KEY = 'woodfire-companion-v1';
 const LIBRARY_URL = './recipes/index.json';
@@ -29,6 +40,8 @@ const defaultState = () => ({
   servings: 4,
   completed: {},
   taskShifts: {},
+  observations: [],
+  rechecks: {},
   temperatureTarget: 93,
   measurements: [],
   cookStartedAt: null,
@@ -105,7 +118,8 @@ function firstKnownSessionTimestamp(value) {
   const candidates = [
     value.sessionStartedAt,
     value.cookStartedAt,
-    ...Object.values(value.completed || {})
+    ...Object.values(value.completed || {}),
+    ...(value.observations || []).map(item => item.timestamp)
   ].filter(Boolean).sort();
   return candidates[0] || new Date().toISOString();
 }
@@ -116,7 +130,12 @@ function loadState() {
     if (!raw) return defaultState();
     const parsed = JSON.parse(raw);
     const merged = { ...defaultState(), ...parsed };
-    const hasProgress = Object.keys(parsed.completed || {}).length > 0 || (parsed.measurements || []).length > 0 || Boolean(parsed.cookStartedAt);
+    const hasProgress = Object.keys(parsed.completed || {}).length > 0
+      || (parsed.measurements || []).length > 0
+      || (parsed.observations || []).length > 0
+      || Object.keys(parsed.rechecks || {}).length > 0
+      || Boolean(parsed.cookStartedAt)
+      || Boolean(parsed.sessionStartedAt && parsed.recipeId);
     if (!parsed.view) merged.view = hasProgress ? 'cook' : 'library';
 
     if (hasProgress && !merged.sessionId) {
@@ -124,7 +143,13 @@ function loadState() {
       merged.sessionId = createSessionId(new Date(merged.sessionStartedAt));
     }
     if (hasProgress && !merged.sessionStartedAt) merged.sessionStartedAt = firstKnownSessionTimestamp(merged);
-    if (hasProgress && !merged.targetServingAt) merged.targetServingAt = mealAnchorDate(merged.mealTime || '20:00', new Date()).toISOString();
+    if (hasProgress && merged.sessionStartedAt) {
+      merged.targetServingAt = resolveSessionServingTarget({
+        mealTime: merged.mealTime || '20:00',
+        targetServingAt: merged.targetServingAt,
+        sessionStartedAt: merged.sessionStartedAt
+      }).toISOString();
+    }
     return merged;
   } catch (error) {
     console.warn('État local illisible, réinitialisation.', error);
@@ -149,6 +174,8 @@ function clearError() {
 function hasSessionProgress() {
   return Object.keys(state.completed || {}).length > 0
     || state.measurements.length > 0
+    || state.observations.length > 0
+    || Object.keys(state.rechecks || {}).length > 0
     || Boolean(state.cookStartedAt)
     || Boolean(state.sessionStartedAt && state.recipeId);
 }
@@ -399,12 +426,19 @@ function ensureSessionMetadata(resetSession) {
     state.sessionId = createSessionId(now);
     state.sessionStartedAt = now.toISOString();
     state.sessionServedAt = null;
-    state.targetServingAt = mealAnchorDate(configMealTime, now).toISOString();
+    state.targetServingAt = resolveSessionServingTarget({
+      mealTime: configMealTime,
+      sessionStartedAt: state.sessionStartedAt
+    }).toISOString();
     return;
   }
   if (!state.sessionStartedAt) state.sessionStartedAt = firstKnownSessionTimestamp(state);
   if (!state.sessionId) state.sessionId = createSessionId(new Date(state.sessionStartedAt));
-  if (!state.targetServingAt) state.targetServingAt = mealAnchorDate(configMealTime, now).toISOString();
+  state.targetServingAt = resolveSessionServingTarget({
+    mealTime: configMealTime,
+    targetServingAt: state.targetServingAt,
+    sessionStartedAt: state.sessionStartedAt
+  }).toISOString();
 }
 
 async function activateRecipe(entry, loadedRecipe, resetSession) {
@@ -413,6 +447,8 @@ async function activateRecipe(entry, loadedRecipe, resetSession) {
   if (resetSession) {
     state.completed = {};
     state.taskShifts = {};
+    state.observations = [];
+    state.rechecks = {};
     state.measurements = [];
     state.cookStartedAt = null;
   }
@@ -437,7 +473,7 @@ async function activateRecipe(entry, loadedRecipe, resetSession) {
 async function startConfiguredCook() {
   if (!selectedRecipe || !selectedEntry) return;
   if (hasSessionProgress() && !state.sessionServedAt) {
-    const ok = confirm('Démarrer ce repas comme nouvelle cuisson ? Les cases cochées et mesures de la cuisson en cours seront effacées.');
+    const ok = confirm('Démarrer ce repas comme nouvelle cuisson ? Les cases cochées, observations et mesures de la cuisson en cours seront effacées.');
     if (!ok) return;
   }
   await activateRecipe(selectedEntry, selectedRecipe, true);
@@ -471,9 +507,12 @@ function renderCookShell() {
 
 function recomputeSchedule() {
   if (!recipe) return;
-  const referenceDate = state.targetServingAt ? new Date(state.targetServingAt) : new Date();
-  schedule = buildSchedule(recipe, state.mealTime, referenceDate, state.taskShifts, {
-    actualCompletionTimes: state.completed
+  schedule = buildMealSchedule(recipe, {
+    servings: state.servings,
+    targetServingAt: state.targetServingAt,
+    taskShifts: state.taskShifts,
+    actualCompletionTimes: state.completed,
+    expectedCompletionTimes: state.rechecks
   });
   const dependencyIssues = findDependencyIssues(recipe, schedule);
   const woodfireConflicts = findResourceConflicts(schedule, 'woodfire');
@@ -482,7 +521,13 @@ function recomputeSchedule() {
 }
 
 function serveStep() {
-  return recipe?.steps.find(step => step.plan?.anchor === 'serve') || null;
+  if (!recipe) return null;
+  try {
+    return resolveServiceStep(recipe);
+  } catch (error) {
+    console.warn('Service step resolution failed:', error);
+    return null;
+  }
 }
 
 function syncJournal() {
@@ -503,12 +548,94 @@ function syncJournal() {
   saveState();
 }
 
+function applyStepObservation(step, option) {
+  const result = applyObservation({
+    observations: state.observations,
+    rechecks: state.rechecks,
+    completed: state.completed
+  }, step, option, new Date());
+
+  state.observations = result.observations;
+  state.rechecks = result.rechecks;
+  state.completed = result.completed;
+  if (!state.cookStartedAt) state.cookStartedAt = result.record.timestamp;
+  saveState();
+  recomputeSchedule();
+  syncJournal();
+  renderTasks();
+  renderLibrary();
+}
+
+function renderObservationControls(detail, step) {
+  const options = getObservationOptions(step, recipe);
+  if (!options.length) return;
+
+  const panel = document.createElement('div');
+  panel.className = 'observation-panel';
+
+  const heading = document.createElement('div');
+  heading.className = 'observation-heading';
+  const label = document.createElement('strong');
+  label.textContent = 'Observation';
+  const criterion = document.createElement('span');
+  criterion.textContent = step.completion?.description || 'Choisir l’état observé.';
+  heading.append(label, criterion);
+  panel.appendChild(heading);
+
+  if (!state.completed[step.id]) {
+    const actions = document.createElement('div');
+    actions.className = 'observation-actions';
+    for (const option of options) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = `observation-btn ${option.outcome === 'complete' ? 'observation-ready' : ''}`;
+      const delay = option.outcome === 'recheck' ? resolveObservationDelayMin(step, option) : null;
+      button.textContent = delay ? `${option.label} · ${delay} min` : option.label;
+      button.addEventListener('click', () => applyStepObservation(step, option));
+      actions.appendChild(button);
+    }
+    panel.appendChild(actions);
+  }
+
+  const pending = pendingRecheckDate(state.rechecks, step.id);
+  if (pending && !state.completed[step.id]) {
+    const due = document.createElement('div');
+    due.className = 'recheck-due';
+    due.textContent = `Recontrôle prévu à ${formatTime(pending)}`;
+    panel.appendChild(due);
+  }
+
+  const history = observationsForStep(state.observations, step.id).slice(-3).reverse();
+  if (history.length) {
+    const historyBox = document.createElement('div');
+    historyBox.className = 'observation-history';
+    for (const observation of history) {
+      const row = document.createElement('div');
+      const at = document.createElement('span');
+      at.textContent = formatTime(new Date(observation.timestamp));
+      const text = document.createElement('span');
+      const recheck = observation.recheckDueAt ? ` → recontrôle ${formatTime(new Date(observation.recheckDueAt))}` : '';
+      text.textContent = `${observation.label}${recheck}`;
+      row.append(at, text);
+      historyBox.appendChild(row);
+    }
+    panel.appendChild(historyBox);
+  }
+
+  detail.appendChild(panel);
+}
+
 function renderTasks() {
   taskList.innerHTML = '';
   for (const item of schedule) {
     const step = item.step;
+    const pending = pendingRecheckDate(state.rechecks, step.id);
+    const classes = ['task-card'];
+    if (state.completed[step.id]) classes.push('completed');
+    if (pending && !state.completed[step.id]) classes.push('awaiting-recheck');
+
     const card = document.createElement('article');
-    card.className = `task-card${state.completed[step.id] ? ' completed' : ''}`;
+    card.className = classes.join(' ');
     card.dataset.taskId = step.id;
 
     const main = document.createElement('div');
@@ -522,6 +649,7 @@ function renderTasks() {
     check.addEventListener('change', () => {
       if (check.checked) state.completed[step.id] = new Date().toISOString();
       else delete state.completed[step.id];
+      state.rechecks = clearPendingRecheck(state.rechecks, step.id);
       saveState();
       recomputeSchedule();
       syncJournal();
@@ -531,14 +659,17 @@ function renderTasks() {
 
     const time = document.createElement('div');
     time.className = 'task-time';
-    time.textContent = formatTime(item.start);
+    time.textContent = formatTime(pending && !state.completed[step.id] ? pending : item.start);
 
     const title = document.createElement('div');
     title.className = 'task-title';
     const strong = document.createElement('strong');
     strong.textContent = step.title;
     const sub = document.createElement('span');
-    sub.textContent = step.summary || '';
+    const baseSummary = step.summary || '';
+    sub.textContent = pending && !state.completed[step.id]
+      ? `${baseSummary}${baseSummary ? ' · ' : ''}Recontrôle ${formatTime(pending)}`
+      : baseSummary;
     title.append(strong, sub);
 
     const detailsBtn = document.createElement('button');
@@ -563,6 +694,14 @@ function renderTasks() {
       mode.textContent = formatWoodfireSummary(step);
       detail.appendChild(mode);
     }
+
+    if (step.completion?.description) {
+      const criterion = document.createElement('div');
+      criterion.className = 'completion-criterion';
+      criterion.textContent = `Critère de fin · ${step.completion.description}`;
+      detail.appendChild(criterion);
+    }
+
     const ul = document.createElement('ul');
     for (const detailText of step.details || []) {
       const li = document.createElement('li');
@@ -570,6 +709,8 @@ function renderTasks() {
       ul.appendChild(li);
     }
     detail.appendChild(ul);
+
+    renderObservationControls(detail, step);
 
     if (state.completed[step.id]) {
       const completion = document.createElement('div');
@@ -586,24 +727,41 @@ function renderTasks() {
 
 function updateNextTask() {
   if (!recipe) return;
-  const next = getNextScheduledTask(schedule, state.completed);
+  const next = getNextScheduledTask(schedule, state.completed, state.rechecks);
   if (!next) {
     nextTaskName.textContent = 'Checklist terminée';
     nextTaskCountdown.textContent = 'Tout est prêt.';
     return;
   }
+
+  const pending = pendingRecheckDate(state.rechecks, next.step.id);
+  const target = pending || next.start;
   const now = new Date();
-  const deltaMin = Math.round((next.start - now) / 60000);
-  nextTaskName.textContent = `${formatTime(next.start)} · ${next.step.title}`;
+  const deltaMin = Math.round((target - now) / 60000);
+
+  nextTaskName.textContent = `${formatTime(target)} · ${pending ? 'Recontrôler · ' : ''}${next.step.title}`;
+  if (pending) {
+    if (deltaMin > 1) nextTaskCountdown.textContent = `Recontrôle dans ${deltaMin} min`;
+    else if (deltaMin >= -1) nextTaskCountdown.textContent = 'Recontrôle maintenant';
+    else nextTaskCountdown.textContent = `Recontrôle en retard de ${Math.abs(deltaMin)} min`;
+    return;
+  }
+
   if (deltaMin > 1) nextTaskCountdown.textContent = `Dans ${deltaMin} min`;
   else if (deltaMin >= -1) nextTaskCountdown.textContent = 'Maintenant';
   else nextTaskCountdown.textContent = `En retard de ${Math.abs(deltaMin)} min`;
 }
 
 function shiftRemainingTasks(minutes) {
-  const nextTask = getNextScheduledTask(schedule, state.completed);
+  const nextTask = getNextScheduledTask(schedule, state.completed, state.rechecks);
   if (!nextTask) return;
-  state.taskShifts = addStepDelay(state.taskShifts, nextTask.step.id, minutes);
+
+  const pending = pendingRecheckDate(state.rechecks, nextTask.step.id);
+  if (pending) {
+    state.rechecks[nextTask.step.id] = new Date(pending.getTime() + minutes * 60000).toISOString();
+  } else {
+    state.taskShifts = addStepDelay(state.taskShifts, nextTask.step.id, minutes);
+  }
   saveState();
   recomputeSchedule();
   renderTasks();
@@ -618,9 +776,13 @@ function switchTab(tabName, persist = true) {
 }
 
 function updateCookTime() {
-  const reference = state.targetServingAt ? new Date(state.targetServingAt) : new Date();
+  const reference = state.targetServingAt;
   state.mealTime = readTimePicker(cookMealHour, cookMealMinute);
-  state.targetServingAt = mealAnchorDate(state.mealTime, reference).toISOString();
+  state.targetServingAt = resolveSessionServingTarget({
+    mealTime: state.mealTime,
+    targetServingAt: reference,
+    sessionStartedAt: state.sessionStartedAt || new Date().toISOString()
+  }).toISOString();
   saveState();
   renderCookShell();
   recomputeSchedule();
@@ -754,9 +916,11 @@ function bindEvents() {
   document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
 
   resetChecklistBtn.addEventListener('click', () => {
-    if (!confirm('Réinitialiser toutes les cases et les décalages du planning ?')) return;
+    if (!confirm('Réinitialiser toutes les cases, observations et décalages du planning ?')) return;
     state.completed = {};
     state.taskShifts = {};
+    state.observations = [];
+    state.rechecks = {};
     state.sessionServedAt = null;
     saveState();
     recomputeSchedule();

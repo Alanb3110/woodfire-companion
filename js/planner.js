@@ -17,6 +17,26 @@ export function mealAnchorDate(mealTime, referenceDate = new Date()) {
   return base;
 }
 
+export function closestMealAnchorDate(mealTime, referenceDate = new Date()) {
+  const reference = new Date(referenceDate);
+  if (Number.isNaN(reference.getTime())) throw new Error('Invalid reference date.');
+  const sameDay = mealAnchorDate(mealTime, reference);
+  const previous = new Date(sameDay);
+  previous.setDate(previous.getDate() - 1);
+  const next = new Date(sameDay);
+  next.setDate(next.getDate() + 1);
+  return [previous, sameDay, next]
+    .sort((a, b) => Math.abs(a - reference) - Math.abs(b - reference))[0];
+}
+
+export function nextMealAnchorDate(mealTime, referenceDate = new Date()) {
+  const reference = new Date(referenceDate);
+  if (Number.isNaN(reference.getTime())) throw new Error('Invalid reference date.');
+  const anchor = mealAnchorDate(mealTime, reference);
+  if (anchor.getTime() <= reference.getTime()) anchor.setDate(anchor.getDate() + 1);
+  return anchor;
+}
+
 export function plannedDurationMin(step) {
   if (isFiniteNumber(step.durationPlanMin)) return step.durationPlanMin;
   if (isFiniteNumber(step.durationMin)) return step.durationMin;
@@ -123,7 +143,6 @@ function buildBaselineStarts(recipe, anchor) {
   }
 
   if (!starts.size) {
-    // Compatibility path for older recipes that only contain fixed offsets.
     for (const step of ordered) {
       const preferred = legacyPreferredStartMs(step, anchor);
       if (preferred === null) throw new Error(`Step ${step.id} is not connected to a serving anchor and has no migration timing hint.`);
@@ -142,9 +161,6 @@ function buildBaselineStarts(recipe, anchor) {
     }
   }
 
-  // V1 migration: old preferred offsets are soft "not later than" hints only.
-  // They preserve known buffers/parallel placement while recipe data moves toward
-  // explicit planningBuffer/window semantics.
   for (const step of ordered) {
     const preferred = legacyPreferredStartMs(step, anchor);
     if (preferred === null) continue;
@@ -154,8 +170,6 @@ function buildBaselineStarts(recipe, anchor) {
     }
   }
 
-  // Tasks explicitly marked "earliest" are pulled to the earliest feasible point
-  // after their predecessors, without moving already anchored descendants.
   const byId = new Map(recipe.steps.map(step => [step.id, step]));
   for (const step of ordered) {
     if (step.plan?.placement !== 'earliest' || !(step.dependencies || []).length) continue;
@@ -296,6 +310,12 @@ function enforceRuntimeConstraints(recipe, items, completed = {}) {
   throw new Error('Planner could not resolve runtime dependency/resource constraints.');
 }
 
+function validTimestamp(value) {
+  if (!value) return null;
+  const date = value instanceof Date ? new Date(value) : new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 export function buildSchedule(recipe, mealTime, referenceDate = new Date(), taskShifts = {}, options = {}) {
   const anchor = mealAnchorDate(mealTime, referenceDate);
   const starts = buildBaselineStarts(recipe, anchor);
@@ -304,16 +324,20 @@ export function buildSchedule(recipe, mealTime, referenceDate = new Date(), task
   freezeBaseline(items);
 
   const actualCompletionTimes = options.actualCompletionTimes || {};
+  const expectedCompletionTimes = options.expectedCompletionTimes || {};
   for (const item of items) {
     const shift = isFiniteNumber(taskShifts[item.step.id]) ? taskShifts[item.step.id] : 0;
     if (shift) shiftItem(item, shift * 60000);
     item.shiftMin = shift;
 
-    const completion = actualCompletionTimes[item.step.id];
-    if (completion) {
-      const actualEnd = new Date(completion);
-      if (!Number.isNaN(actualEnd.getTime())) item.end = actualEnd;
+    const actualEnd = validTimestamp(actualCompletionTimes[item.step.id]);
+    if (actualEnd) {
+      item.end = actualEnd;
+      continue;
     }
+
+    const expectedEnd = validTimestamp(expectedCompletionTimes[item.step.id]);
+    if (expectedEnd && expectedEnd > item.end) item.end = expectedEnd;
   }
 
   enforceRuntimeConstraints(recipe, items, actualCompletionTimes);
@@ -387,9 +411,6 @@ export function addStepDelay(taskShifts, sourceStepId, minutes) {
   return next;
 }
 
-// Kept temporarily for compatibility with the current active-cook UI.
-// The next UI increment should delay one observed step and let buildSchedule()
-// propagate only constraints that actually need to move.
 export function shiftDependentTasks(recipe, taskShifts, completed, sourceStepId, minutes) {
   const next = { ...taskShifts };
   const ids = getDependentStepIds(recipe, sourceStepId);
@@ -400,6 +421,9 @@ export function shiftDependentTasks(recipe, taskShifts, completed, sourceStepId,
   return next;
 }
 
-export function getNextScheduledTask(schedule, completed) {
-  return schedule.find(item => !completed[item.step.id]) || null;
+export function getNextScheduledTask(schedule, completed, nextActionTimes = {}) {
+  const candidates = schedule.filter(item => !completed[item.step.id]);
+  if (!candidates.length) return null;
+  const effectiveTime = item => validTimestamp(nextActionTimes[item.step.id])?.getTime() ?? item.start.getTime();
+  return [...candidates].sort((a, b) => effectiveTime(a) - effectiveTime(b) || schedule.indexOf(a) - schedule.indexOf(b))[0];
 }

@@ -95,6 +95,7 @@ export function buildJournalEntry({ state, recipe, schedule, now = new Date() })
   const updatedAt = now.toISOString();
   const completed = { ...(state.completed || {}) };
   const measurements = (state.measurements || []).map(sample => ({ ...sample }));
+  const observations = (state.observations || []).map(observation => ({ ...observation }));
 
   return {
     schemaVersion: JOURNAL_SCHEMA_VERSION,
@@ -111,6 +112,7 @@ export function buildJournalEntry({ state, recipe, schedule, now = new Date() })
     updatedAt,
     temperatureTarget: state.temperatureTarget,
     measurements,
+    observations,
     completed,
     taskShifts: { ...(state.taskShifts || {}) },
     totalSteps: recipe.steps.length,

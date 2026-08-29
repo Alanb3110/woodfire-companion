@@ -1,16 +1,35 @@
-import { buildSchedule } from './planner.js';
+import { buildSchedule, closestMealAnchorDate, nextMealAnchorDate } from './planner.js';
 
 function isFiniteNumber(value) {
   return typeof value === 'number' && Number.isFinite(value);
 }
 
 function validDate(value) {
+  if (value === undefined || value === null || value === '') return null;
   const date = value instanceof Date ? new Date(value) : new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
 function formatLocalTime(date) {
   return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+}
+
+export function resolveSessionServingTarget({ mealTime, targetServingAt = null, sessionStartedAt }) {
+  const startedAt = validDate(sessionStartedAt);
+  if (!startedAt) throw new Error('Session serving target requires a valid sessionStartedAt.');
+  if (!mealTime) throw new Error('Session serving target requires mealTime.');
+
+  const reference = validDate(targetServingAt) || startedAt;
+  let target = closestMealAnchorDate(mealTime, reference);
+
+  // Migration/safety rule: an active session cannot target a service occurrence
+  // that predates the start of that session. Older app versions could persist
+  // exactly this state around midnight, which later mixed two calendar days.
+  if (target.getTime() < startedAt.getTime()) {
+    target = nextMealAnchorDate(mealTime, startedAt);
+  }
+
+  return target;
 }
 
 export function normalizeMealPlanContext(recipe, context = {}) {
@@ -53,6 +72,7 @@ export function normalizeMealPlanContext(recipe, context = {}) {
     referenceDate,
     taskShifts: { ...(context.taskShifts || {}) },
     actualCompletionTimes: { ...(context.actualCompletionTimes || {}) },
+    expectedCompletionTimes: { ...(context.expectedCompletionTimes || {}) },
     selectedComponents,
     variants
   };
@@ -65,6 +85,9 @@ export function buildMealSchedule(recipe, context = {}) {
     normalized.mealTime,
     normalized.referenceDate,
     normalized.taskShifts,
-    { actualCompletionTimes: normalized.actualCompletionTimes }
+    {
+      actualCompletionTimes: normalized.actualCompletionTimes,
+      expectedCompletionTimes: normalized.expectedCompletionTimes
+    }
   );
 }
