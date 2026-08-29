@@ -8,6 +8,7 @@ const APP_ASSETS = [
   './journal.css',
   './app.js',
   './js/planner.js',
+  './js/meal-planner.js',
   './js/recipe.js',
   './js/recipe-loader.js',
   './js/library.js',
