@@ -13,7 +13,6 @@ const accentBlueInput = $('accentBlueInput');
 const accentPreview = $('accentPreview');
 const resetAccentBtn = $('resetAccentBtn');
 const accentValidation = $('accentValidation');
-const themeMeta = document.querySelector('meta[name="theme-color"]');
 
 function normalizeHex(value) {
   if (typeof value !== 'string') return null;
@@ -59,7 +58,6 @@ function applyAccent(hex, persist = true) {
   const normalized = normalizeHex(hex);
   if (!normalized) return false;
   root.style.setProperty('--accent', normalized);
-  if (themeMeta) themeMeta.content = '#090909';
   if (persist) saveAccent(normalized);
   return true;
 }
@@ -67,7 +65,7 @@ function applyAccent(hex, persist = true) {
 function syncControls(hex) {
   const normalized = normalizeHex(hex) || DEFAULT_ACCENT;
   const rgb = hexToRgb(normalized);
-  accentColorInput.value = normalized;
+  accentColorInput.value = normalized.toLowerCase();
   accentHexInput.value = normalized;
   accentRedInput.value = rgb.r;
   accentGreenInput.value = rgb.g;
