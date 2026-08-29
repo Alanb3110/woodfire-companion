@@ -3,11 +3,21 @@ import { loadRecipe } from './js/recipe-loader.js';
 import { formatWoodfireSummary, scaleIngredients } from './js/recipe.js';
 import { renderPreCook } from './js/prep-ui.js';
 import {
+  buildJournalEntry,
+  clearJournal,
+  createSessionId,
+  loadJournal,
+  removeJournalEntry,
+  upsertJournalEntry
+} from './js/journal.js';
+import { renderJournalEntries } from './js/journal-ui.js';
+import {
   addStepDelay,
   buildSchedule,
   findDependencyIssues,
   findResourceConflicts,
-  getNextScheduledTask
+  getNextScheduledTask,
+  mealAnchorDate
 } from './js/planner.js';
 
 const STORAGE_KEY = 'woodfire-companion-v1';
@@ -22,6 +32,10 @@ const defaultState = () => ({
   temperatureTarget: 93,
   measurements: [],
   cookStartedAt: null,
+  sessionId: null,
+  sessionStartedAt: null,
+  sessionServedAt: null,
+  targetServingAt: null,
   activeTab: 'planning',
   recipeId: null,
   recipeVersion: null,
@@ -47,6 +61,9 @@ const recipeGrid = $('recipeGrid');
 const resumeCookBtn = $('resumeCookBtn');
 const resumeCookTitle = $('resumeCookTitle');
 const resumeCookMeta = $('resumeCookMeta');
+const journalList = $('journalList');
+const journalCount = $('journalCount');
+const clearJournalBtn = $('clearJournalBtn');
 const recipeHero = $('recipeHero');
 const recipeHeroSymbol = $('recipeHeroSymbol');
 const recipeHeroEyebrow = $('recipeHeroEyebrow');
@@ -84,16 +101,30 @@ const exportCsvBtn = $('exportCsvBtn');
 const installHelpBtn = $('installHelpBtn');
 const installDialog = $('installDialog');
 
+function firstKnownSessionTimestamp(value) {
+  const candidates = [
+    value.sessionStartedAt,
+    value.cookStartedAt,
+    ...Object.values(value.completed || {})
+  ].filter(Boolean).sort();
+  return candidates[0] || new Date().toISOString();
+}
+
 function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return defaultState();
     const parsed = JSON.parse(raw);
     const merged = { ...defaultState(), ...parsed };
-    if (!parsed.view) {
-      const hasProgress = Object.keys(parsed.completed || {}).length > 0 || (parsed.measurements || []).length > 0 || Boolean(parsed.cookStartedAt);
-      merged.view = hasProgress ? 'cook' : 'library';
+    const hasProgress = Object.keys(parsed.completed || {}).length > 0 || (parsed.measurements || []).length > 0 || Boolean(parsed.cookStartedAt);
+    if (!parsed.view) merged.view = hasProgress ? 'cook' : 'library';
+
+    if (hasProgress && !merged.sessionId) {
+      merged.sessionStartedAt = firstKnownSessionTimestamp(merged);
+      merged.sessionId = createSessionId(new Date(merged.sessionStartedAt));
     }
+    if (hasProgress && !merged.sessionStartedAt) merged.sessionStartedAt = firstKnownSessionTimestamp(merged);
+    if (hasProgress && !merged.targetServingAt) merged.targetServingAt = mealAnchorDate(merged.mealTime || '20:00', new Date()).toISOString();
     return merged;
   } catch (error) {
     console.warn('État local illisible, réinitialisation.', error);
@@ -116,7 +147,10 @@ function clearError() {
 }
 
 function hasSessionProgress() {
-  return Object.keys(state.completed || {}).length > 0 || state.measurements.length > 0 || Boolean(state.cookStartedAt);
+  return Object.keys(state.completed || {}).length > 0
+    || state.measurements.length > 0
+    || Boolean(state.cookStartedAt)
+    || Boolean(state.sessionStartedAt && state.recipeId);
 }
 
 function showView(name, persist = true) {
@@ -185,6 +219,11 @@ function applyVisual(element, visual = {}) {
   element.className = `recipe-hero theme-${visual.theme || 'embers'}`;
 }
 
+function renderJournalHistory() {
+  const data = loadJournal();
+  renderJournalEntries(data.entries, { container: journalList, countElement: journalCount, clearButton: clearJournalBtn });
+}
+
 function renderLibrary() {
   recipeGrid.innerHTML = '';
   for (const entry of library.recipes) {
@@ -236,7 +275,7 @@ function renderLibrary() {
     recipeGrid.appendChild(card);
   }
 
-  const resumable = state.recipeId && hasSessionProgress();
+  const resumable = state.recipeId && hasSessionProgress() && !state.sessionServedAt;
   resumeCookBtn.hidden = !resumable;
   if (resumable) {
     const entry = findLibraryRecipe(library, state.recipeId);
@@ -244,6 +283,7 @@ function renderLibrary() {
     const completedCount = Object.keys(state.completed || {}).length;
     resumeCookMeta.textContent = `${completedCount} étape${completedCount === 1 ? '' : 's'} terminée${completedCount === 1 ? '' : 's'} · ›`;
   }
+  renderJournalHistory();
 }
 
 async function openRecipe(entry) {
@@ -353,6 +393,20 @@ function updateConfigTime() {
   renderScaledRecipeDetails();
 }
 
+function ensureSessionMetadata(resetSession) {
+  const now = new Date();
+  if (resetSession) {
+    state.sessionId = createSessionId(now);
+    state.sessionStartedAt = now.toISOString();
+    state.sessionServedAt = null;
+    state.targetServingAt = mealAnchorDate(configMealTime, now).toISOString();
+    return;
+  }
+  if (!state.sessionStartedAt) state.sessionStartedAt = firstKnownSessionTimestamp(state);
+  if (!state.sessionId) state.sessionId = createSessionId(new Date(state.sessionStartedAt));
+  if (!state.targetServingAt) state.targetServingAt = mealAnchorDate(configMealTime, now).toISOString();
+}
+
 async function activateRecipe(entry, loadedRecipe, resetSession) {
   recipe = loadedRecipe;
   activeEntry = entry;
@@ -362,6 +416,7 @@ async function activateRecipe(entry, loadedRecipe, resetSession) {
     state.measurements = [];
     state.cookStartedAt = null;
   }
+  ensureSessionMetadata(resetSession);
   state.recipeId = recipe.id;
   state.recipeVersion = recipe.version;
   state.activeRecipeUrl = entry.recipeUrl;
@@ -372,6 +427,7 @@ async function activateRecipe(entry, loadedRecipe, resetSession) {
   saveState();
   renderCookShell();
   recomputeSchedule();
+  syncJournal();
   renderTasks();
   renderTemperature();
   switchTab(state.activeTab || 'planning', false);
@@ -380,7 +436,7 @@ async function activateRecipe(entry, loadedRecipe, resetSession) {
 
 async function startConfiguredCook() {
   if (!selectedRecipe || !selectedEntry) return;
-  if (hasSessionProgress()) {
+  if (hasSessionProgress() && !state.sessionServedAt) {
     const ok = confirm('Démarrer ce repas comme nouvelle cuisson ? Les cases cochées et mesures de la cuisson en cours seront effacées.');
     if (!ok) return;
   }
@@ -415,13 +471,36 @@ function renderCookShell() {
 
 function recomputeSchedule() {
   if (!recipe) return;
-  schedule = buildSchedule(recipe, state.mealTime, new Date(), state.taskShifts, {
+  const referenceDate = state.targetServingAt ? new Date(state.targetServingAt) : new Date();
+  schedule = buildSchedule(recipe, state.mealTime, referenceDate, state.taskShifts, {
     actualCompletionTimes: state.completed
   });
   const dependencyIssues = findDependencyIssues(recipe, schedule);
   const woodfireConflicts = findResourceConflicts(schedule, 'woodfire');
   if (dependencyIssues.length) console.warn('Planning dependency issues:', dependencyIssues);
   if (woodfireConflicts.length) console.warn('Planning Woodfire conflicts:', woodfireConflicts);
+}
+
+function serveStep() {
+  return recipe?.steps.find(step => step.plan?.anchor === 'serve') || null;
+}
+
+function syncJournal() {
+  if (!recipe || !state.sessionId) return;
+  const serve = serveStep();
+  const servedAt = serve ? state.completed?.[serve.id] : null;
+
+  if (!servedAt) {
+    state.sessionServedAt = null;
+    removeJournalEntry(state.sessionId);
+    saveState();
+    return;
+  }
+
+  state.sessionServedAt = servedAt;
+  const entry = buildJournalEntry({ state, recipe, schedule });
+  upsertJournalEntry(entry);
+  saveState();
 }
 
 function renderTasks() {
@@ -445,6 +524,7 @@ function renderTasks() {
       else delete state.completed[step.id];
       saveState();
       recomputeSchedule();
+      syncJournal();
       renderTasks();
       renderLibrary();
     });
@@ -538,10 +618,13 @@ function switchTab(tabName, persist = true) {
 }
 
 function updateCookTime() {
+  const reference = state.targetServingAt ? new Date(state.targetServingAt) : new Date();
   state.mealTime = readTimePicker(cookMealHour, cookMealMinute);
+  state.targetServingAt = mealAnchorDate(state.mealTime, reference).toISOString();
   saveState();
   renderCookShell();
   recomputeSchedule();
+  syncJournal();
   renderTasks();
 }
 
@@ -564,6 +647,7 @@ function addTemperature() {
   if (!state.cookStartedAt) state.cookStartedAt = now.toISOString();
   state.measurements.push({ timestamp: now.toISOString(), temperature: validation.value, source: 'manual' });
   saveState();
+  syncJournal();
   temperatureInput.value = '';
   renderTemperature();
   temperatureInput.focus();
@@ -666,8 +750,6 @@ function bindEvents() {
   cookMealHour.addEventListener('change', updateCookTime);
   cookMealMinute.addEventListener('change', updateCookTime);
 
-  const shiftLabel = document.querySelector('.shift-row > span');
-  if (shiftLabel) shiftLabel.textContent = 'Retard sur la prochaine étape :';
   document.querySelectorAll('.chip-btn').forEach(btn => btn.addEventListener('click', () => shiftRemainingTasks(Number(btn.dataset.shift))));
   document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
 
@@ -675,8 +757,10 @@ function bindEvents() {
     if (!confirm('Réinitialiser toutes les cases et les décalages du planning ?')) return;
     state.completed = {};
     state.taskShifts = {};
+    state.sessionServedAt = null;
     saveState();
     recomputeSchedule();
+    syncJournal();
     renderTasks();
   });
 
@@ -686,6 +770,7 @@ function bindEvents() {
     const val = Number(targetTemperature.value);
     state.temperatureTarget = Number.isFinite(val) ? Math.min(120, Math.max(30, val)) : recipe?.temperature?.defaultTargetC || 93;
     saveState();
+    syncJournal();
     renderTemperature();
   });
   undoMeasurementBtn.addEventListener('click', () => {
@@ -693,6 +778,7 @@ function bindEvents() {
     state.measurements.pop();
     if (!state.measurements.length) state.cookStartedAt = null;
     saveState();
+    syncJournal();
     renderTemperature();
   });
   newCookBtn.addEventListener('click', () => {
@@ -700,10 +786,18 @@ function bindEvents() {
     state.measurements = [];
     state.cookStartedAt = null;
     saveState();
+    syncJournal();
     renderTemperature();
     temperatureInput.focus();
   });
   exportCsvBtn.addEventListener('click', exportCsv);
+
+  clearJournalBtn.addEventListener('click', () => {
+    if (!confirm('Effacer tout le journal de cuisson local ? Cette action est définitive.')) return;
+    clearJournal();
+    renderJournalHistory();
+  });
+
   installHelpBtn.addEventListener('click', () => {
     if (typeof installDialog.showModal === 'function') installDialog.showModal();
     else alert('Dans Safari : Partager → Sur l’écran d’accueil → Ajouter.');
@@ -719,7 +813,7 @@ async function init() {
   try {
     library = await loadLibrary(LIBRARY_URL);
     renderLibrary();
-    if (state.view === 'cook' && state.recipeId) await resumeCook();
+    if (state.view === 'cook' && state.recipeId && !state.sessionServedAt) await resumeCook();
     else showView('library', false);
   } catch (error) {
     console.error(error);

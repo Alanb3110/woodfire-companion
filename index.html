@@ -11,6 +11,7 @@
   <link rel="apple-touch-icon" href="./icons/icon-192.png" />
   <link rel="stylesheet" href="./styles.css" />
   <link rel="stylesheet" href="./prep.css" />
+  <link rel="stylesheet" href="./journal.css" />
   <title>Woodfire Companion</title>
 </head>
 <body>
@@ -18,7 +19,7 @@
     <header class="topbar">
       <div class="brand-line">
         <span class="eyebrow">WOODFIRE COMPANION</span>
-        <span class="dev-badge">DEV · v0.3.0-dev.3</span>
+        <span class="dev-badge">DEV · v0.3.0-dev.4</span>
       </div>
       <div class="topbar-actions">
         <button id="settingsBtn" class="icon-btn" type="button" aria-label="Réglages">⚙︎</button>
@@ -42,6 +43,20 @@
       </button>
 
       <div id="recipeGrid" class="recipe-grid" aria-live="polite"></div>
+
+      <section class="journal-section" aria-labelledby="journalHeading">
+        <div class="section-heading">
+          <div>
+            <span class="field-label">Journal</span>
+            <strong id="journalHeading">Cuissons passées</strong>
+          </div>
+          <div class="journal-heading-actions">
+            <span id="journalCount" class="journal-count">0 cuisson</span>
+            <button id="clearJournalBtn" class="text-btn danger" type="button" hidden>Effacer</button>
+          </div>
+        </div>
+        <div id="journalList" class="journal-list"></div>
+      </section>
     </section>
 
     <section id="recipeView" class="app-view" hidden>
@@ -186,8 +201,8 @@
             <span id="nextTaskCountdown" class="status-meta">—</span>
           </div>
 
-          <div class="shift-row" aria-label="Décaler les étapes restantes">
-            <span>Retard ? Décaler la suite :</span>
+          <div class="shift-row" aria-label="Signaler un retard sur la prochaine étape">
+            <span>Retard sur la prochaine étape :</span>
             <button class="chip-btn" data-shift="5" type="button">+5 min</button>
             <button class="chip-btn" data-shift="10" type="button">+10 min</button>
             <button class="chip-btn" data-shift="15" type="button">+15 min</button>

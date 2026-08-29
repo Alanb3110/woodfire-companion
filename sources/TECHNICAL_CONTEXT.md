@@ -12,12 +12,15 @@ woodfire-companion/
 ├── index.html
 ├── styles.css
 ├── prep.css
+├── journal.css
 ├── app.js
 ├── manifest.webmanifest
 ├── service-worker.js
 ├── package.json
 ├── .github/workflows/tests.yml
 ├── js/
+│   ├── journal.js
+│   ├── journal-ui.js
 │   ├── library.js
 │   ├── planner.js
 │   ├── prep-ui.js
@@ -30,6 +33,8 @@ woodfire-companion/
 │   └── pork-belly-burnt-ends.json
 ├── tests/
 │   ├── active-cook-replan.test.js
+│   ├── journal-integration.test.js
+│   ├── journal.test.js
 │   ├── library.test.js
 │   ├── planner.test.js
 │   ├── recipe.test.js
@@ -42,128 +47,124 @@ woodfire-companion/
 
 ## Application flow
 The UI has three top-level views:
-1. `library` — browse recipe cards and resume an existing cook;
-2. `recipe` — configure servings/service time and review ingredients/courses/preparation/equipment;
+1. `library` — recipes, active-cook resume card and local cook journal;
+2. `recipe` — servings/service time plus ingredients/courses/preparation/equipment;
 3. `cook` — active planning + temperature tracking.
 
-State is local-first and an active cook can be resumed after navigation or reload.
+State remains local-first/offline.
 
 ## Recipe/content layer
 `recipes/index.json` is the library manifest. Only complete validated recipes may be executable.
 
-Canonical executable recipe:
+Canonical executable recipe: `recipes/pork-belly-burnt-ends.json`, content version `4`.
 
-`recipes/pork-belly-burnt-ends.json`
+Version 4 contains no `preferredStartOffsetMin`. Its baseline is derived from service anchor, dependencies, durations and explicit planning buffers.
 
-The current content version is `4`.
-
-Version 4 is the first reference content version fully scheduled from explicit planner semantics. It contains no `preferredStartOffsetMin` fields. The established 20:00 baseline is reproduced from:
-- `eat` serving anchor;
-- durations and hard dependencies;
-- a 35 min uncertainty buffer after the first pork tenderness check;
-- a 25 min readiness buffer between potato prep and Woodfire Air Fry;
-- one independent sauce-prep anchor before service.
-
-`js/recipe.js` provides validation, serving scaling and Woodfire summary formatting. It validates serving anchors, planning buffers, dependencies and optional legacy timing fallback for older recipes.
+`js/recipe.js` provides validation, serving scaling and Woodfire summary formatting.
 
 See:
 - `sources/RECIPE_SCHEMA_V1.md`;
 - `sources/SHOPPING_PREP.md`;
 - `sources/PLANNER_V1.md`;
-- `sources/ACTIVE_COOK_V1.md`.
+- `sources/ACTIVE_COOK_V1.md`;
+- `sources/COOK_JOURNAL_V1.md`.
 
 ## Serving configuration and pre-cook
-Changing servings updates the same scaled ingredient data used by the user-facing `Ingrédients & courses` checklist.
+Changing servings updates the same scaled data used by the user-facing `Ingrédients & courses` checklist.
 
-`js/shopping.js` is a pure helper for categorized ingredients, consumables, reusable equipment, advance-prep records and item counts.
+`js/shopping.js` is pure data logic. `js/prep-ui.js` owns pre-cook rendering and shopping checkbox persistence.
 
-`js/prep-ui.js` owns shopping/pre-cook rendering and checkbox persistence.
-
-Shopping state uses:
-
-`woodfire-companion-shopping-v1`
-
-It is independent from cook completion, temperatures and visual settings.
+Shopping state uses `woodfire-companion-shopping-v1` and is independent from cook history, active progress and visual settings.
 
 ## Cook-session state
 Active cook state remains under:
 
 `woodfire-companion-v1`
 
-Logical fields include `view`, `mealTime`, `servings`, `completed`, `taskShifts`, `temperatureTarget`, `measurements`, `cookStartedAt`, `activeTab`, `recipeId`, `recipeVersion` and `activeRecipeUrl`.
+Logical fields now include:
+- `view`;
+- `mealTime`;
+- `servings`;
+- `completed`;
+- `taskShifts`;
+- `temperatureTarget`;
+- `measurements`;
+- `cookStartedAt`;
+- `sessionId`;
+- `sessionStartedAt`;
+- `sessionServedAt`;
+- `targetServingAt`;
+- `activeTab`;
+- `recipeId`;
+- `recipeVersion`;
+- `activeRecipeUrl`.
 
-`completed[stepId]` stores the actual completion timestamp. `taskShifts[stepId]` stores an explicit manual delay attached to that step.
+`sessionId` remains stable for one meal. `targetServingAt` stores an absolute date/time so a resumed cook does not silently move to another calendar day.
 
-Older records remain readable because defaults are merged during load. Future state-schema changes should use explicit migration rather than silently dropping local cook history.
+Older active records without these fields remain readable; compatible metadata is created from existing progress where possible.
+
+`completed[stepId]` stores actual completion timestamps. `taskShifts[stepId]` stores explicit manual delay attached to a step.
+
+## Cook Journal V1
+Completed meal sessions are stored separately under:
+
+`woodfire-companion-journal-v1`
+
+The stored object has `schemaVersion: 1` and an `entries` array.
+
+`js/journal.js` owns the versioned journal model/store and can:
+- generate session ids;
+- build immutable-ish cook snapshots from current recipe/state/schedule;
+- load/save the versioned journal;
+- upsert by session id;
+- remove one session;
+- clear the journal without touching other local storage keys.
+
+A journal entry includes recipe identity/version/title, servings, target/actual service timestamps, temperature samples, actual step completions, explicit delays, and baseline/final schedule timestamps.
+
+The recipe `serve` anchor is the archive trigger. Repeated edits after service update the same entry rather than creating duplicates.
+
+`js/journal-ui.js` renders compact `<details>` cards in the library. Cards expose target vs actual service, servings, completed steps, measurements, step timing history and recent temperature samples.
+
+A served session is no longer presented as `CUISSON EN COURS` in the library.
 
 ## UI preferences
-Visual preferences use the separate key:
+Visual preferences remain separate under `woodfire-companion-settings-v1`.
 
-`woodfire-companion-settings-v1`
-
-`js/settings.js` owns accent color presets, native color picker, HEX/RGB input and reset to Woodfire orange.
+`js/settings.js` owns accent presets, native color picker, HEX/RGB input and reset to Woodfire orange.
 
 ## Planner V1
 `js/planner.js` is a pure module with no DOM access.
 
-The primary planning model is:
-- desired serving time as a `serve` anchor;
-- step durations;
-- dependency graph;
-- optional planning buffers;
-- resource constraints;
-- real completion timestamps and explicit runtime delays.
+The primary model is desired serving time + durations + dependencies + optional planning buffers + resources + actual completion timestamps + explicit runtime delays.
 
-The engine works backwards for the baseline plan. The Woodfire is treated as one exclusive resource; planned conflicts are resolved upstream so the requested serving time remains the baseline target.
+The engine works backwards for baseline planning. The Woodfire is one exclusive resource. Planned conflicts are resolved upstream; runtime conflicts move unfinished work when necessary.
 
-`preferredStartOffsetMin` remains supported only for older recipe compatibility. New curated recipe content should use anchors/dependencies/buffers/resources instead.
-
-Planner V1 can:
-- derive a schedule without fixed offsets;
-- cross midnight correctly;
-- place prerequisites from dependency relations;
-- reserve absorbable `planningBufferMin` margin;
-- resolve baseline Woodfire conflicts backwards;
-- apply actual completion timestamps;
-- move unfinished downstream work only when hard constraints require it;
-- allow service time to slip when the real cook can no longer meet the target feasibly.
+Planner V1 supports dependency-only recipes with no fixed offsets, midnight crossing, buffer absorption, actual-completion propagation and service slippage when reality can no longer meet the target.
 
 ## Active-cook replanning
-The active checklist is connected to Planner V1.
+Checking a task complete stores its actual timestamp, saves state, rebuilds the schedule using `actualCompletionTimes`, and rerenders remaining actions.
 
-When a task is checked complete:
-1. the current timestamp is stored in `state.completed`;
-2. state is saved;
-3. `buildSchedule()` is called with `actualCompletionTimes: state.completed`;
-4. the remaining cards/countdown are rerendered from the feasible schedule.
+The +5/+10/+15 controls delay only the next unfinished step using `addStepDelay()`. Planner V1 decides what downstream work truly moves.
 
-Completed timestamps are historical facts and are not shifted to make the plan look cleaner.
-
-The +5/+10/+15 controls add a delay only to the current next unfinished step using `addStepDelay()`. Planner V1 then determines which downstream tasks actually need to move.
-
-This means unrelated parallel work can remain unchanged, while a dependency or Woodfire conflict propagates delay when necessary.
-
-Unchecking a completed task removes its actual completion timestamp and recomputes from the remaining facts.
-
-## Active-cook UI
-The current layout provides checklist cards, expandable detail, structured Woodfire configuration, actual completion timestamps, next-action countdown, next-step delay controls, manual temperature logging, target temperature, graph/history and CSV export.
-
-Structured observation controls and automatic rechecks are later work.
+Completed timestamps remain historical facts.
 
 ## Temperature tracking
-Manual logging remains independent and fast. A measurement records timestamp, temperature and source.
+Manual logging remains fast and independent. A measurement records timestamp, °C value and source.
 
-No ETA is currently inferred from temperature slope and no recipe step is automatically completed from a temperature sample.
+No ETA is currently inferred from temperature slope and no step is automatically completed from a sample.
 
 ## PWA/offline
-The service worker uses a versioned cache and network-first reads while online, with cached fallback offline.
+The service worker uses a versioned network-first cache with offline fallback.
 
-Current dev version: `0.3.0-dev.3`.
+Current dev version: `0.3.0-dev.4`.
 
-Assets must remain compatible with the `/woodfire-companion/` GitHub Pages subpath and installed iOS/Safari PWA behavior.
+Cached assets include the shell, recipe/planner/settings/shopping/journal modules, CSS, library manifest, current recipe JSON, manifest and icons.
+
+Assets must remain compatible with the `/woodfire-companion/` GitHub Pages subpath and installed iPhone/Safari PWA behavior.
 
 ## Testing and CI
-The repository uses Node's built-in test runner with no runtime package dependency:
+Run:
 
 ```bash
 npm test
@@ -171,13 +172,7 @@ npm test
 
 GitHub Actions runs the suite on `main`, feature pushes and pull requests.
 
-Tests cover recipe validation/scaling, library resolution, shopping/pre-cook generation, PWA version consistency, UI contracts, dependency-only planning, midnight crossing, Woodfire resource conflicts, planning-buffer absorption/service slippage, actual completion propagation, active-cook wiring and next-step-only manual delays.
-
-Reference-recipe tests additionally enforce:
-- zero `preferredStartOffsetMin` fields;
-- explicit 35 min pork uncertainty buffer;
-- explicit 25 min potato readiness buffer;
-- preservation of the established baseline schedule.
+Coverage includes recipe validation/scaling, library resolution, shopping/pre-cook, version consistency, DOM contracts, dependency planner behavior, resource conflicts, buffer/service slippage, actual completion propagation, active-cook wiring, journal serialization/upsert/removal and session/journal integration.
 
 ## Target architecture
 Keep four primary layers separate:
@@ -186,14 +181,14 @@ Keep four primary layers separate:
 3. session state + persistence/migrations;
 4. UI.
 
-Independent local UI/shopping settings may remain outside cook-session state when they have different lifecycles.
+Independent local settings/shopping/journal stores may remain separate when their lifecycles differ from the active session.
 
 ## Current technical debt / next work
 1. Add at least one second complete executable recipe to validate planner/schema generality.
-2. Add a true flexible planning-window concept when a real recipe demonstrates the need; the independent sauce task currently uses an explicit pre-service anchor.
-3. Reduce scaling-sensitive quantities duplicated inside step prose by referencing structured ingredient usage where useful.
-4. Add structured observation/recheck controls for uncertain cooks.
-5. Add cook-session journal/history with explicit storage schema/versioning.
-6. Replace temporary CSS/emoji covers with local illustrated assets when the visual direction is finalized.
+2. Add structured observation/recheck controls for uncertain cooks.
+3. Add a flexible planning-window concept when a real recipe demonstrates the need; sauce prep currently uses a pre-service anchor.
+4. Reduce scaling-sensitive quantities duplicated inside step prose by referencing structured ingredient usage where useful.
+5. Add journal notes/rating and JSON backup/import when useful.
+6. Replace temporary CSS/emoji covers with local illustrated assets when visual direction is finalized.
 7. Add richer resources such as user attention only when real meal plans demonstrate the need.
 8. Add predictive ETA later from temperature/history with uncertainty, never false precision.

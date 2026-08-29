@@ -1,0 +1,109 @@
+.journal-section {
+  margin-top: 26px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 17px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.journal-heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.journal-count {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.journal-list {
+  display: grid;
+  gap: 9px;
+  margin-top: 12px;
+}
+
+.journal-empty {
+  margin: 0;
+  padding: 16px 2px 4px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.journal-card {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.journal-card summary {
+  min-height: 70px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 13px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.journal-card summary::-webkit-details-marker { display: none; }
+.journal-card summary > div { display: grid; gap: 3px; min-width: 0; }
+.journal-date { color: var(--accent-strong); font-size: 10px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.journal-card summary strong { font-size: 16px; }
+.journal-service { color: var(--muted); font-size: 12px; line-height: 1.35; }
+.journal-chevron { color: var(--muted); font-size: 24px; transform: rotate(0deg); transition: transform .12s ease; }
+.journal-card[open] .journal-chevron { transform: rotate(90deg); }
+
+.journal-body {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.journal-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.journal-metric {
+  min-width: 0;
+  padding: 10px;
+  border-radius: 11px;
+  background: var(--surface-3);
+}
+
+.journal-metric span { display: block; color: var(--muted); font-size: 10px; margin-bottom: 3px; }
+.journal-metric strong { font-size: 15px; }
+.journal-body h4 { margin: 0; font-size: 13px; }
+
+.journal-step-list, .journal-temperature-list { display: grid; }
+.journal-step-row, .journal-temperature-list > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 9px 0;
+  border-top: 1px solid var(--border);
+}
+
+.journal-step-row:first-child, .journal-temperature-list > div:first-child { border-top: 0; }
+.journal-step-row > div { min-width: 0; }
+.journal-step-row strong { display: block; font-size: 13px; }
+.journal-step-row small { display: block; margin-top: 2px; color: var(--muted); font-size: 11px; }
+.journal-step-row > span { color: var(--success); font-size: 12px; font-weight: 750; white-space: nowrap; }
+.journal-temperature-list span { color: var(--muted); font-size: 12px; }
+.journal-temperature-list strong { font-size: 13px; }
+.journal-more { color: var(--muted); font-size: 11px; padding-top: 7px; }
+
+@media (max-width: 390px) {
+  .journal-section { padding: 13px; }
+  .journal-metrics { grid-template-columns: 1fr 1fr 1fr; }
+  .journal-metric { padding: 8px; }
+  .journal-metric strong { font-size: 13px; }
+}
