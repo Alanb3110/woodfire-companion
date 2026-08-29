@@ -39,6 +39,7 @@ function migrateV1ToV2(value) {
 export function migrateSessionState(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return createDefaultSessionState();
 
+  const hadExplicitView = Object.prototype.hasOwnProperty.call(value, 'view');
   let migrated = { ...value };
   let version = Number.isInteger(migrated.schemaVersion) ? migrated.schemaVersion : 1;
   if (version > SESSION_SCHEMA_VERSION) {
@@ -51,7 +52,7 @@ export function migrateSessionState(value) {
   }
 
   const defaults = createDefaultSessionState();
-  return {
+  const result = {
     ...defaults,
     ...migrated,
     schemaVersion: SESSION_SCHEMA_VERSION,
@@ -65,6 +66,8 @@ export function migrateSessionState(value) {
       ? structuredClone(migrated.recipeSnapshot)
       : null
   };
+  if (!hadExplicitView && hasSessionProgress(result)) result.view = 'cook';
+  return result;
 }
 
 export function loadSessionState(storage = globalThis.localStorage) {
