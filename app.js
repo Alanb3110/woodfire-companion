@@ -3,6 +3,7 @@ import { loadRecipe } from './js/recipe-loader.js';
 import { formatWoodfireSummary, scaleIngredients } from './js/recipe.js';
 import { renderPreCook } from './js/prep-ui.js';
 import {
+  addStepDelay,
   buildSchedule,
   findDependencyIssues,
   findResourceConflicts,
@@ -414,7 +415,9 @@ function renderCookShell() {
 
 function recomputeSchedule() {
   if (!recipe) return;
-  schedule = buildSchedule(recipe, state.mealTime, new Date(), state.taskShifts);
+  schedule = buildSchedule(recipe, state.mealTime, new Date(), state.taskShifts, {
+    actualCompletionTimes: state.completed
+  });
   const dependencyIssues = findDependencyIssues(recipe, schedule);
   const woodfireConflicts = findResourceConflicts(schedule, 'woodfire');
   if (dependencyIssues.length) console.warn('Planning dependency issues:', dependencyIssues);
@@ -441,8 +444,8 @@ function renderTasks() {
       if (check.checked) state.completed[step.id] = new Date().toISOString();
       else delete state.completed[step.id];
       saveState();
+      recomputeSchedule();
       renderTasks();
-      updateNextTask();
       renderLibrary();
     });
 
@@ -518,9 +521,9 @@ function updateNextTask() {
 }
 
 function shiftRemainingTasks(minutes) {
-  for (const step of recipe.steps) {
-    if (!state.completed[step.id]) state.taskShifts[step.id] = (state.taskShifts[step.id] || 0) + minutes;
-  }
+  const nextTask = getNextScheduledTask(schedule, state.completed);
+  if (!nextTask) return;
+  state.taskShifts = addStepDelay(state.taskShifts, nextTask.step.id, minutes);
   saveState();
   recomputeSchedule();
   renderTasks();
@@ -663,6 +666,8 @@ function bindEvents() {
   cookMealHour.addEventListener('change', updateCookTime);
   cookMealMinute.addEventListener('change', updateCookTime);
 
+  const shiftLabel = document.querySelector('.shift-row > span');
+  if (shiftLabel) shiftLabel.textContent = 'Retard sur la prochaine étape :';
   document.querySelectorAll('.chip-btn').forEach(btn => btn.addEventListener('click', () => shiftRemainingTasks(Number(btn.dataset.shift))));
   document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
 
