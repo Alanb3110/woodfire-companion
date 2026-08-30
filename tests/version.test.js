@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-const expectedVersion = '0.3.0-dev.6';
+const expectedVersion = '0.3.0-dev.7';
 
 test('development version is consistent across package, UI and service worker cache', async () => {
   const [packageText, indexHtml, serviceWorker] = await Promise.all([
