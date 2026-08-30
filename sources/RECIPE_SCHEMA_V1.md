@@ -62,10 +62,14 @@ Supported scale types:
 
 Top-level ingredient quantities remain the source for the pre-cook ingredient/shopping view.
 
-## Structured ingredient usage inside steps
-A step may optionally declare `ingredientUsage` when its summary/details need serving-sensitive quantities. This avoids hard-coding reference-serving amounts in prose while keeping the shopping list and active-cook instructions aligned.
+## Structured ingredient usage in instructions
+User-facing instructions may optionally declare `ingredientUsage` when their text needs serving-sensitive quantities. This avoids hard-coding reference-serving amounts in prose while keeping shopping, pre-cook reminders and Active Cook aligned.
 
-Example:
+V1 supports structured usage on:
+- executable `steps`: tokens may appear in `summary` and/or `details[]`;
+- `advancePrep` records: tokens may appear in the string `details` field.
+
+Example step:
 
 ```json
 {
@@ -84,20 +88,36 @@ Example:
 }
 ```
 
+Example advance preparation:
+
+```json
+{
+  "id": "marinate-ahead",
+  "ingredientUsage": [
+    { "id": "marinade-meat", "ingredientId": "meat" }
+  ],
+  "details": "Mariner {{use:marinade-meat}} de viande."
+}
+```
+
 Rules:
-- `ingredientUsage[].id` is unique inside the step and is referenced as `{{use:<id>}}` in `summary` and/or `details`;
+- `ingredientUsage[].id` is unique inside its instruction item and is referenced as `{{use:<id>}}` in supported text;
 - `ingredientId` must reference a top-level ingredient;
-- usage quantity/unit/scale describe the amount used by that step at `servings.reference`;
+- usage quantity/unit/scale describe the amount used by that instruction at `servings.reference`;
 - omitted quantity/unit/scale inherit the top-level ingredient values;
 - changing the unit requires an explicit converted quantity;
-- a usage may override the top-level scaling rule when the step-specific representation needs different semantics;
-- a step-local `step` scale must cover `servings.max`;
+- a usage may override the top-level scaling rule when the local representation needs different semantics;
+- a usage-local `step` scale must cover `servings.max`;
 - `displayUnit: false` may suppress the unit when prose supplies the noun itself, such as a lemon count;
-- every declared usage must appear in step text and every `{{use:...}}` token must resolve to a declared usage.
+- every declared usage must appear in supported item text and every `{{use:...}}` token must resolve to a declared usage.
 
-`buildMealSchedule()` materializes these tokens for the selected serving count before Planner V1 builds the runtime schedule. Therefore Active Cook receives already-scaled summary/detail text. This materialization does not change durations, dependencies or resource allocation.
+`buildMealSchedule()` materializes step tokens for the selected serving count before Planner V1 builds the runtime schedule. Therefore Active Cook receives already-scaled summary/detail text.
 
-`ingredientUsage` is instructional metadata only in V1. It does **not** automatically aggregate the shopping list or enforce conservation between per-step usage and top-level ingredient totals; this is intentional because one physical ingredient may be represented in several ways and optional usage can make exact summation ambiguous.
+`getAdvancePrep(recipe, servings)` materializes advance-prep tokens before the recipe/pre-cook UI renders those reminders.
+
+These materializations do not change durations, dependencies or resource allocation.
+
+`ingredientUsage` is instructional metadata only in V1. It does **not** automatically aggregate the shopping list or enforce conservation between usage entries and top-level ingredient totals; this is intentional because one physical ingredient may be represented in several ways and optional usage can make exact summation ambiguous.
 
 See `sources/STEP_INGREDIENT_USAGE_V1.md`.
 
@@ -121,7 +141,9 @@ Reusable equipment/accessories use stable `id` + `name` and may be optional.
 Recipe-specific non-food consumables may use `consumable: true` plus a display quantity. Consumables enter the shopping checklist and are excluded from reusable equipment.
 
 ## Advance preparation
-`advancePrep` records are informational V1 guidance before the active timeline. If advance work needs dependencies/resources/replanning, represent it as a real planner step.
+`advancePrep` records are informational V1 guidance before the active timeline. They may include stable id/title/timing/details, an optional marker, and optional `ingredientUsage` for serving-sensitive preparation text.
+
+Serving-aware advance prep remains informational from the planner's perspective. If advance work needs dependencies/resources/replanning, represent it as a real planner step rather than adding hidden schedule logic to `advancePrep`.
 
 ## Steps
 A step may contain:
@@ -214,13 +236,13 @@ Every Woodfire step must reserve `woodfire` and explicitly define:
 Critical appliance state must not live only in prose.
 
 ## Validation summary
-`validateRecipe()` plus recipe-load step-usage validation now reject at least:
+`validateRecipe()` plus recipe-load ingredient-usage validation now reject at least:
 - invalid serving bounds/timing ranges;
 - invalid/contradictory temperature tracking metadata or temperature completion without a target;
 - duplicate ingredient/component/equipment/advance-prep/step ids;
 - malformed scaling or incomplete step breakpoints;
-- invalid/missing step ingredient usage references and quantity tokens;
-- unsafe step usage unit overrides without explicit converted quantities;
+- invalid/missing step or advance-prep ingredient-usage references and quantity tokens;
+- unsafe usage unit overrides without explicit converted quantities;
 - component/step ownership mismatches;
 - malformed resources and durations;
 - missing/invalid completion criteria;
@@ -233,7 +255,7 @@ Critical appliance state must not live only in prose.
 ## Testing
 The repository contains both reference-recipe tests and synthetic contract fixtures. In addition, the multi-recipe acceptance suite applies the executable contract automatically to every library entry marked `available`.
 
-Available-recipe tests validate structured step usage and build schedules at minimum/reference/maximum servings with no unresolved quantity tokens. Pork Belly additionally has explicit 2/4/6/8-serving text regression coverage.
+Available-recipe tests validate structured instruction usage, materialize advance-prep reminders and build schedules at minimum/reference/maximum servings with no unresolved quantity tokens. Pork Belly additionally has explicit 2/4/6/8-serving Active Cook text regression coverage; turkey has 4/5/6 gratin coverage; barbacoa covers 6/8 advance-prep and Active Cook quantities.
 
 Observation tests cover label derivation, scheduled rechecks, actual completion and persistence helpers for both tenderness-driven Pork Belly and temperature-driven turkey.
 
@@ -244,4 +266,4 @@ See `sources/MULTI_RECIPE_CONTRACT.md`, `sources/STEP_INGREDIENT_USAGE_V1.md` an
 2. Add a flexible planning-window concept when a real recipe requires it.
 3. Add curated observation labels only if a real recipe cannot be represented clearly by V1-derived controls.
 4. Add richer resources such as user attention only when real meal plans demonstrate the need.
-5. Consider optional validation/aggregation between top-level shopping quantities and per-step usage only after real recipes demonstrate a reliable rule for optional/shared ingredients.
+5. Consider optional validation/aggregation between top-level shopping quantities and structured instruction usage only after real recipes demonstrate a reliable rule for optional/shared ingredients.
