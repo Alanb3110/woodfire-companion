@@ -16,7 +16,7 @@
         "theme": "embers",
         "symbol": "🔥",
         "eyebrow": "SMOKER · ROAST · AIR FRY",
-        "imageUrl": "./assets/recipes/pork-belly-burnt-ends.svg"
+        "imageUrl": "./assets/recipes/pork-belly-burnt-ends.webp"
       }
     },
     {
@@ -34,7 +34,7 @@
         "theme": "korean",
         "symbol": "🍗",
         "eyebrow": "SMOKER · ROAST · FOUR",
-        "imageUrl": "./assets/recipes/sweet-savory-turkey-zucchini-gratin.svg"
+        "imageUrl": "./assets/recipes/sweet-savory-turkey-zucchini-gratin.webp"
       }
     },
     {
@@ -52,7 +52,7 @@
         "theme": "barbacoa",
         "symbol": "🌮",
         "eyebrow": "GRILL · SMOKER · BRAISE",
-        "imageUrl": "./assets/recipes/smoked-beef-barbacoa.svg"
+        "imageUrl": "./assets/recipes/smoked-beef-barbacoa.webp"
       }
     }
   ]
