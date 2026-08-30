@@ -1,4 +1,4 @@
-const APP_VERSION = '0.3.0-dev.6';
+const APP_VERSION = '0.3.0-dev.7';
 const CACHE_NAME = `woodfire-companion-${APP_VERSION}`;
 const APP_ASSETS = [
   './',
@@ -22,6 +22,7 @@ const APP_ASSETS = [
   './js/session.js',
   './js/timestamp-editor.js',
   './js/dev-tools.js',
+  './js/start-hint.js',
   './recipes/index.json',
   './manifest.webmanifest',
   './icons/icon-192.png',
