@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "pork-belly-burnt-ends-meal",
-  "version": 5,
+  "version": 6,
   "title": "Pork Belly Burnt Ends",
   "description": "Poitrine de porc fumée puis confite et caramélisée, servie avec grenailles croustillantes et sauce fraîche citronnée.",
   "heroImage": null,
@@ -58,18 +58,18 @@
     { "id": "potatoes", "name": "Pommes de terre grenaille", "quantity": { "min": 700, "max": 800 }, "unit": "g", "scale": { "type": "linear" }, "category": "fruits-legumes" },
     { "id": "greek-yogurt", "name": "Yaourt grec", "quantity": 250, "unit": "g", "scale": { "type": "linear" }, "category": "produits-frais" },
     { "id": "creme-fraiche", "name": "Crème fraîche", "quantity": { "min": 60, "max": 80 }, "unit": "g", "scale": { "type": "linear" }, "category": "produits-frais" },
-    { "id": "lemon", "name": "Citron", "quantity": 1, "unit": "piece", "scale": { "type": "step", "breakpoints": [{ "maxServings": 4, "quantity": 1 }, { "maxServings": 8, "quantity": 2 }] }, "category": "fruits-legumes", "preparation": "Zeste + 20–30 mL de jus" },
-    { "id": "salt", "name": "Sel", "quantity": { "min": 26, "max": 32 }, "unit": "g", "scale": { "type": "range" }, "category": "epicerie", "preparation": "Base pour 4 : 18–22 g rub + ~3 g sauce + 5–7 g pommes de terre; ajuster ensuite si nécessaire" },
-    { "id": "smoked-paprika", "name": "Paprika fumé", "quantity": 3, "unit": "tsp", "scale": { "type": "linear" }, "category": "epicerie", "preparation": "2 c. à café pour le rub + 1 c. à café pour les pommes de terre" },
-    { "id": "garlic-powder", "name": "Ail en poudre", "quantity": 3.5, "unit": "tsp", "scale": { "type": "linear" }, "category": "epicerie", "preparation": "2 c. à café rub + ½ sauce + 1 pommes de terre" },
-    { "id": "black-pepper", "name": "Poivre", "quantity": { "min": 1.75, "max": 2 }, "unit": "tsp", "scale": { "type": "range" }, "category": "epicerie", "preparation": "1 c. à café rub + ¼ sauce + ½–¾ pommes de terre" },
+    { "id": "lemon", "name": "Citron", "quantity": 1, "unit": "piece", "scale": { "type": "step", "breakpoints": [{ "maxServings": 4, "quantity": 1 }, { "maxServings": 8, "quantity": 2 }] }, "category": "fruits-legumes", "preparation": "Zeste + jus pour la sauce" },
+    { "id": "salt", "name": "Sel", "quantity": { "min": 26, "max": 32 }, "unit": "g", "scale": { "type": "range" }, "category": "epicerie", "preparation": "Réparti entre rub, sauce et pommes de terre; quantités détaillées dans les étapes" },
+    { "id": "smoked-paprika", "name": "Paprika fumé", "quantity": 3, "unit": "tsp", "scale": { "type": "linear" }, "category": "epicerie", "preparation": "Réparti entre rub et pommes de terre" },
+    { "id": "garlic-powder", "name": "Ail en poudre", "quantity": 3.5, "unit": "tsp", "scale": { "type": "linear" }, "category": "epicerie", "preparation": "Réparti entre rub, sauce et pommes de terre" },
+    { "id": "black-pepper", "name": "Poivre", "quantity": { "min": 1.75, "max": 2 }, "unit": "tsp", "scale": { "type": "range" }, "category": "epicerie", "preparation": "Réparti entre rub, sauce et pommes de terre" },
     { "id": "brown-sugar", "name": "Cassonade", "quantity": { "min": 1, "max": 2 }, "unit": "tbsp", "scale": { "type": "linear" }, "category": "epicerie" },
     { "id": "bbq-sauce", "name": "Sauce BBQ", "quantity": { "min": 2, "max": 3 }, "unit": "tbsp", "scale": { "type": "linear" }, "category": "epicerie" },
     { "id": "honey", "name": "Miel", "quantity": 1, "unit": "tbsp", "scale": { "type": "linear" }, "category": "epicerie" },
     { "id": "apple-juice", "name": "Jus de pomme", "quantity": 50, "unit": "mL", "scale": { "type": "linear" }, "category": "boissons-epicerie" },
     { "id": "butter", "name": "Beurre", "quantity": { "min": 10, "max": 15 }, "unit": "g", "scale": { "type": "linear" }, "category": "produits-frais", "optional": true },
     { "id": "fresh-herbs", "name": "Ciboulette ou persil", "quantity": { "min": 1, "max": 2 }, "unit": "tbsp", "scale": { "type": "linear" }, "category": "fruits-legumes" },
-    { "id": "olive-oil", "name": "Huile d’olive", "quantity": { "min": 1.5, "max": 3 }, "unit": "tbsp", "scale": { "type": "range" }, "category": "epicerie", "preparation": "1½–2 c. à soupe pommes de terre + jusqu’à 1 c. à soupe facultative dans la sauce" }
+    { "id": "olive-oil", "name": "Huile d’olive", "quantity": { "min": 1.5, "max": 3 }, "unit": "tbsp", "scale": { "type": "range" }, "category": "epicerie", "preparation": "Pommes de terre + quantité facultative dans la sauce; détails dans les étapes" }
   ],
   "equipment": [
     { "id": "woodfire", "name": "Ninja Woodfire" },
@@ -89,9 +89,17 @@
       "summary": "Tempérer et vérifier le rub",
       "durationMin": 30,
       "resources": [],
+      "ingredientUsage": [
+        { "id": "pork-amount", "ingredientId": "pork-belly", "quantity": { "min": 1.2, "max": 1.5 }, "unit": "kg" },
+        { "id": "rub-salt", "ingredientId": "salt", "quantity": { "min": 18, "max": 22 }, "unit": "g" },
+        { "id": "rub-paprika", "ingredientId": "smoked-paprika", "quantity": 2, "unit": "tsp" },
+        { "id": "rub-garlic", "ingredientId": "garlic-powder", "quantity": 2, "unit": "tsp" },
+        { "id": "rub-pepper", "ingredientId": "black-pepper", "quantity": 1, "unit": "tsp" },
+        { "id": "rub-sugar", "ingredientId": "brown-sugar", "quantity": { "min": 1, "max": 2 }, "unit": "tbsp" }
+      ],
       "details": [
-        "1,2 à 1,5 kg de poitrine de porc en cubes de ~45–50 mm.",
-        "Rub indicatif : 18–22 g de sel, 2 c. à café de paprika fumé, 2 c. à café d’ail en poudre, 1 c. à café de poivre, 1–2 c. à soupe de cassonade.",
+        "{{use:pork-amount}} de poitrine de porc en cubes de ~45–50 mm.",
+        "Rub indicatif : {{use:rub-salt}} de sel, {{use:rub-paprika}} de paprika fumé, {{use:rub-garlic}} d’ail en poudre, {{use:rub-pepper}} de poivre, {{use:rub-sugar}} de cassonade.",
         "Si le rub a été appliqué la veille, ne rien ajouter : laisser simplement tempérer."
       ],
       "completion": { "type": "manual", "description": "Porc prêt à être fumé" }
@@ -122,9 +130,15 @@
       "dependencies": [{ "stepId": "smoke", "relation": "after_finish", "lagMin": 0 }],
       "resources": ["woodfire"],
       "woodfire": { "mode": "BAKE_ROAST", "temperatureC": 160, "temperatureRangeC": [155, 160], "smoke": false, "pellets": false, "support": "compact_dish", "covered": true, "placement": "Petit plat permettant 1 à 2 couches; les cubes peuvent se toucher légèrement." },
+      "ingredientUsage": [
+        { "id": "covered-bbq", "ingredientId": "bbq-sauce", "quantity": { "min": 2, "max": 3 }, "unit": "tbsp" },
+        { "id": "covered-honey", "ingredientId": "honey", "quantity": 1, "unit": "tbsp" },
+        { "id": "covered-juice", "ingredientId": "apple-juice", "quantity": 50, "unit": "mL" },
+        { "id": "covered-butter", "ingredientId": "butter", "quantity": { "min": 10, "max": 15 }, "unit": "g" }
+      ],
       "details": [
         "Prendre le plus petit plat permettant de garder les cubes sur 1 à 2 couches. Ils peuvent se toucher légèrement.",
-        "Ajouter 2–3 c. à soupe de sauce BBQ, 1 c. à soupe de miel, 50 mL de jus de pomme et 10–15 g de beurre (facultatif).",
+        "Ajouter {{use:covered-bbq}} de sauce BBQ, {{use:covered-honey}} de miel, {{use:covered-juice}} de jus de pomme et {{use:covered-butter}} de beurre (facultatif).",
         "Le liquide ne doit pas noyer les cubes.",
         "Couvrir très hermétiquement avec de l’aluminium.",
         "Durée indicative : ~1 h avant le premier contrôle."
@@ -139,14 +153,25 @@
       "durationMin": 15,
       "plan": { "anchor": "serve", "anchorOffsetMin": -155 },
       "resources": ["fridge"],
+      "ingredientUsage": [
+        { "id": "sauce-yogurt", "ingredientId": "greek-yogurt", "quantity": 250, "unit": "g" },
+        { "id": "sauce-cream", "ingredientId": "creme-fraiche", "quantity": { "min": 60, "max": 80 }, "unit": "g" },
+        { "id": "sauce-lemon-count", "ingredientId": "lemon", "displayUnit": false },
+        { "id": "sauce-lemon-juice", "ingredientId": "lemon", "quantity": { "min": 20, "max": 30 }, "unit": "mL", "scale": { "type": "linear" } },
+        { "id": "sauce-garlic", "ingredientId": "garlic-powder", "quantity": 0.5, "unit": "tsp" },
+        { "id": "sauce-herbs", "ingredientId": "fresh-herbs", "quantity": { "min": 1, "max": 2 }, "unit": "tbsp" },
+        { "id": "sauce-salt", "ingredientId": "salt", "quantity": 3, "unit": "g" },
+        { "id": "sauce-pepper", "ingredientId": "black-pepper", "quantity": 0.25, "unit": "tsp" },
+        { "id": "sauce-oil", "ingredientId": "olive-oil", "quantity": 1, "unit": "tbsp" }
+      ],
       "details": [
-        "250 g de yaourt grec.",
-        "60–80 g de crème fraîche.",
-        "Zeste de 1 citron + 20–30 mL de jus de citron.",
-        "½ c. à café d’ail en poudre.",
-        "1–2 c. à soupe de ciboulette ou persil haché.",
-        "½ c. à café de sel (~3 g) + ¼ c. à café de poivre.",
-        "1 c. à soupe d’huile d’olive facultative.",
+        "{{use:sauce-yogurt}} de yaourt grec.",
+        "{{use:sauce-cream}} de crème fraîche.",
+        "Zeste de {{use:sauce-lemon-count}} citron(s) + {{use:sauce-lemon-juice}} de jus de citron.",
+        "{{use:sauce-garlic}} d’ail en poudre.",
+        "{{use:sauce-herbs}} de ciboulette ou persil haché.",
+        "{{use:sauce-salt}} de sel + {{use:sauce-pepper}} de poivre.",
+        "{{use:sauce-oil}} d’huile d’olive facultative.",
         "Mélanger, goûter, ajuster, puis garder au frais. Servir à part pour conserver le croustillant des pommes de terre."
       ],
       "completion": { "type": "manual", "description": "Sauce assaisonnée et placée au frais" }
@@ -171,12 +196,15 @@
       "id": "potato-boil",
       "component": "potatoes",
       "title": "Précuire les grenailles",
-      "summary": "700–800 g · 8 à 10 min",
+      "summary": "{{use:potato-amount}} · 8 à 10 min",
       "durationRangeMin": [8, 10],
       "durationPlanMin": 10,
       "resources": ["stovetop"],
+      "ingredientUsage": [
+        { "id": "potato-amount", "ingredientId": "potatoes" }
+      ],
       "details": [
-        "Cuire les pommes de terre grenaille dans une eau salée pendant 8–10 min après reprise de l’ébullition.",
+        "Cuire {{use:potato-amount}} de pommes de terre grenaille dans une eau salée pendant 8–10 min après reprise de l’ébullition.",
         "Elles doivent commencer à s’attendrir sans se désagréger."
       ],
       "completion": { "type": "appearance", "description": "Pommes de terre juste attendries sans se désagréger" }
@@ -189,10 +217,17 @@
       "durationMin": 10,
       "dependencies": [{ "stepId": "potato-boil", "relation": "after_finish", "lagMin": 0 }],
       "resources": [],
+      "ingredientUsage": [
+        { "id": "potato-oil", "ingredientId": "olive-oil", "quantity": { "min": 1.5, "max": 2 }, "unit": "tbsp" },
+        { "id": "potato-salt", "ingredientId": "salt", "quantity": { "min": 5, "max": 7 }, "unit": "g" },
+        { "id": "potato-paprika", "ingredientId": "smoked-paprika", "quantity": 1, "unit": "tsp" },
+        { "id": "potato-garlic", "ingredientId": "garlic-powder", "quantity": 1, "unit": "tsp" },
+        { "id": "potato-pepper", "ingredientId": "black-pepper", "quantity": { "min": 0.5, "max": 0.75 }, "unit": "tsp" }
+      ],
       "details": [
         "Égoutter puis laisser sécher 3–5 min.",
         "Écraser légèrement chaque pomme de terre.",
-        "Ajouter 1½–2 c. à soupe d’huile d’olive, 5–7 g de sel, 1 c. à café de paprika fumé, 1 c. à café d’ail en poudre et ½–¾ c. à café de poivre.",
+        "Ajouter {{use:potato-oil}} d’huile d’olive, {{use:potato-salt}} de sel, {{use:potato-paprika}} de paprika fumé, {{use:potato-garlic}} d’ail en poudre et {{use:potato-pepper}} de poivre.",
         "Elles peuvent attendre ainsi pendant que le porc termine."
       ],
       "completion": { "type": "manual", "description": "Pommes de terre écrasées et assaisonnées" }

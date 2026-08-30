@@ -1,4 +1,5 @@
 import { buildSchedule, closestMealAnchorDate, nextMealAnchorDate } from './planner.js';
+import { materializeRecipeForServings } from './step-details.js';
 
 function isFiniteNumber(value) {
   return typeof value === 'number' && Number.isFinite(value);
@@ -22,9 +23,6 @@ export function resolveSessionServingTarget({ mealTime, targetServingAt = null, 
   const reference = validDate(targetServingAt) || startedAt;
   let target = closestMealAnchorDate(mealTime, reference);
 
-  // Migration/safety rule: an active session cannot target a service occurrence
-  // that predates the start of that session. Older app versions could persist
-  // exactly this state around midnight, which later mixed two calendar days.
   if (target.getTime() < startedAt.getTime()) {
     target = nextMealAnchorDate(mealTime, startedAt);
   }
@@ -81,8 +79,9 @@ export function normalizeMealPlanContext(recipe, context = {}) {
 
 export function buildMealSchedule(recipe, context = {}) {
   const normalized = normalizeMealPlanContext(recipe, context);
+  const materializedRecipe = materializeRecipeForServings(recipe, normalized.servings);
   return buildSchedule(
-    recipe,
+    materializedRecipe,
     normalized.mealTime,
     normalized.referenceDate,
     normalized.taskShifts,

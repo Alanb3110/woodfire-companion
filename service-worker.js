@@ -1,5 +1,5 @@
 const APP_VERSION = '0.3.0-dev.10';
-const CACHE_REVISION = 'start-hint-loop-hotfix-2';
+const CACHE_REVISION = 'scaled-step-details-3';
 const CACHE_NAME = `woodfire-companion-${APP_VERSION}-${CACHE_REVISION}`;
 const APP_ASSETS = [
   './',
@@ -13,6 +13,7 @@ const APP_ASSETS = [
   './js/meal-planner.js',
   './js/recipe.js',
   './js/recipe-loader.js',
+  './js/step-details.js',
   './js/library.js',
   './js/recipe-hero.js',
   './js/settings.js',
