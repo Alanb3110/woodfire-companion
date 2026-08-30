@@ -27,12 +27,14 @@ test('temperature tracking can be explicitly disabled', () => {
   assert.equal(temperatureTrackingEnabled(recipe), false);
 });
 
-test('temperature metadata must be an object', () => {
-  const recipe = copyRecipe();
-  recipe.temperature = '74';
-  const validation = validateRecipe(recipe);
-  assert.equal(validation.valid, false);
-  assert.ok(validation.errors.some(error => error.includes('temperature must be an object')));
+test('temperature metadata must be a real object when provided', () => {
+  for (const malformed of [null, '74', [], 74]) {
+    const recipe = copyRecipe();
+    recipe.temperature = malformed;
+    const validation = validateRecipe(recipe);
+    assert.equal(validation.valid, false, `Expected malformed temperature value ${JSON.stringify(malformed)} to fail.`);
+    assert.ok(validation.errors.some(error => error.includes('temperature must be an object')));
+  }
 });
 
 test('enabled tracking requires a valid 30–120 °C default target', () => {
