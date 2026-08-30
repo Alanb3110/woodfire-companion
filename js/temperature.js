@@ -1,3 +1,18 @@
+export function temperatureTrackingEnabled(recipe) {
+  const config = recipe?.temperature;
+  if (!config || typeof config !== 'object') return false;
+  if (config.enabled === false) return false;
+  if (config.enabled === true) return true;
+  return Number.isFinite(config.defaultTargetC);
+}
+
+export function defaultTemperatureTarget(recipe) {
+  if (!temperatureTrackingEnabled(recipe)) return null;
+  return Number.isFinite(recipe?.temperature?.defaultTargetC)
+    ? recipe.temperature.defaultTargetC
+    : null;
+}
+
 export function validateTemperature(raw) {
   const value = Number(raw);
   if (raw === '' || raw === null || raw === undefined || !Number.isFinite(value)) {

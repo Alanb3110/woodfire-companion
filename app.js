@@ -41,6 +41,7 @@ import {
   stepLifecycle
 } from './js/session.js';
 import { createTemperatureController } from './js/temperature-ui.js';
+import { defaultTemperatureTarget, temperatureTrackingEnabled } from './js/temperature.js';
 
 const LIBRARY_URL = './recipes/index.json';
 
@@ -92,6 +93,8 @@ const currentTaskMeta = $('currentTaskMeta');
 const nextTaskName = $('nextTaskName');
 const nextTaskCountdown = $('nextTaskCountdown');
 const resetChecklistBtn = $('resetChecklistBtn');
+const temperatureTab = document.querySelector('.tab[data-tab="temperature"]');
+const temperaturePanel = $('temperature');
 const installHelpBtn = $('installHelpBtn');
 const installDialog = $('installDialog');
 
@@ -111,7 +114,7 @@ const temperatureController = createTemperatureController({
     exportButton: $('exportCsvBtn')
   },
   getState: () => state,
-  getDefaultTarget: () => recipe?.temperature?.defaultTargetC || 93,
+  getDefaultTarget: () => defaultTemperatureTarget(recipe) ?? 93,
   commit: () => {
     saveState();
     syncJournal();
@@ -423,14 +426,16 @@ async function activateRecipe(entry, loadedRecipe, resetSession) {
   state.activeRecipeUrl = entry.recipeUrl || state.activeRecipeUrl;
   state.servings = configServings;
   state.mealTime = configMealTime;
-  state.temperatureTarget = resetSession ? (recipe.temperature?.defaultTargetC || 93) : state.temperatureTarget;
+  const temperatureEnabled = temperatureTrackingEnabled(recipe);
+  if (resetSession) state.temperatureTarget = temperatureEnabled ? defaultTemperatureTarget(recipe) : null;
+  if (!temperatureEnabled && state.activeTab === 'temperature') state.activeTab = 'planning';
   state.view = 'cook';
   saveState();
   renderCookShell();
   recomputeSchedule();
   syncJournal();
   renderTasks();
-  temperatureController.render();
+  if (temperatureEnabled) temperatureController.render();
   switchTab(state.activeTab || 'planning', false);
   showView('cook');
 }
@@ -480,6 +485,9 @@ function renderCookShell() {
   cookTitle.textContent = recipe.title;
   cookSubtitle.textContent = `${state.servings} personne${state.servings > 1 ? 's' : ''} · service ${state.mealTime}`;
   fillTimePicker(cookMealHour, cookMealMinute, state.mealTime);
+  const enabled = temperatureTrackingEnabled(recipe);
+  temperatureTab.hidden = !enabled;
+  temperaturePanel.hidden = !enabled;
 }
 
 function recomputeSchedule() {
@@ -807,11 +815,12 @@ function shiftRemainingTasks(minutes) {
 }
 
 function switchTab(tabName, persist = true) {
-  state.activeTab = tabName;
+  const resolvedTab = tabName === 'temperature' && !temperatureTrackingEnabled(recipe) ? 'planning' : tabName;
+  state.activeTab = resolvedTab;
   if (persist) saveState();
-  document.querySelectorAll('.tab').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabName));
-  document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.toggle('active', panel.id === tabName));
-  if (tabName === 'temperature' && !cookView.hidden) temperatureController.focus();
+  document.querySelectorAll('.tab').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === resolvedTab));
+  document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.toggle('active', panel.id === resolvedTab));
+  if (resolvedTab === 'temperature' && !cookView.hidden) temperatureController.focus();
 }
 
 function updateCookTime() {

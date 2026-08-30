@@ -3,10 +3,22 @@ import assert from 'node:assert/strict';
 import {
   appendTemperatureMeasurement,
   clampTemperatureTarget,
+  defaultTemperatureTarget,
   removeLastTemperatureMeasurement,
   temperatureCsv,
+  temperatureTrackingEnabled,
   validateTemperature
 } from '../js/temperature.js';
+
+test('recipe temperature tracking is optional and backward compatible', () => {
+  assert.equal(temperatureTrackingEnabled({}), false);
+  assert.equal(temperatureTrackingEnabled({ temperature: { enabled: false } }), false);
+  assert.equal(temperatureTrackingEnabled({ temperature: { enabled: true, defaultTargetC: 74 } }), true);
+  assert.equal(temperatureTrackingEnabled({ temperature: { defaultTargetC: 93 } }), true);
+  assert.equal(defaultTemperatureTarget({}), null);
+  assert.equal(defaultTemperatureTarget({ temperature: { enabled: false } }), null);
+  assert.equal(defaultTemperatureTarget({ temperature: { defaultTargetC: 93 } }), 93);
+});
 
 test('temperature validation keeps the existing 0–150 °C contract', () => {
   assert.deepEqual(validateTemperature(''), { ok: false, message: 'Saisis une température.' });

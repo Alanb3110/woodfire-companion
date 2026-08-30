@@ -116,8 +116,24 @@ export function validateRecipe(recipe) {
   if (recipe.timing?.elapsedRangeMin !== undefined && !numericRangeIsValid(recipe.timing.elapsedRangeMin)) {
     errors.push('timing.elapsedRangeMin must be a valid [min, max] range.');
   }
-  if (recipe.temperature?.defaultTargetC !== undefined && !isFiniteNumber(recipe.temperature.defaultTargetC)) {
-    errors.push('temperature.defaultTargetC must be numeric when provided.');
+  if (recipe.temperature !== undefined
+    && (!recipe.temperature || typeof recipe.temperature !== 'object' || Array.isArray(recipe.temperature))) {
+    errors.push('temperature must be an object when provided.');
+  }
+  if (recipe.temperature?.enabled !== undefined && typeof recipe.temperature.enabled !== 'boolean') {
+    errors.push('temperature.enabled must be boolean when provided.');
+  }
+  if (recipe.temperature?.defaultTargetC !== undefined
+    && (!isFiniteNumber(recipe.temperature.defaultTargetC)
+      || recipe.temperature.defaultTargetC < 30
+      || recipe.temperature.defaultTargetC > 120)) {
+    errors.push('temperature.defaultTargetC must be between 30 and 120 °C when provided.');
+  }
+  if (recipe.temperature?.enabled === true && !isFiniteNumber(recipe.temperature.defaultTargetC)) {
+    errors.push('temperature.defaultTargetC is required when temperature tracking is enabled.');
+  }
+  if (recipe.temperature?.enabled === false && recipe.temperature.defaultTargetC !== undefined) {
+    errors.push('temperature.defaultTargetC must be omitted when temperature tracking is disabled.');
   }
 
   const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
@@ -254,6 +270,10 @@ export function validateRecipe(recipe) {
       errors.push(`Step ${step.id || '?'} requires a completion criterion.`);
     } else {
       if (!COMPLETION_TYPES.has(step.completion.type)) errors.push(`Invalid completion type for step ${step.id || '?'}: ${step.completion.type}`);
+      if (step.completion.type === 'temperature'
+        && (recipe.temperature?.enabled === false || !isFiniteNumber(recipe.temperature?.defaultTargetC))) {
+        errors.push(`Temperature completion for step ${step.id || '?'} requires enabled recipe temperature tracking with defaultTargetC.`);
+      }
       if (!step.completion.description || typeof step.completion.description !== 'string') {
         errors.push(`Step ${step.id || '?'} completion requires a description.`);
       }
