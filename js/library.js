@@ -1,8 +1,12 @@
+import { installRecipeHeroImageBridge } from './recipe-hero.js';
+
 const VALID_STATUSES = new Set(['available', 'coming_soon']);
 
 function isLocalAssetUrl(value) {
   return typeof value === 'string' && value.startsWith('./') && !value.startsWith('./../');
 }
+
+installRecipeHeroImageBridge();
 
 export function validateLibrary(library) {
   const errors = [];

@@ -16,3 +16,9 @@ test('service worker does not hard-code executable recipe or cover filenames', (
   assert.doesNotMatch(serviceWorker, /recipes\/pork-belly-burnt-ends\.json/);
   assert.doesNotMatch(serviceWorker, /assets\/recipes\/pork-belly-burnt-ends\.svg/);
 });
+
+test('iOS detail hotfix gets a fresh shell cache and bypasses stale HTTP cache', () => {
+  assert.match(serviceWorker, /CACHE_REVISION = 'ios-recipe-detail-hotfix-1'/);
+  assert.match(serviceWorker, /'\.\/js\/recipe-hero\.js'/);
+  assert.match(serviceWorker, /fetch\(event\.request, \{ cache: 'no-store' \}\)/);
+});
