@@ -12,7 +12,12 @@
       "activePrepMin": 45,
       "elapsedRangeMin": [300, 360],
       "servings": { "min": 2, "max": 8, "reference": 4 },
-      "visual": { "theme": "embers", "symbol": "🔥", "eyebrow": "SMOKER · ROAST · AIR FRY" }
+      "visual": {
+        "theme": "embers",
+        "symbol": "🔥",
+        "eyebrow": "SMOKER · ROAST · AIR FRY",
+        "imageUrl": "./assets/recipes/pork-belly-burnt-ends.svg"
+      }
     },
     {
       "id": "sweet-savory-turkey-zucchini-gratin",
@@ -25,7 +30,12 @@
       "activePrepMin": 60,
       "elapsedRangeMin": [210, 240],
       "servings": { "min": 4, "max": 6, "reference": 5 },
-      "visual": { "theme": "korean", "symbol": "🍗", "eyebrow": "SMOKER · ROAST · FOUR" }
+      "visual": {
+        "theme": "korean",
+        "symbol": "🍗",
+        "eyebrow": "SMOKER · ROAST · FOUR",
+        "imageUrl": "./assets/recipes/sweet-savory-turkey-zucchini-gratin.svg"
+      }
     },
     {
       "id": "smoked-beef-barbacoa",
@@ -38,7 +48,12 @@
       "activePrepMin": 90,
       "elapsedRangeMin": [650, 720],
       "servings": { "min": 6, "max": 8, "reference": 8 },
-      "visual": { "theme": "barbacoa", "symbol": "🌮", "eyebrow": "GRILL · SMOKER · BRAISE" }
+      "visual": {
+        "theme": "barbacoa",
+        "symbol": "🌮",
+        "eyebrow": "GRILL · SMOKER · BRAISE",
+        "imageUrl": "./assets/recipes/smoked-beef-barbacoa.svg"
+      }
     }
   ]
 }
