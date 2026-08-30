@@ -82,14 +82,16 @@ The current reference meal is based on:
 - generous fresh yogurt/crème fraîche lemon-herb sauce.
 
 The current structured implementation uses approximately:
-- pork belly: 1.2–1.5 kg, ~40 mm cubes;
+- pork belly: 1.2–1.5 kg, ~45–50 mm cubes;
 - smoking: `SMOKER`, 125 °C, smoke on, pellets, directly on grill surface;
 - covered phase: compact dish, 1–2 layers, 155–160 °C, smoke off, tightly covered;
-- finishing: 175–180 °C uncovered;
+- finishing: 175–180 °C uncovered, 10–20 min estimated with checks from 10 min and an appearance/tenderness exit criterion;
 - potatoes: 700–800 g, parboiled then `AIR FRY` 205–210 °C in Air Fry basket;
 - fresh sauce: about 250 g Greek yogurt + 60–80 g crème fraîche + lemon + herbs/seasoning.
 
-This demo recipe is a starting dataset, not the intended final schema.
+The larger cube size and shorter finishing range are the V5 next-cook defaults after the first real cook showed that already-tender small fragments could dry and over-caramelise during a longer uncovered finish. See `sources/PORK_BELLY_MEAL.md` for the recipe-specific refinement record.
+
+This reference recipe is one curated project dataset, not a universal cooking standard.
 
 ## Temperature logging use case
 The user may manually probe meat during a cook. Logging should therefore not interrupt execution.

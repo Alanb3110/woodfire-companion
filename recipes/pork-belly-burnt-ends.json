@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "pork-belly-burnt-ends-meal",
-  "version": 4,
+  "version": 5,
   "title": "Pork Belly Burnt Ends",
   "description": "Poitrine de porc fumée puis confite et caramélisée, servie avec grenailles croustillantes et sauce fraîche citronnée.",
   "heroImage": null,
@@ -20,7 +20,7 @@
       "id": "rub-ahead",
       "title": "Assaisonner le porc en avance",
       "timing": "Idéalement la veille · sinon ≥ 30 min avant",
-      "details": "Découper la poitrine en cubes d’environ 40 mm, appliquer le rub puis conserver au frais. Si fait la veille, sortir le porc environ 30 min avant le fumage."
+      "details": "Découper la poitrine en cubes d’environ 45–50 mm, appliquer le rub puis conserver au frais. Si fait la veille, sortir le porc environ 30 min avant le fumage."
     },
     {
       "id": "sauce-ahead",
@@ -54,7 +54,7 @@
     }
   ],
   "ingredients": [
-    { "id": "pork-belly", "name": "Poitrine de porc", "quantity": { "min": 1200, "max": 1500 }, "unit": "g", "scale": { "type": "linear" }, "category": "viande", "preparation": "En cubes d’environ 40 mm" },
+    { "id": "pork-belly", "name": "Poitrine de porc", "quantity": { "min": 1200, "max": 1500 }, "unit": "g", "scale": { "type": "linear" }, "category": "viande", "preparation": "En cubes d’environ 45–50 mm" },
     { "id": "potatoes", "name": "Pommes de terre grenaille", "quantity": { "min": 700, "max": 800 }, "unit": "g", "scale": { "type": "linear" }, "category": "fruits-legumes" },
     { "id": "greek-yogurt", "name": "Yaourt grec", "quantity": 250, "unit": "g", "scale": { "type": "linear" }, "category": "produits-frais" },
     { "id": "creme-fraiche", "name": "Crème fraîche", "quantity": { "min": 60, "max": 80 }, "unit": "g", "scale": { "type": "linear" }, "category": "produits-frais" },
@@ -90,7 +90,7 @@
       "durationMin": 30,
       "resources": [],
       "details": [
-        "1,2 à 1,5 kg de poitrine de porc en cubes de ~40 mm.",
+        "1,2 à 1,5 kg de poitrine de porc en cubes de ~45–50 mm.",
         "Rub indicatif : 18–22 g de sel, 2 c. à café de paprika fumé, 2 c. à café d’ail en poudre, 1 c. à café de poivre, 1–2 c. à soupe de cassonade.",
         "Si le rub a été appliqué la veille, ne rien ajouter : laisser simplement tempérer."
       ],
@@ -201,19 +201,20 @@
       "id": "finish-pork",
       "component": "pork",
       "title": "Finition du porc à découvert",
-      "summary": "20 à 30 min",
-      "durationRangeMin": [20, 30],
-      "durationPlanMin": 30,
+      "summary": "10 à 20 min · contrôler dès 10 min",
+      "durationRangeMin": [10, 20],
+      "durationPlanMin": 15,
       "dependencies": [{ "stepId": "first-check", "relation": "after_finish", "lagMin": 0, "planningBufferMin": 35 }],
       "resources": ["woodfire"],
       "woodfire": { "mode": "BAKE_ROAST", "temperatureC": 180, "temperatureRangeC": [175, 180], "smoke": false, "pellets": false, "support": "compact_dish", "covered": false, "placement": "Même plat, aluminium retiré." },
       "details": [
-        "Retirer l’aluminium lorsque les cubes sont tendres.",
-        "Mélanger pour bien les enrober de sauce.",
-        "Caraméliser 20–30 min à découvert en remuant une fois à mi-cuisson.",
-        "Objectif : extérieur collant et légèrement caramélisé, intérieur très tendre."
+        "Retirer l’aluminium lorsque les cubes sont déjà très tendres.",
+        "Mélanger délicatement pour les enrober de sauce sans fragmenter davantage les cubes.",
+        "Caraméliser à découvert 10–20 min; contrôler dès 10 min puis toutes les 5 min.",
+        "Retirer plus tôt les petits morceaux détachés s’ils sont déjà très foncés et collants.",
+        "Arrêter dès que le glaçage est collant et légèrement caramélisé : ne pas prolonger uniquement pour atteindre le temps prévu."
       ],
-      "completion": { "type": "combined", "description": "Extérieur collant/caramélisé et intérieur très tendre" }
+      "completion": { "type": "combined", "description": "Glaçage collant et légèrement caramélisé sans dessèchement; intérieur très tendre" }
     },
     {
       "id": "rest-pork",

@@ -21,12 +21,12 @@ function byId(schedule) {
   return Object.fromEntries(schedule.map(item => [item.step.id, item]));
 }
 
-test('baseline schedule reproduces current POC anchor times during migration', () => {
+test('baseline schedule reproduces current Pork Belly reference anchor times', () => {
   const schedule = buildSchedule(recipe, '20:00', ref);
   const map = byId(schedule);
-  assert.equal(hm(map['take-out-pork'].start), '14:30');
-  assert.equal(hm(map.smoke.start), '15:00');
-  assert.equal(hm(map.covered.start), '17:15');
+  assert.equal(hm(map['take-out-pork'].start), '14:45');
+  assert.equal(hm(map.smoke.start), '15:15');
+  assert.equal(hm(map.covered.start), '17:30');
   assert.equal(hm(map['airfry-potatoes'].start), '19:25');
   assert.equal(hm(map.eat.start), '20:00');
 });

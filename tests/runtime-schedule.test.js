@@ -64,18 +64,18 @@ test('a recheck inside the Pork Belly planning buffer is absorbed', () => {
   const schedule = buildSchedule(pork, '20:00', referenceDate, {}, { expectedCompletionTimes });
   const map = scheduleMap(schedule);
 
-  assert.equal(hm(map['finish-pork'].start), '18:50');
+  assert.equal(hm(map['finish-pork'].start), '19:05');
   assert.equal(hm(map.eat.start), '20:00');
 });
 
 test('a recheck beyond the Pork Belly buffer propagates through dependent work and service', () => {
   const expectedCompletionTimes = {
-    'first-check': new Date(2026, 7, 29, 19, 0, 0, 0).toISOString()
+    'first-check': new Date(2026, 7, 29, 19, 15, 0, 0).toISOString()
   };
   const schedule = buildSchedule(pork, '20:00', referenceDate, {}, { expectedCompletionTimes });
   const map = scheduleMap(schedule);
 
-  assert.equal(hm(map['finish-pork'].start), '19:00');
+  assert.equal(hm(map['finish-pork'].start), '19:15');
   assert.equal(hm(map['rest-pork'].start), '19:30');
   assert.equal(hm(map['airfry-potatoes'].start), '19:35');
   assert.equal(hm(map.eat.start), '20:10');

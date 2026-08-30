@@ -11,7 +11,7 @@ function hm(date) {
 }
 
 test('recommended Pork Belly start comes from the generated plan', () => {
-  assert.equal(hm(recommendedStartFromPlan(pork, 4, '20:00')), '14:30');
+  assert.equal(hm(recommendedStartFromPlan(pork, 4, '20:00')), '14:45');
 });
 
 test('recommended turkey meal start comes from the generated plan', () => {

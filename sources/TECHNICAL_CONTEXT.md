@@ -25,11 +25,11 @@ State remains local-first/offline.
 `recipes/index.json` is the library manifest. Only complete validated recipes may be marked `available`.
 
 Executable meals currently include:
-- `recipes/pork-belly-burnt-ends.json`, content version 4;
+- `recipes/pork-belly-burnt-ends.json`, content version 5;
 - `recipes/sweet-savory-turkey-zucchini-gratin.json`, content version 2;
 - `recipes/smoked-beef-barbacoa.json`, content version 1.
 
-The Pork Belly meal remains the first long-cook reference. The turkey + zucchini-gratin meal adds a temperature-driven poultry cook in parallel with a conventional-oven side dish. The barbacoa meal adds a much longer tenderness-driven beef braise, observation rechecks, smoked salsa and parallel meat-rest/stovetop reduction before service.
+The Pork Belly meal remains the first long-cook reference. Version 5 incorporates the first real-cook refinement: larger 45–50 mm cubes and a shorter observation-led uncovered finish to reduce drying of small fragments. The turkey + zucchini-gratin meal adds a temperature-driven poultry cook in parallel with a conventional-oven side dish. The barbacoa meal adds a much longer tenderness-driven beef braise, observation rechecks, smoked salsa and parallel meat-rest/stovetop reduction before service.
 
 `js/recipe.js` owns recipe validation, ingredient scaling and Woodfire summary formatting. Validation protects serving bounds, component ownership, duration ranges, completion/recheck semantics, dependency connectivity, service milestones and Woodfire configuration consistency.
 
@@ -49,6 +49,7 @@ Relevant source contracts:
 - `sources/COOK_JOURNAL_V2.md`;
 - `sources/MULTI_RECIPE_CONTRACT.md`;
 - `sources/ILLUSTRATED_LIBRARY_V1.md`;
+- `sources/PORK_BELLY_MEAL.md`;
 - `sources/TURKEY_ZUCCHINI_MEAL.md`.
 
 ## Multi-recipe acceptance
