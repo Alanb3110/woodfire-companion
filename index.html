@@ -20,7 +20,7 @@
     <header class="topbar">
       <div class="brand-line">
         <span class="eyebrow">WOODFIRE COMPANION</span>
-        <span class="dev-badge">DEV · v0.3.0-dev.5</span>
+        <span class="dev-badge">DEV · v0.3.0-dev.6</span>
       </div>
       <div class="topbar-actions">
         <button id="settingsBtn" class="icon-btn" type="button" aria-label="Réglages">⚙︎</button>
@@ -194,6 +194,12 @@
               </div>
             </div>
             <button id="resetChecklistBtn" class="secondary-btn" type="button">Réinitialiser</button>
+          </div>
+
+          <div id="currentTaskCard" class="status-card" aria-live="polite" hidden>
+            <span class="status-label">En cours</span>
+            <strong id="currentTaskName">—</strong>
+            <span id="currentTaskMeta" class="status-meta">—</span>
           </div>
 
           <div class="status-card" aria-live="polite">

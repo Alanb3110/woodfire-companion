@@ -1,6 +1,6 @@
 import { loadLibrary, findLibraryRecipe } from './js/library.js';
 import { loadRecipe } from './js/recipe-loader.js';
-import { formatWoodfireSummary, scaleIngredients } from './js/recipe.js';
+import { formatWoodfireSummary, scaleIngredients, validateRecipe } from './js/recipe.js';
 import { renderPreCook } from './js/prep-ui.js';
 import {
   buildJournalEntry,
@@ -15,12 +15,10 @@ import { renderJournalEntries } from './js/journal-ui.js';
 import { buildMealSchedule, resolveSessionServingTarget } from './js/meal-planner.js';
 import {
   addStepDelay,
-  closestMealAnchorDate,
   findDependencyIssues,
   findResourceConflicts,
   getNextScheduledTask,
-  mealAnchorDate,
-  nextMealAnchorDate
+  plannedDurationMin
 } from './js/planner.js';
 import {
   applyObservation,
@@ -30,30 +28,20 @@ import {
   pendingRecheckDate,
   resolveObservationDelayMin
 } from './js/observations.js';
+import {
+  completeStep,
+  firstKnownSessionTimestamp,
+  hasSessionProgress as sessionHasProgress,
+  loadSessionState,
+  resetCookProgress,
+  resetStep,
+  saveSessionState,
+  snapshotRecipe,
+  startStep,
+  stepLifecycle
+} from './js/session.js';
 
-const STORAGE_KEY = 'woodfire-companion-v1';
 const LIBRARY_URL = './recipes/index.json';
-
-const defaultState = () => ({
-  view: 'library',
-  mealTime: '20:00',
-  servings: 4,
-  completed: {},
-  taskShifts: {},
-  observations: [],
-  rechecks: {},
-  temperatureTarget: 93,
-  measurements: [],
-  cookStartedAt: null,
-  sessionId: null,
-  sessionStartedAt: null,
-  sessionServedAt: null,
-  targetServingAt: null,
-  activeTab: 'planning',
-  recipeId: null,
-  recipeVersion: null,
-  activeRecipeUrl: null
-});
 
 let library = null;
 let recipe = null;
@@ -63,7 +51,8 @@ let selectedEntry = null;
 let configServings = 4;
 let configMealTime = '20:00';
 let schedule = [];
-let state = loadState();
+let state = repairLoadedSession(loadSessionState());
+saveSessionState(state);
 
 const $ = id => document.getElementById(id);
 const appError = $('appError');
@@ -96,6 +85,9 @@ const cookMealMinute = $('cookMealMinute');
 const cookTitle = $('cookTitle');
 const cookSubtitle = $('cookSubtitle');
 const taskList = $('taskList');
+const currentTaskCard = $('currentTaskCard');
+const currentTaskName = $('currentTaskName');
+const currentTaskMeta = $('currentTaskMeta');
 const nextTaskName = $('nextTaskName');
 const nextTaskCountdown = $('nextTaskCountdown');
 const resetChecklistBtn = $('resetChecklistBtn');
@@ -114,51 +106,22 @@ const exportCsvBtn = $('exportCsvBtn');
 const installHelpBtn = $('installHelpBtn');
 const installDialog = $('installDialog');
 
-function firstKnownSessionTimestamp(value) {
-  const candidates = [
-    value.sessionStartedAt,
-    value.cookStartedAt,
-    ...Object.values(value.completed || {}),
-    ...(value.observations || []).map(item => item.timestamp)
-  ].filter(Boolean).sort();
-  return candidates[0] || new Date().toISOString();
-}
-
-function loadState() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return defaultState();
-    const parsed = JSON.parse(raw);
-    const merged = { ...defaultState(), ...parsed };
-    const hasProgress = Object.keys(parsed.completed || {}).length > 0
-      || (parsed.measurements || []).length > 0
-      || (parsed.observations || []).length > 0
-      || Object.keys(parsed.rechecks || {}).length > 0
-      || Boolean(parsed.cookStartedAt)
-      || Boolean(parsed.sessionStartedAt && parsed.recipeId);
-    if (!parsed.view) merged.view = hasProgress ? 'cook' : 'library';
-
-    if (hasProgress && !merged.sessionId) {
-      merged.sessionStartedAt = firstKnownSessionTimestamp(merged);
-      merged.sessionId = createSessionId(new Date(merged.sessionStartedAt));
-    }
-    if (hasProgress && !merged.sessionStartedAt) merged.sessionStartedAt = firstKnownSessionTimestamp(merged);
-    if (hasProgress && merged.sessionStartedAt) {
-      merged.targetServingAt = resolveSessionServingTarget({
-        mealTime: merged.mealTime || '20:00',
-        targetServingAt: merged.targetServingAt,
-        sessionStartedAt: merged.sessionStartedAt
-      }).toISOString();
-    }
-    return merged;
-  } catch (error) {
-    console.warn('État local illisible, réinitialisation.', error);
-    return defaultState();
+function repairLoadedSession(value) {
+  const hasProgress = sessionHasProgress(value);
+  if (hasProgress && !value.sessionStartedAt) value.sessionStartedAt = firstKnownSessionTimestamp(value);
+  if (hasProgress && !value.sessionId) value.sessionId = createSessionId(new Date(value.sessionStartedAt));
+  if (hasProgress && value.sessionStartedAt) {
+    value.targetServingAt = resolveSessionServingTarget({
+      mealTime: value.mealTime || '20:00',
+      targetServingAt: value.targetServingAt,
+      sessionStartedAt: value.sessionStartedAt
+    }).toISOString();
   }
+  return value;
 }
 
 function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  saveSessionState(state);
 }
 
 function showError(message) {
@@ -172,12 +135,7 @@ function clearError() {
 }
 
 function hasSessionProgress() {
-  return Object.keys(state.completed || {}).length > 0
-    || state.measurements.length > 0
-    || state.observations.length > 0
-    || Object.keys(state.rechecks || {}).length > 0
-    || Boolean(state.cookStartedAt)
-    || Boolean(state.sessionStartedAt && state.recipeId);
+  return sessionHasProgress(state);
 }
 
 function showView(name, persist = true) {
@@ -193,10 +151,6 @@ function showView(name, persist = true) {
 
 function formatTime(date) {
   return new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit', hour12: false }).format(date);
-}
-
-function formatCompletion(iso) {
-  return `Fait à ${formatTime(new Date(iso))}`;
 }
 
 function formatDurationRange(range) {
@@ -306,9 +260,12 @@ function renderLibrary() {
   resumeCookBtn.hidden = !resumable;
   if (resumable) {
     const entry = findLibraryRecipe(library, state.recipeId);
-    resumeCookTitle.textContent = entry ? `Reprendre · ${entry.title}` : 'Reprendre la cuisson';
+    const activeTitle = entry?.title || state.recipeSnapshot?.title || 'Cuisson en cours';
+    resumeCookTitle.textContent = `Reprendre · ${activeTitle}`;
     const completedCount = Object.keys(state.completed || {}).length;
-    resumeCookMeta.textContent = `${completedCount} étape${completedCount === 1 ? '' : 's'} terminée${completedCount === 1 ? '' : 's'} · ›`;
+    const activeCount = Object.keys(state.started || {}).filter(id => !state.completed[id]).length;
+    const activeCopy = activeCount ? ` · ${activeCount} en cours` : '';
+    resumeCookMeta.textContent = `${completedCount} terminée${completedCount === 1 ? '' : 's'}${activeCopy} · ›`;
   }
   renderJournalHistory();
 }
@@ -444,18 +401,12 @@ function ensureSessionMetadata(resetSession) {
 async function activateRecipe(entry, loadedRecipe, resetSession) {
   recipe = loadedRecipe;
   activeEntry = entry;
-  if (resetSession) {
-    state.completed = {};
-    state.taskShifts = {};
-    state.observations = [];
-    state.rechecks = {};
-    state.measurements = [];
-    state.cookStartedAt = null;
-  }
+  if (resetSession) state = resetCookProgress(state);
   ensureSessionMetadata(resetSession);
+  if (resetSession || !state.recipeSnapshot) state.recipeSnapshot = snapshotRecipe(recipe);
   state.recipeId = recipe.id;
   state.recipeVersion = recipe.version;
-  state.activeRecipeUrl = entry.recipeUrl;
+  state.activeRecipeUrl = entry.recipeUrl || state.activeRecipeUrl;
   state.servings = configServings;
   state.mealTime = configMealTime;
   state.temperatureTarget = resetSession ? (recipe.temperature?.defaultTargetC || 93) : state.temperatureTarget;
@@ -473,22 +424,34 @@ async function activateRecipe(entry, loadedRecipe, resetSession) {
 async function startConfiguredCook() {
   if (!selectedRecipe || !selectedEntry) return;
   if (hasSessionProgress() && !state.sessionServedAt) {
-    const ok = confirm('Démarrer ce repas comme nouvelle cuisson ? Les cases cochées, observations et mesures de la cuisson en cours seront effacées.');
+    const ok = confirm('Démarrer ce repas comme nouvelle cuisson ? Les étapes en cours/terminées, observations et mesures de la cuisson actuelle seront effacées.');
     if (!ok) return;
   }
   await activateRecipe(selectedEntry, selectedRecipe, true);
 }
 
 async function resumeCook() {
-  const entry = findLibraryRecipe(library, state.recipeId);
-  if (!entry?.recipeUrl) {
-    showError('La recette de la cuisson en cours n’est plus disponible dans la bibliothèque.');
-    showView('library');
-    return;
-  }
+  const libraryEntry = findLibraryRecipe(library, state.recipeId);
+  const entry = libraryEntry || {
+    id: state.recipeId,
+    title: state.recipeSnapshot?.title || 'Cuisson en cours',
+    recipeUrl: state.activeRecipeUrl,
+    visual: { theme: 'embers', symbol: '🔥', eyebrow: 'WOODFIRE' }
+  };
   clearError();
   try {
-    const loaded = await loadRecipe(entry.recipeUrl);
+    let loaded = null;
+    if (state.recipeSnapshot?.id === state.recipeId) {
+      const validation = validateRecipe(state.recipeSnapshot);
+      if (validation.valid) loaded = snapshotRecipe(state.recipeSnapshot);
+    }
+    if (!loaded) {
+      if (!entry.recipeUrl) throw new Error('No recipe snapshot or recipeUrl is available for the active cook.');
+      loaded = await loadRecipe(entry.recipeUrl);
+      state.recipeSnapshot = snapshotRecipe(loaded);
+      state.recipeVersion = loaded.version;
+      saveState();
+    }
     configServings = state.servings || loaded.servings.reference;
     configMealTime = state.mealTime || '20:00';
     await activateRecipe(entry, loaded, false);
@@ -511,6 +474,7 @@ function recomputeSchedule() {
     servings: state.servings,
     targetServingAt: state.targetServingAt,
     taskShifts: state.taskShifts,
+    actualStartTimes: state.started,
     actualCompletionTimes: state.completed,
     expectedCompletionTimes: state.rechecks
   });
@@ -549,11 +513,13 @@ function syncJournal() {
 }
 
 function applyStepObservation(step, option) {
+  const now = new Date();
+  if (!state.started[step.id]) state = startStep(state, step.id, now);
   const result = applyObservation({
     observations: state.observations,
     rechecks: state.rechecks,
     completed: state.completed
-  }, step, option, new Date());
+  }, step, option, now);
 
   state.observations = result.observations;
   state.rechecks = result.rechecks;
@@ -625,14 +591,37 @@ function renderObservationControls(detail, step) {
   detail.appendChild(panel);
 }
 
+function handleStepToggle(step) {
+  const lifecycle = stepLifecycle(state, step.id);
+  const now = new Date();
+  if (lifecycle === 'done') {
+    state = resetStep(state, step.id);
+  } else if (lifecycle === 'active') {
+    state = completeStep(state, step.id, now);
+    state.rechecks = clearPendingRecheck(state.rechecks, step.id);
+  } else if (plannedDurationMin(step) > 0) {
+    state = startStep(state, step.id, now);
+  } else {
+    state = completeStep(state, step.id, now);
+    state.rechecks = clearPendingRecheck(state.rechecks, step.id);
+  }
+  saveState();
+  recomputeSchedule();
+  syncJournal();
+  renderTasks();
+  renderLibrary();
+}
+
 function renderTasks() {
   taskList.innerHTML = '';
   for (const item of schedule) {
     const step = item.step;
+    const lifecycle = stepLifecycle(state, step.id);
     const pending = pendingRecheckDate(state.rechecks, step.id);
     const classes = ['task-card'];
-    if (state.completed[step.id]) classes.push('completed');
-    if (pending && !state.completed[step.id]) classes.push('awaiting-recheck');
+    if (lifecycle === 'done') classes.push('completed');
+    if (lifecycle === 'active') classes.push('active');
+    if (pending && lifecycle !== 'done') classes.push('awaiting-recheck');
 
     const card = document.createElement('article');
     card.className = classes.join(' ');
@@ -644,22 +633,20 @@ function renderTasks() {
     const check = document.createElement('input');
     check.type = 'checkbox';
     check.className = 'task-check';
-    check.checked = Boolean(state.completed[step.id]);
-    check.setAttribute('aria-label', `Marquer ${step.title} comme terminée`);
-    check.addEventListener('change', () => {
-      if (check.checked) state.completed[step.id] = new Date().toISOString();
-      else delete state.completed[step.id];
-      state.rechecks = clearPendingRecheck(state.rechecks, step.id);
-      saveState();
-      recomputeSchedule();
-      syncJournal();
-      renderTasks();
-      renderLibrary();
-    });
+    check.checked = lifecycle === 'done';
+    check.indeterminate = lifecycle === 'active';
+    check.setAttribute('aria-label', lifecycle === 'done'
+      ? `Réinitialiser ${step.title}`
+      : lifecycle === 'active'
+        ? `Terminer ${step.title}`
+        : plannedDurationMin(step) > 0
+          ? `Démarrer ${step.title}`
+          : `Marquer ${step.title} comme terminée`);
+    check.addEventListener('change', () => handleStepToggle(step));
 
     const time = document.createElement('div');
     time.className = 'task-time';
-    time.textContent = formatTime(pending && !state.completed[step.id] ? pending : item.start);
+    time.textContent = formatTime(pending && lifecycle !== 'done' ? pending : item.start);
 
     const title = document.createElement('div');
     title.className = 'task-title';
@@ -667,9 +654,13 @@ function renderTasks() {
     strong.textContent = step.title;
     const sub = document.createElement('span');
     const baseSummary = step.summary || '';
-    sub.textContent = pending && !state.completed[step.id]
-      ? `${baseSummary}${baseSummary ? ' · ' : ''}Recontrôle ${formatTime(pending)}`
-      : baseSummary;
+    if (pending && lifecycle !== 'done') {
+      sub.textContent = `${baseSummary}${baseSummary ? ' · ' : ''}Recontrôle ${formatTime(pending)}`;
+    } else if (lifecycle === 'active') {
+      sub.textContent = `EN COURS${baseSummary ? ` · ${baseSummary}` : ''}`;
+    } else {
+      sub.textContent = baseSummary;
+    }
     title.append(strong, sub);
 
     const detailsBtn = document.createElement('button');
@@ -712,25 +703,59 @@ function renderTasks() {
 
     renderObservationControls(detail, step);
 
+    if (state.started[step.id]) {
+      const started = document.createElement('div');
+      started.className = 'completion-time';
+      started.textContent = `Démarré à ${formatTime(new Date(state.started[step.id]))}`;
+      detail.appendChild(started);
+    }
     if (state.completed[step.id]) {
       const completion = document.createElement('div');
       completion.className = 'completion-time';
-      completion.textContent = formatCompletion(state.completed[step.id]);
+      completion.textContent = `Terminé à ${formatTime(new Date(state.completed[step.id]))}`;
       detail.appendChild(completion);
     }
 
     card.append(main, detail);
     taskList.appendChild(card);
   }
+  renderCurrentTask();
   updateNextTask();
+}
+
+function activeScheduleItems() {
+  return schedule.filter(item => state.started[item.step.id] && !state.completed[item.step.id]);
+}
+
+function renderCurrentTask() {
+  const active = activeScheduleItems();
+  currentTaskCard.hidden = !active.length;
+  if (!active.length) return;
+
+  const ordered = [...active].sort((a, b) => {
+    const aWoodfire = (a.step.resources || []).includes('woodfire') ? 0 : 1;
+    const bWoodfire = (b.step.resources || []).includes('woodfire') ? 0 : 1;
+    return aWoodfire - bWoodfire || a.start - b.start;
+  });
+  const primary = ordered[0];
+  const extra = ordered.length - 1;
+  currentTaskName.textContent = `${primary.step.title}${extra ? ` · +${extra} autre${extra > 1 ? 's' : ''}` : ''}`;
+  const startedAt = new Date(state.started[primary.step.id]);
+  const config = primary.step.woodfire ? formatWoodfireSummary(primary.step) : primary.step.summary || 'Étape active';
+  currentTaskMeta.textContent = `${config} · démarré ${formatTime(startedAt)} · fin indicative ${formatTime(primary.end)}`;
 }
 
 function updateNextTask() {
   if (!recipe) return;
-  const next = getNextScheduledTask(schedule, state.completed, state.rechecks);
+  const next = getNextScheduledTask(schedule, state.completed, state.rechecks, state.started);
   if (!next) {
-    nextTaskName.textContent = 'Checklist terminée';
-    nextTaskCountdown.textContent = 'Tout est prêt.';
+    if (activeScheduleItems().length) {
+      nextTaskName.textContent = 'Aucune autre action planifiée';
+      nextTaskCountdown.textContent = 'Poursuis les étapes en cours.';
+    } else {
+      nextTaskName.textContent = 'Checklist terminée';
+      nextTaskCountdown.textContent = 'Tout est prêt.';
+    }
     return;
   }
 
@@ -753,7 +778,7 @@ function updateNextTask() {
 }
 
 function shiftRemainingTasks(minutes) {
-  const nextTask = getNextScheduledTask(schedule, state.completed, state.rechecks);
+  const nextTask = getNextScheduledTask(schedule, state.completed, state.rechecks, state.started);
   if (!nextTask) return;
 
   const pending = pendingRecheckDate(state.rechecks, nextTask.step.id);
@@ -916,7 +941,8 @@ function bindEvents() {
   document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
 
   resetChecklistBtn.addEventListener('click', () => {
-    if (!confirm('Réinitialiser toutes les cases, observations et décalages du planning ?')) return;
+    if (!confirm('Réinitialiser les étapes, observations et décalages du planning ?')) return;
+    state.started = {};
     state.completed = {};
     state.taskShifts = {};
     state.observations = [];
@@ -940,7 +966,7 @@ function bindEvents() {
   undoMeasurementBtn.addEventListener('click', () => {
     if (!state.measurements.length) return;
     state.measurements.pop();
-    if (!state.measurements.length) state.cookStartedAt = null;
+    if (!state.measurements.length && !Object.keys(state.started || {}).length) state.cookStartedAt = null;
     saveState();
     syncJournal();
     renderTemperature();
@@ -948,7 +974,7 @@ function bindEvents() {
   newCookBtn.addEventListener('click', () => {
     if (!confirm('Effacer toutes les mesures de température et démarrer une nouvelle série de mesures ?')) return;
     state.measurements = [];
-    state.cookStartedAt = null;
+    if (!Object.keys(state.started || {}).length) state.cookStartedAt = null;
     saveState();
     syncJournal();
     renderTemperature();
@@ -985,7 +1011,12 @@ async function init() {
     showView('library', false);
   }
 
-  setInterval(() => { if (!cookView.hidden) updateNextTask(); }, 30000);
+  setInterval(() => {
+    if (!cookView.hidden) {
+      renderCurrentTask();
+      updateNextTask();
+    }
+  }, 30000);
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(console.warn));

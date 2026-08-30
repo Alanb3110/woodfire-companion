@@ -1,104 +1,93 @@
 # Woodfire Companion — Active Cook V1 Source
 
 ## Scope
-The active-cooking checklist is connected to Planner V1 and now also exposes structured observation/recheck controls for uncertain cooking checkpoints.
+The active-cooking UI is connected to Planner V1 and exposes explicit step lifecycle plus structured observation/recheck controls.
 
-The objective remains behavioral: real progress becomes planner input, delay/recheck controls change only what reality requires, and completed timestamps remain historical facts.
+The objective is behavioral: actual starts/completions become planner facts, temporary rechecks remain expectations, and only future work that truly depends on those facts is moved.
 
-## Completion timestamps
-Checking a task complete records the current timestamp in the cook-session state.
+## Step lifecycle
+Session V2 distinguishes:
+- `upcoming`;
+- `active`;
+- `done`.
 
-That timestamp is historical fact. On every completion change the application:
-1. saves the session;
-2. rebuilds the schedule with `actualCompletionTimes`;
-3. rerenders unfinished tasks from the new feasible plan.
+Timed steps use two actions through the checklist control:
+1. first tap records the actual start;
+2. the checkbox becomes indeterminate and the step is `EN COURS`;
+3. second tap records actual completion.
 
-Completed timestamps must not be rewritten merely to make the remaining plan look tidy.
+Zero-duration/manual milestones may start and complete in one tap.
 
-Unchecking a step removes its recorded completion, clears any pending recheck for that step and recalculates the plan from the remaining known facts.
+Actual starts and completions are historical facts. They must not be rewritten simply to tidy the schedule.
+
+See `sources/SESSION_V2.md`.
+
+## Current action
+The planning header exposes an `EN COURS` card separate from `PROCHAINE ÉTAPE`.
+
+If one or more tasks are active, the Woodfire task is prioritised when present. Its exact structured configuration is shown together with actual start and indicative end. Parallel work may remain active simultaneously.
+
+The next-action selector excludes timed tasks already in progress. A pending recheck remains actionable and may therefore become the next action.
 
 ## Absolute serving date
 An active cook stores `targetServingAt` as an absolute date/time, not only a clock string such as `05:30`.
 
-The session start is also absolute. A service occurrence is never allowed to predate `sessionStartedAt`. This matters around midnight: a cook started at 23:50 for a 05:30 meal must target 05:30 the following day, not the already-passed 05:30 of the current day.
-
-Older persisted sessions are repaired when loaded/resumed. If their stored service occurrence predates the session start, the application selects the next matching occurrence of the configured meal time. Legitimate lateness is preserved when the target is after session start but has subsequently passed.
-
-Editing the meal clock keeps the calendar-day occurrence closest to the previous target, subject to the same session-start lower bound.
+The session start is also absolute. A service occurrence is never allowed to predate `sessionStartedAt`. Older persisted sessions are repaired when loaded/resumed, and editing the meal clock keeps the intended nearby calendar occurrence subject to the same lower bound.
 
 ## Structured observations
 A step declaring `recheck.notReadyMin` receives observation controls in its expanded detail.
 
-The UI derives labels from the existing completion semantics:
+Derived labels currently include:
 - tenderness: `Encore ferme / Presque prêt / Très tendre`;
 - target-temperature/combined completion: `Sous X °C / Presque X °C / X °C atteint`;
 - generic fallback: `Pas prêt / Presque prêt / Prêt`.
 
-Choosing a not-ready state stores the observation and a future recheck timestamp. The step remains incomplete and its historical start is unchanged.
+If a checkpoint had not already been started, the first observation records its actual start.
 
-The pending recheck timestamp is also passed to Planner V1 as an `expectedCompletionTime` for that step. This represents a temporary runtime expectation, not a historical fact. Existing planning buffer may absorb it; if the recheck extends beyond the remaining buffer, dependent work moves accordingly.
+Choosing a not-ready state stores the observation and a future recheck timestamp. The step remains active/incomplete. The recheck is passed to Planner V1 as an expected completion time, so existing buffer may absorb the delay before downstream work moves.
 
-Choosing a ready state stores the observation and completes the step at the current timestamp. The pending expected completion disappears and the real completion becomes the planner input.
+Choosing a ready state stores the real completion timestamp and clears the pending expectation.
 
 See `sources/OBSERVATIONS_V1.md`.
 
 ## Delay controls
-The +5 / +10 / +15 minute controls remain for fast one-handed recovery during a cook.
+The +5 / +10 / +15 minute controls remain for fast one-handed recovery.
 
 Normal meaning:
 
-**The next unfinished step is delayed by this amount.**
+**The next actionable upcoming step is delayed by this amount.**
 
-The UI records the delay only against that step using `addStepDelay()`. Planner V1 then decides what else must move.
-
-If the next actionable item is an observation recheck, the same buttons move only that pending recheck deadline. Planner V1 then reevaluates whether the additional wait still fits inside available buffer.
+Already-active timed work is not selected as a normal upcoming action. If the next action is an observation recheck, the buttons move only that deadline.
 
 ## Propagation rules
-After a completion, recheck expectation or explicit step delay:
-- hard dependencies remain satisfied;
-- a planning buffer may absorb some or all of a delay;
-- unrelated parallel work remains where it was when feasible;
-- an exclusive Woodfire conflict moves unfinished competing work as required;
-- completed steps retain their actual timestamps;
-- service time may move if the remaining meal can no longer be completed feasibly by the original target.
+After an actual start, completion, recheck expectation or explicit delay:
+- historical starts/completions remain fixed;
+- hard dependencies remain satisfied for movable future work;
+- planning buffers may absorb delay;
+- unrelated parallel work remains where feasible;
+- an exclusive Woodfire conflict moves only work that has not already happened;
+- service may move if the target can no longer be met without compromising the cook.
 
-Do not move unrelated tasks solely because another component is late.
+## Recipe version during a cook
+A new session stores a validated recipe snapshot. Resume uses that snapshot rather than silently switching to a newer repository recipe version.
 
-## User-facing interpretation
-The active cook should answer:
-- what is the next action?;
-- when should I do it now?;
-- is the next action a normal task or a recheck?;
-- am I early/on-time/late?;
-- what Woodfire state is required?;
-- what completion criterion am I looking for?;
+This keeps step ids, dependencies, timings and instructions stable for the lifetime of one cook.
 
-The next-action selector compares the effective actionable times: a pending recheck uses its recheck deadline; other unfinished steps use their replanned start. This prevents a stale checkpoint start from incorrectly staying at the top of the list.
-
-## Current UI
-The checklist and expandable detail cards remain the primary interaction.
-
-Expanded details now show:
-- explicit Woodfire state when applicable;
-- the completion criterion;
-- observation buttons when the recipe step declares a recheck;
+## Expanded details
+Expanded task cards show:
+- exact Woodfire state when applicable;
+- completion criterion;
+- observation buttons when applicable;
 - pending recheck time;
 - recent observation history;
+- actual start timestamp;
 - actual completion timestamp.
 
-The delay row remains:
-
-`Retard sur la prochaine étape : +5 / +10 / +15 min`
-
 ## Temperature logging
-Temperature logging remains independent and low-friction.
-
-The turkey completion observation can use the recipe’s 74 °C target in its button labels, but a logged temperature sample does not automatically complete the step. The cook explicitly confirms readiness.
-
-No ETA is currently inferred from temperature slope.
+Temperature logging remains independent and low-friction. A logged temperature does not automatically complete a step; the cook still confirms readiness.
 
 ## Current limitations / next work
-- No background/push notification fires when a recheck becomes due; the active screen updates while open.
+- No background/push notification fires when an active phase or recheck becomes due.
 - No temperature sample automatically chooses an observation outcome.
-- Observation labels are derived rather than curated per recipe; extend the schema only if a real recipe demonstrates the need.
+- Observation labels remain derived rather than curated per recipe.
 - Predictive ETA remains later work and must expose uncertainty.
