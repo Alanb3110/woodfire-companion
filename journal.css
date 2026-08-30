@@ -55,6 +55,7 @@
 .journal-date { color: var(--accent-strong); font-size: 10px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
 .journal-card summary strong { font-size: 16px; }
 .journal-service { color: var(--muted); font-size: 12px; line-height: 1.35; }
+.journal-summary-rating { color: var(--accent-text-soft); font-size: 12px; font-weight: 800; }
 .journal-chevron { color: var(--muted); font-size: 24px; transform: rotate(0deg); transition: transform .12s ease; }
 .journal-card[open] .journal-chevron { transform: rotate(90deg); }
 
@@ -82,6 +83,83 @@
 .journal-metric strong { font-size: 15px; }
 .journal-body h4 { margin: 0; font-size: 13px; }
 
+.journal-feedback {
+  display: grid;
+  gap: 9px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-3);
+}
+
+.journal-feedback-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.journal-feedback-label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.journal-rating {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 46px));
+  gap: 6px;
+}
+
+.journal-rating-btn {
+  min-width: 0;
+  min-height: 42px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #111113;
+  color: var(--muted);
+  font-size: 21px;
+  line-height: 1;
+}
+
+.journal-rating-btn.active {
+  color: var(--accent-strong);
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+}
+
+.journal-notes {
+  width: 100%;
+  min-height: 78px;
+  resize: vertical;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: #111113;
+  color: var(--text);
+  padding: 10px 11px;
+  font: inherit;
+  line-height: 1.4;
+}
+
+.journal-notes::placeholder { color: var(--muted); }
+
+.journal-feedback-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.journal-feedback-status {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.journal-feedback-status.error { color: var(--danger); }
+
 .journal-step-list, .journal-temperature-list { display: grid; }
 .journal-step-row, .journal-temperature-list > div {
   display: grid;
@@ -106,4 +184,6 @@
   .journal-metrics { grid-template-columns: 1fr 1fr 1fr; }
   .journal-metric { padding: 8px; }
   .journal-metric strong { font-size: 13px; }
+  .journal-rating { grid-template-columns: repeat(5, 1fr); }
+  .journal-feedback-heading { align-items: flex-start; flex-direction: column; gap: 4px; }
 }
