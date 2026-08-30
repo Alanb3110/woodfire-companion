@@ -1,4 +1,4 @@
-const APP_VERSION = '0.3.0-dev.9';
+const APP_VERSION = '0.3.0-dev.10';
 const CACHE_NAME = `woodfire-companion-${APP_VERSION}`;
 const APP_ASSETS = [
   './',
@@ -36,11 +36,12 @@ async function cacheAvailableRecipeContent(cache) {
   if (!response.ok) throw new Error(`Recipe manifest preload failed (${response.status}).`);
 
   const library = await response.json();
-  const recipeUrls = (library.recipes || [])
+  const contentUrls = (library.recipes || [])
     .filter(entry => entry.status === 'available' && entry.recipeUrl)
-    .map(entry => entry.recipeUrl);
+    .flatMap(entry => [entry.recipeUrl, entry.visual?.imageUrl].filter(Boolean));
+  const uniqueUrls = [...new Set(contentUrls)];
 
-  if (recipeUrls.length) await cache.addAll(recipeUrls);
+  if (uniqueUrls.length) await cache.addAll(uniqueUrls);
 }
 
 self.addEventListener('install', event => {
