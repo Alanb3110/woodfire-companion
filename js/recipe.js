@@ -116,6 +116,10 @@ export function validateRecipe(recipe) {
   if (recipe.timing?.elapsedRangeMin !== undefined && !numericRangeIsValid(recipe.timing.elapsedRangeMin)) {
     errors.push('timing.elapsedRangeMin must be a valid [min, max] range.');
   }
+  if (recipe.temperature !== undefined
+    && (!recipe.temperature || typeof recipe.temperature !== 'object' || Array.isArray(recipe.temperature))) {
+    errors.push('temperature must be an object when provided.');
+  }
   if (recipe.temperature?.enabled !== undefined && typeof recipe.temperature.enabled !== 'boolean') {
     errors.push('temperature.enabled must be boolean when provided.');
   }
