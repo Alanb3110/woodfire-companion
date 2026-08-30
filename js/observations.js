@@ -113,7 +113,7 @@ export function latestObservationForStep(observations = [], stepId) {
   return null;
 }
 
-export function editLatestObservationTimestamp({ observations = [], rechecks = {}, completed = {} }, stepId, at) {
+export function editLatestObservationTimestamp({ observations = [], rechecks = {}, started = {}, completed = {} }, stepId, at) {
   if (!stepId) throw new Error('Observation timestamp edit requires a step id.');
   const nextAt = toDate(at);
   if (!nextAt) throw new Error('Heure de contrôle invalide.');
@@ -123,6 +123,7 @@ export function editLatestObservationTimestamp({ observations = [], rechecks = {
 
   const nextObservations = observations.map(item => ({ ...item }));
   const nextRechecks = { ...rechecks };
+  const nextStarted = { ...started };
   const nextCompleted = { ...completed };
   const current = nextObservations[index];
   const previousAt = toDate(current.timestamp);
@@ -140,6 +141,7 @@ export function editLatestObservationTimestamp({ observations = [], rechecks = {
     current.recheckDueAt = shiftedDue;
   }
 
+  if (nextStarted[stepId] === previousTimestamp) nextStarted[stepId] = nextAt.toISOString();
   if (current.outcome === 'complete' && nextCompleted[stepId] === previousTimestamp) {
     nextCompleted[stepId] = nextAt.toISOString();
   }
@@ -147,6 +149,7 @@ export function editLatestObservationTimestamp({ observations = [], rechecks = {
   return {
     observations: nextObservations,
     rechecks: nextRechecks,
+    started: nextStarted,
     completed: nextCompleted,
     record: current
   };
