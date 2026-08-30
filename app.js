@@ -40,6 +40,7 @@ import {
   startStep,
   stepLifecycle
 } from './js/session.js';
+import { createTemperatureController } from './js/temperature-ui.js';
 
 const LIBRARY_URL = './recipes/index.json';
 
@@ -91,20 +92,33 @@ const currentTaskMeta = $('currentTaskMeta');
 const nextTaskName = $('nextTaskName');
 const nextTaskCountdown = $('nextTaskCountdown');
 const resetChecklistBtn = $('resetChecklistBtn');
-const temperatureInput = $('temperatureInput');
-const addTemperatureBtn = $('addTemperatureBtn');
-const tempValidation = $('tempValidation');
-const targetTemperature = $('targetTemperature');
-const lastTemperature = $('lastTemperature');
-const lastTemperatureTime = $('lastTemperatureTime');
-const measurementCount = $('measurementCount');
-const chartContainer = $('chartContainer');
-const measurementList = $('measurementList');
-const undoMeasurementBtn = $('undoMeasurementBtn');
-const newCookBtn = $('newCookBtn');
-const exportCsvBtn = $('exportCsvBtn');
 const installHelpBtn = $('installHelpBtn');
 const installDialog = $('installDialog');
+
+const temperatureController = createTemperatureController({
+  elements: {
+    input: $('temperatureInput'),
+    addButton: $('addTemperatureBtn'),
+    validation: $('tempValidation'),
+    targetInput: $('targetTemperature'),
+    lastValue: $('lastTemperature'),
+    lastTime: $('lastTemperatureTime'),
+    count: $('measurementCount'),
+    chart: $('chartContainer'),
+    list: $('measurementList'),
+    undoButton: $('undoMeasurementBtn'),
+    newSeriesButton: $('newCookBtn'),
+    exportButton: $('exportCsvBtn')
+  },
+  getState: () => state,
+  getDefaultTarget: () => recipe?.temperature?.defaultTargetC || 93,
+  commit: () => {
+    saveState();
+    syncJournal();
+  },
+  formatTime,
+  confirmAction: message => confirm(message)
+});
 
 function repairLoadedSession(value) {
   const hasProgress = sessionHasProgress(value);
@@ -416,7 +430,7 @@ async function activateRecipe(entry, loadedRecipe, resetSession) {
   recomputeSchedule();
   syncJournal();
   renderTasks();
-  renderTemperature();
+  temperatureController.render();
   switchTab(state.activeTab || 'planning', false);
   showView('cook');
 }
@@ -797,7 +811,7 @@ function switchTab(tabName, persist = true) {
   if (persist) saveState();
   document.querySelectorAll('.tab').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabName));
   document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.toggle('active', panel.id === tabName));
-  if (tabName === 'temperature' && !cookView.hidden) temperatureInput.focus();
+  if (tabName === 'temperature' && !cookView.hidden) temperatureController.focus();
 }
 
 function updateCookTime() {
@@ -815,115 +829,6 @@ function updateCookTime() {
   renderTasks();
 }
 
-function validateTemperature(raw) {
-  const value = Number(raw);
-  if (raw === '' || !Number.isFinite(value)) return { ok: false, message: 'Saisis une température.' };
-  if (value < 0 || value > 150) return { ok: false, message: 'Valeur attendue entre 0 et 150 °C.' };
-  return { ok: true, value: Math.round(value * 10) / 10 };
-}
-
-function addTemperature() {
-  const validation = validateTemperature(temperatureInput.value);
-  if (!validation.ok) {
-    tempValidation.textContent = validation.message;
-    temperatureInput.focus();
-    return;
-  }
-  tempValidation.textContent = '';
-  const now = new Date();
-  if (!state.cookStartedAt) state.cookStartedAt = now.toISOString();
-  state.measurements.push({ timestamp: now.toISOString(), temperature: validation.value, source: 'manual' });
-  saveState();
-  syncJournal();
-  temperatureInput.value = '';
-  renderTemperature();
-  temperatureInput.focus();
-}
-
-function renderTemperature() {
-  targetTemperature.value = state.temperatureTarget;
-  const measurements = state.measurements;
-  const last = measurements.at(-1);
-  lastTemperature.textContent = last ? `${last.temperature.toFixed(1).replace('.0', '')} °C` : '—';
-  lastTemperatureTime.textContent = last ? formatTime(new Date(last.timestamp)) : '—';
-  measurementCount.textContent = `${measurements.length} mesure${measurements.length === 1 ? '' : 's'}`;
-  measurementList.innerHTML = '';
-  [...measurements].reverse().slice(0, 12).forEach(measurement => {
-    const row = document.createElement('div');
-    row.className = 'measurement-row';
-    const left = document.createElement('span');
-    left.textContent = formatTime(new Date(measurement.timestamp));
-    const right = document.createElement('strong');
-    right.textContent = `${measurement.temperature.toFixed(1).replace('.0', '')} °C`;
-    row.append(left, right);
-    measurementList.appendChild(row);
-  });
-  renderChart();
-}
-
-function renderChart() {
-  const data = state.measurements;
-  if (!data.length) {
-    chartContainer.innerHTML = '<div class="empty-chart">Ajoute une température : l’heure est enregistrée automatiquement et la courbe apparaît ici.</div>';
-    return;
-  }
-  const width = 640;
-  const height = 300;
-  const pad = { left: 48, right: 18, top: 18, bottom: 42 };
-  const target = Number(state.temperatureTarget) || 93;
-  const times = data.map(d => new Date(d.timestamp).getTime());
-  const temps = data.map(d => d.temperature);
-  const minTime = Math.min(...times);
-  const maxTime = Math.max(...times);
-  const timeSpan = Math.max(maxTime - minTime, 10 * 60 * 1000);
-  const minTemp = Math.max(0, Math.floor(Math.min(...temps, target) / 10) * 10 - 5);
-  const maxTemp = Math.min(150, Math.ceil(Math.max(...temps, target) / 10) * 10 + 5);
-  const tempSpan = Math.max(maxTemp - minTemp, 10);
-  const x = t => pad.left + ((t - minTime) / timeSpan) * (width - pad.left - pad.right);
-  const y = temp => pad.top + (1 - (temp - minTemp) / tempSpan) * (height - pad.top - pad.bottom);
-  const points = data.map(d => `${x(new Date(d.timestamp).getTime()).toFixed(1)},${y(d.temperature).toFixed(1)}`).join(' ');
-
-  let grid = '';
-  for (let i = 0; i <= 5; i++) {
-    const val = minTemp + (tempSpan * i / 5);
-    const yy = y(val);
-    grid += `<line x1="${pad.left}" y1="${yy}" x2="${width - pad.right}" y2="${yy}" stroke="currentColor" opacity="0.10" />`;
-    grid += `<text x="${pad.left - 8}" y="${yy + 4}" text-anchor="end" font-size="11" fill="currentColor" opacity="0.65">${Math.round(val)}°</text>`;
-  }
-
-  const xTicks = Math.min(4, Math.max(2, data.length));
-  let xLabels = '';
-  for (let i = 0; i < xTicks; i++) {
-    const t = minTime + (timeSpan * i / (xTicks - 1));
-    xLabels += `<text x="${x(t)}" y="${height - 15}" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.65">${formatTime(new Date(t))}</text>`;
-  }
-  const circles = data.map(d => `<circle cx="${x(new Date(d.timestamp).getTime())}" cy="${y(d.temperature)}" r="4.5" fill="var(--accent)" />`).join('');
-  const targetY = y(target);
-  chartContainer.innerHTML = `
-    <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Évolution de la température à cœur">
-      ${grid}
-      <line x1="${pad.left}" y1="${targetY}" x2="${width - pad.right}" y2="${targetY}" stroke="var(--success)" stroke-width="2" stroke-dasharray="7 6" />
-      <text x="${width - pad.right}" y="${Math.max(12, targetY - 6)}" text-anchor="end" font-size="11" fill="var(--success)">Cible ${target} °C</text>
-      <polyline points="${points}" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
-      ${circles}
-      ${xLabels}
-    </svg>`;
-}
-
-function exportCsv() {
-  if (!state.measurements.length) return;
-  const lines = ['timestamp,temperature_c,source'];
-  state.measurements.forEach(m => lines.push(`${m.timestamp},${m.temperature},${m.source}`));
-  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `woodfire-${new Date().toISOString().slice(0, 10)}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
 
 function bindEvents() {
   $('backToLibraryBtn').addEventListener('click', () => { renderLibrary(); showView('library'); });
@@ -954,33 +859,7 @@ function bindEvents() {
     renderTasks();
   });
 
-  addTemperatureBtn.addEventListener('click', addTemperature);
-  temperatureInput.addEventListener('keydown', event => { if (event.key === 'Enter') addTemperature(); });
-  targetTemperature.addEventListener('change', () => {
-    const val = Number(targetTemperature.value);
-    state.temperatureTarget = Number.isFinite(val) ? Math.min(120, Math.max(30, val)) : recipe?.temperature?.defaultTargetC || 93;
-    saveState();
-    syncJournal();
-    renderTemperature();
-  });
-  undoMeasurementBtn.addEventListener('click', () => {
-    if (!state.measurements.length) return;
-    state.measurements.pop();
-    if (!state.measurements.length && !Object.keys(state.started || {}).length) state.cookStartedAt = null;
-    saveState();
-    syncJournal();
-    renderTemperature();
-  });
-  newCookBtn.addEventListener('click', () => {
-    if (!confirm('Effacer toutes les mesures de température et démarrer une nouvelle série de mesures ?')) return;
-    state.measurements = [];
-    if (!Object.keys(state.started || {}).length) state.cookStartedAt = null;
-    saveState();
-    syncJournal();
-    renderTemperature();
-    temperatureInput.focus();
-  });
-  exportCsvBtn.addEventListener('click', exportCsv);
+  temperatureController.bind();
 
   clearJournalBtn.addEventListener('click', () => {
     if (!confirm('Effacer tout le journal de cuisson local ? Cette action est définitive.')) return;

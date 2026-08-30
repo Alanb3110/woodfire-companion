@@ -153,7 +153,17 @@ The normal `PROCHAINE ÉTAPE` selector excludes already-started timed work; a pe
 The +5/+10/+15 controls apply only to the next actionable upcoming task, or to a pending recheck when that is the next action.
 
 ## Temperature tracking
-Manual logging remains fast and independent. A measurement records timestamp, °C value and source.
+Temperature tracking is now split out of `app.js` without changing the user workflow.
+
+`js/temperature.js` owns pure/testable temperature data operations:
+- manual-value validation (0–150 °C);
+- target clamping (30–120 °C);
+- immutable measurement append/remove helpers;
+- CSV serialization.
+
+`js/temperature-ui.js` owns the DOM controller for fast entry, target editing, latest-measurement display, recent-measurement list, SVG chart, undo/new-series actions and CSV download. It receives the current session through callbacks, so the temperature layer does not own session persistence or journal semantics.
+
+Manual logging remains value → Add/Enter → automatic timestamp. The existing session fields `temperatureTarget`, `measurements` and `cookStartedAt` are unchanged, preserving stored data compatibility.
 
 Both current executable recipes benefit from temperature logging, although the role differs: Pork Belly uses temperature as supporting information for a tenderness-driven cook, while the turkey meal uses a 74 °C core target as the decisive endpoint.
 
@@ -166,7 +176,7 @@ The service worker uses a network-first cache with offline fallback.
 
 Current dev version: `0.3.0-dev.8`.
 
-Static shell/modules are listed in `APP_ASSETS`, including session, meal-planner, observation, timestamp-editor, DEV-tool, planner-derived start-hint and journal modules. Executable recipe JSON is discovered from `recipes/index.json` and preloaded automatically for every `available` entry.
+Static shell/modules are listed in `APP_ASSETS`, including session, meal-planner, observation, timestamp-editor, DEV-tool, planner-derived start-hint, journal and temperature modules. Executable recipe JSON is discovered from `recipes/index.json` and preloaded automatically for every `available` entry.
 
 `recipes/index.json` remains the source of truth for recipe discovery and recipe-JSON offline preloading.
 
@@ -181,10 +191,10 @@ npm test
 
 GitHub Actions runs the suite on `main`, supported feature/fix/chore pushes and pull requests.
 
-Coverage includes hardened recipe contracts, generic available-recipe acceptance, actionable ingredient quantities, recipe-specific timelines, shopping/pre-cook, offline caching, version consistency, DOM contracts, dependency/resource planning, buffers/service slippage, actual start/completion propagation, session v1→v2→v3 migration, step lifecycle transitions, frozen recipe snapshots, timestamp correction, observation/recheck behavior, journal v1→v2 migration, feedback persistence/resync protection, test-session exclusion and active-cook wiring.
+Coverage includes hardened recipe contracts, generic available-recipe acceptance, actionable ingredient quantities, recipe-specific timelines, shopping/pre-cook, offline caching, version consistency, DOM contracts, dependency/resource planning, buffers/service slippage, actual start/completion propagation, session v1→v2→v3 migration, step lifecycle transitions, frozen recipe snapshots, timestamp correction, observation/recheck behavior, journal v1→v2 migration, feedback persistence/resync protection, test-session exclusion, active-cook wiring and extracted temperature validation/measurement/CSV behavior.
 
 ## Current technical debt / next work
-1. Split additional session/active-cook/temperature orchestration out of the growing `app.js` without introducing a framework.
+1. Continue splitting active-cook/session orchestration out of the growing `app.js` without introducing a framework; temperature orchestration is now extracted.
 2. Make temperature tracking explicitly optional before adding recipes that do not benefit from core-temperature logging.
 3. Reduce scaling-sensitive quantities duplicated inside step prose by referencing structured ingredient usage where useful.
 4. Add journal JSON backup/import when useful.
