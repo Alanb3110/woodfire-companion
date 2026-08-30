@@ -25,6 +25,27 @@
   margin-top: 12px;
 }
 
+.journal-backup-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-bottom: 3px;
+}
+
+.journal-backup-actions .secondary-btn {
+  min-height: 40px;
+}
+
+.journal-backup-status {
+  min-width: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.journal-backup-status.error { color: var(--danger); }
+
 .journal-empty {
   margin: 0;
   padding: 16px 2px 4px;
@@ -186,4 +207,6 @@
   .journal-metric strong { font-size: 13px; }
   .journal-rating { grid-template-columns: repeat(5, 1fr); }
   .journal-feedback-heading { align-items: flex-start; flex-direction: column; gap: 4px; }
+  .journal-backup-actions { align-items: flex-start; }
+  .journal-backup-status { flex-basis: 100%; }
 }
