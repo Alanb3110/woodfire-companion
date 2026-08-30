@@ -1,0 +1,75 @@
+name: Barbacoa polish
+
+on:
+  push:
+    branches:
+      - feature/barbacoa-executable-meal
+    paths:
+      - .github/workflows/barbacoa-polish.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/barbacoa-executable-meal
+      - name: Apply targeted content updates
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          recipe = Path('recipes/smoked-beef-barbacoa.json')
+          text = recipe.read_text()
+          old = '''      "summary": "20 min · en parallèle du repos",
+                "durationMin": 20,
+                "dependencies": [{ "stepId": "first-check", "relation": "after_finish", "lagMin": 0 }],
+                "resources": ["stovetop"],'''
+          # JSON indentation in the file is six spaces inside the step object.
+          old = old.replace('                ', '      ')
+          new = '''      "summary": "20 min · en parallèle du repos",
+                "durationMin": 20,
+                "plan": { "placement": "earliest" },
+                "dependencies": [{ "stepId": "first-check", "relation": "after_finish", "lagMin": 0 }],
+                "resources": ["stovetop"],'''.replace('                ', '      ')
+          if old not in text:
+              raise SystemExit('reduce-juices marker not found')
+          recipe.write_text(text.replace(old, new, 1))
+
+          readme = Path('README.md')
+          text = readme.read_text()
+          old = '''Executable now:
+          - **Pork Belly Burnt Ends** + smashed grenaille potatoes + fresh lemon-yogurt sauce;
+          - **Roulé de dinde sucré-salé & gratin de courgettes**.
+
+          Visible as future content:
+          - **Barbacoa de bœuf fumée**.'''
+          new = '''Executable now:
+          - **Pork Belly Burnt Ends** + smashed grenaille potatoes + fresh lemon-yogurt sauce;
+          - **Roulé de dinde sucré-salé & gratin de courgettes**;
+          - **Tacos barbacoa de bœuf fumée** + salsa fumée + garnitures fraîches.'''
+          if old not in text:
+              raise SystemExit('README library marker not found')
+          text = text.replace(old, new, 1)
+          old_tree = '''│   ├── index.json
+          │   ├── pork-belly-burnt-ends.json
+          │   └── sweet-savory-turkey-zucchini-gratin.json'''
+          new_tree = '''│   ├── index.json
+          │   ├── pork-belly-burnt-ends.json
+          │   ├── sweet-savory-turkey-zucchini-gratin.json
+          │   └── smoked-beef-barbacoa.json'''
+          if old_tree not in text:
+              raise SystemExit('README recipe tree marker not found')
+          readme.write_text(text.replace(old_tree, new_tree, 1))
+          PY
+      - name: Commit updates
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add recipes/smoked-beef-barbacoa.json README.md
+          git diff --cached --quiet && exit 0
+          git commit -m "fix: start barbacoa juice reduction with the meat rest"
+          git push
