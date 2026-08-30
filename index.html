@@ -20,7 +20,7 @@
     <header class="topbar">
       <div class="brand-line">
         <span class="eyebrow">WOODFIRE COMPANION</span>
-        <span class="dev-badge">DEV · v0.3.0-dev.8</span>
+        <span class="dev-badge">DEV · v0.3.0-dev.9</span>
       </div>
       <div class="topbar-actions">
         <button id="settingsBtn" class="icon-btn" type="button" aria-label="Réglages">⚙︎</button>
@@ -79,24 +79,23 @@
         <section class="panel config-panel">
           <div class="section-heading compact-heading">
             <div>
-              <span class="field-label">Configurer le repas</span>
-              <strong>Pour combien, et à quelle heure ?</strong>
+              <span class="field-label">Configuration du repas</span>
+              <strong>Pour combien et à quelle heure ?</strong>
             </div>
           </div>
 
           <div class="config-grid">
             <div class="config-field">
               <span class="field-label">Personnes</span>
-              <div class="stepper" aria-label="Nombre de personnes">
-                <button id="servingsMinusBtn" type="button" aria-label="Réduire le nombre de personnes">−</button>
+              <div class="stepper">
+                <button id="servingsMinusBtn" type="button" aria-label="Moins de personnes">−</button>
                 <strong id="servingsValue">4</strong>
-                <button id="servingsPlusBtn" type="button" aria-label="Augmenter le nombre de personnes">+</button>
+                <button id="servingsPlusBtn" type="button" aria-label="Plus de personnes">+</button>
               </div>
             </div>
-
             <div class="config-field">
-              <span class="field-label">Heure du repas</span>
-              <div class="time-picker" aria-label="Heure du repas au format 24 heures">
+              <span class="field-label">Service souhaité</span>
+              <div class="time-picker" aria-label="Heure de service">
                 <select id="configMealHour" aria-label="Heure"></select>
                 <span>:</span>
                 <select id="configMealMinute" aria-label="Minutes"></select>
@@ -104,235 +103,187 @@
             </div>
           </div>
 
-          <div id="startTimeHint" class="start-hint"></div>
+          <p id="startTimeHint" class="start-hint"></p>
+          <button id="startCookBtn" class="primary-btn wide-btn" type="button">Générer le plan de cuisson</button>
         </section>
 
-        <section class="detail-section">
+        <section class="panel">
           <div class="section-heading">
             <div>
               <span class="field-label">Repas</span>
-              <strong>Ce qui est prévu</strong>
+              <strong>Ce qu’on prépare</strong>
             </div>
           </div>
           <div id="componentList" class="component-list"></div>
         </section>
 
-        <section class="detail-section">
+        <section class="panel">
           <div class="section-heading">
             <div>
-              <span class="field-label">Ingrédients</span>
-              <strong id="ingredientsHeading">Pour 4 personnes</strong>
+              <span class="field-label">Quantités calculées</span>
+              <strong id="ingredientsHeading">Ingrédients</strong>
             </div>
           </div>
           <div id="ingredientPreview" class="ingredient-preview"></div>
         </section>
 
-        <section class="detail-section">
-          <div class="section-heading">
-            <div>
-              <span class="field-label">Courses</span>
-              <strong>Liste consolidée</strong>
-            </div>
-            <div class="shopping-heading-actions">
-              <span id="shoppingProgress" class="shopping-progress">0/0</span>
-              <button id="resetShoppingBtn" class="text-btn" type="button">Réinitialiser</button>
-            </div>
-          </div>
-          <div id="shoppingList" class="shopping-list"></div>
-        </section>
-
-        <section class="detail-section">
-          <div class="section-heading">
-            <div>
-              <span class="field-label">Avant de cuisiner</span>
-              <strong>Préparation & matériel</strong>
-            </div>
-          </div>
-          <div class="prep-grid">
-            <div class="prep-block">
-              <h3>À préparer en avance</h3>
-              <div id="advancePrepList" class="advance-prep-list"></div>
-            </div>
-            <div class="prep-block">
-              <h3>Matériel nécessaire</h3>
-              <div id="equipmentList" class="equipment-list"></div>
-            </div>
-          </div>
-        </section>
-
-        <div class="start-cook-footer">
-          <button id="startCookBtn" class="primary-btn wide-btn" type="button">Démarrer la cuisson</button>
-          <p>Les courses et la préparation restent disponibles en revenant sur la recette.</p>
-        </div>
+        <div id="preCookMount"></div>
       </article>
     </section>
 
     <section id="cookView" class="app-view" hidden>
       <div class="cook-heading">
-        <button id="cookHomeBtn" class="back-btn" type="button">‹ Recettes</button>
-        <div>
-          <p class="kicker">CUISSON EN COURS</p>
-          <h1 id="cookTitle">Chargement…</h1>
-          <p id="cookSubtitle" class="cook-subtitle"></p>
-        </div>
+        <button id="cookHomeBtn" class="back-btn" type="button">‹ Bibliothèque</button>
+        <p class="kicker">ASSISTANT DE CUISSON</p>
+        <h1 id="cookTitle">Repas</h1>
+        <p id="cookSubtitle" class="cook-subtitle"></p>
       </div>
 
       <nav class="tabs" aria-label="Navigation cuisson">
-        <button class="tab active" data-tab="planning" type="button">Planning</button>
-        <button class="tab" data-tab="temperature" type="button">Température</button>
+        <button class="tab active" type="button" data-tab="planning">Planning</button>
+        <button class="tab" type="button" data-tab="temperature">Température</button>
       </nav>
 
       <section id="planning" class="tab-panel active">
-        <div class="panel controls-panel">
+        <section class="panel controls-panel">
           <div class="cook-time-row">
             <div>
-              <span class="field-label">Heure du repas</span>
-              <div class="time-picker compact-time-picker" aria-label="Heure du repas au format 24 heures">
+              <span class="field-label">Service</span>
+              <div class="time-picker" aria-label="Heure de service pendant la cuisson">
                 <select id="cookMealHour" aria-label="Heure"></select>
                 <span>:</span>
                 <select id="cookMealMinute" aria-label="Minutes"></select>
               </div>
             </div>
-            <button id="resetChecklistBtn" class="secondary-btn" type="button">Réinitialiser</button>
+            <button id="resetChecklistBtn" class="secondary-btn danger" type="button">Réinitialiser</button>
           </div>
 
-          <div id="currentTaskCard" class="status-card" aria-live="polite" hidden>
-            <span class="status-label">En cours</span>
-            <strong id="currentTaskName">—</strong>
-            <span id="currentTaskMeta" class="status-meta">—</span>
+          <div class="delay-chips" aria-label="Décaler la prochaine action">
+            <span class="field-label">Retard / marge</span>
+            <button class="chip-btn" type="button" data-shift="5">+5 min</button>
+            <button class="chip-btn" type="button" data-shift="10">+10 min</button>
+            <button class="chip-btn" type="button" data-shift="15">+15 min</button>
           </div>
+        </section>
 
-          <div class="status-card" aria-live="polite">
-            <span class="status-label">Prochaine étape</span>
-            <strong id="nextTaskName">—</strong>
-            <span id="nextTaskCountdown" class="status-meta">—</span>
-          </div>
+        <section id="currentTaskCard" class="current-task-card" hidden>
+          <span class="current-task-label">EN COURS</span>
+          <strong id="currentTaskName"></strong>
+          <span id="currentTaskMeta"></span>
+        </section>
 
-          <div class="shift-row" aria-label="Signaler un retard sur la prochaine étape">
-            <span>Retard sur la prochaine étape :</span>
-            <button class="chip-btn" data-shift="5" type="button">+5 min</button>
-            <button class="chip-btn" data-shift="10" type="button">+10 min</button>
-            <button class="chip-btn" data-shift="15" type="button">+15 min</button>
-          </div>
-        </div>
+        <section class="next-task-card">
+          <span class="next-task-label">PROCHAINE ACTION</span>
+          <strong id="nextTaskName">—</strong>
+          <span id="nextTaskCountdown">—</span>
+        </section>
 
         <div id="taskList" class="task-list"></div>
       </section>
 
       <section id="temperature" class="tab-panel">
-        <div class="panel temperature-entry">
-          <label class="field-label" for="temperatureInput">Température à cœur</label>
+        <section class="temperature-entry">
           <div class="temperature-input-row">
-            <input id="temperatureInput" inputmode="decimal" type="number" min="0" max="150" step="0.1" placeholder="93" aria-describedby="tempValidation" />
+            <input id="temperatureInput" type="number" inputmode="decimal" step="0.1" placeholder="72.4" aria-label="Température mesurée" />
             <span class="unit">°C</span>
             <button id="addTemperatureBtn" class="primary-btn" type="button">Ajouter</button>
           </div>
-          <p id="tempValidation" class="validation" role="alert"></p>
-        </div>
+          <p id="tempValidation" class="validation"></p>
+        </section>
 
-        <div class="metric-grid">
+        <section class="metric-grid">
           <div class="metric-card">
             <span>Dernière mesure</span>
             <strong id="lastTemperature">—</strong>
+            <small id="lastTemperatureTime">—</small>
           </div>
           <div class="metric-card">
-            <span>Heure</span>
-            <strong id="lastTemperatureTime">—</strong>
+            <span>Mesures</span>
+            <strong id="measurementCount">0</strong>
           </div>
           <div class="metric-card">
             <label for="targetTemperature">Cible</label>
-            <div><input id="targetTemperature" type="number" min="30" max="120" step="1" value="93" /><span> °C</span></div>
+            <input id="targetTemperature" type="number" inputmode="decimal" step="1" min="30" max="120" />
           </div>
-        </div>
+        </section>
 
-        <div class="panel chart-panel">
+        <section class="panel chart-panel">
           <div class="chart-header">
             <div>
-              <span class="field-label">Courbe de cuisson</span>
-              <p id="measurementCount">0 mesure</p>
+              <strong>Courbe de température</strong>
+              <p>Mesures manuelles horodatées</p>
             </div>
             <div class="chart-actions">
               <button id="undoMeasurementBtn" class="secondary-btn" type="button">Annuler</button>
-              <button id="newCookBtn" class="secondary-btn danger" type="button">Nouvelle cuisson</button>
+              <button id="newCookBtn" class="secondary-btn" type="button">Nouvelle série</button>
+              <button id="exportCsvBtn" class="secondary-btn" type="button">CSV</button>
             </div>
           </div>
-          <div id="chartContainer" class="chart-container" aria-label="Courbe de température"></div>
-        </div>
+          <div id="chartContainer" class="chart-container"></div>
+        </section>
 
-        <div class="panel measurements-panel">
-          <div class="section-heading">
-            <strong>Mesures</strong>
-            <button id="exportCsvBtn" class="text-btn" type="button">Exporter CSV</button>
+        <section class="panel measurements-panel">
+          <div class="section-heading compact-heading">
+            <div>
+              <span class="field-label">Historique</span>
+              <strong>Dernières mesures</strong>
+            </div>
           </div>
           <div id="measurementList" class="measurement-list"></div>
-        </div>
+        </section>
       </section>
     </section>
-
-    <dialog id="settingsDialog">
-      <form method="dialog" class="settings-form">
-        <div class="dialog-heading">
-          <div>
-            <span class="field-label">Apparence</span>
-            <h2>Couleur d’accent</h2>
-          </div>
-          <button class="dialog-close" value="close" aria-label="Fermer">×</button>
-        </div>
-
-        <p class="dialog-copy">Choisis une base rapide ou définis exactement la couleur utilisée pour les actions, horaires et états actifs.</p>
-
-        <div class="accent-presets" aria-label="Couleurs prédéfinies">
-          <button type="button" class="accent-swatch" data-accent="#F97316" style="--swatch:#F97316" aria-label="Orange Woodfire"></button>
-          <button type="button" class="accent-swatch" data-accent="#F59E0B" style="--swatch:#F59E0B" aria-label="Ambre"></button>
-          <button type="button" class="accent-swatch" data-accent="#EF4444" style="--swatch:#EF4444" aria-label="Rouge"></button>
-          <button type="button" class="accent-swatch" data-accent="#D946EF" style="--swatch:#D946EF" aria-label="Magenta"></button>
-          <button type="button" class="accent-swatch" data-accent="#8B5CF6" style="--swatch:#8B5CF6" aria-label="Violet"></button>
-          <button type="button" class="accent-swatch" data-accent="#3B82F6" style="--swatch:#3B82F6" aria-label="Bleu"></button>
-          <button type="button" class="accent-swatch" data-accent="#06B6D4" style="--swatch:#06B6D4" aria-label="Cyan"></button>
-          <button type="button" class="accent-swatch" data-accent="#22C55E" style="--swatch:#22C55E" aria-label="Vert"></button>
-        </div>
-
-        <div class="color-custom-grid">
-          <label class="color-picker-field">
-            <span class="field-label">Sélecteur</span>
-            <input id="accentColorInput" type="color" value="#F97316" aria-label="Sélecteur de couleur" />
-          </label>
-
-          <label class="hex-field">
-            <span class="field-label">HEX</span>
-            <input id="accentHexInput" type="text" value="#F97316" inputmode="text" autocomplete="off" spellcheck="false" maxlength="7" aria-label="Couleur HEX" />
-          </label>
-        </div>
-
-        <fieldset class="rgb-fieldset">
-          <legend>RGB</legend>
-          <label><span>R</span><input id="accentRedInput" type="number" min="0" max="255" step="1" value="249" inputmode="numeric" /></label>
-          <label><span>G</span><input id="accentGreenInput" type="number" min="0" max="255" step="1" value="115" inputmode="numeric" /></label>
-          <label><span>B</span><input id="accentBlueInput" type="number" min="0" max="255" step="1" value="22" inputmode="numeric" /></label>
-        </fieldset>
-
-        <div id="accentPreview" class="accent-preview">#F97316</div>
-        <p id="accentValidation" class="validation" role="alert"></p>
-
-        <div class="dialog-actions">
-          <button id="resetAccentBtn" class="secondary-btn" type="button">Orange Woodfire</button>
-          <button class="primary-btn" value="close">Terminé</button>
-        </div>
-      </form>
-    </dialog>
-
-    <dialog id="installDialog">
-      <form method="dialog">
-        <h2>Installer sur l’iPhone</h2>
-        <p>Dans Safari : <strong>Partager → Sur l’écran d’accueil → Ajouter</strong>.</p>
-        <p>Une fois installée, l’app fonctionne aussi hors connexion après une première ouverture.</p>
-        <button class="primary-btn" value="close">Fermer</button>
-      </form>
-    </dialog>
   </main>
 
-  <script type="module" src="./js/settings.js"></script>
+  <dialog id="settingsDialog">
+    <form method="dialog" class="settings-form">
+      <div class="dialog-heading">
+        <div>
+          <span class="field-label">Interface</span>
+          <h2>Réglages</h2>
+        </div>
+        <button class="dialog-close" value="cancel" aria-label="Fermer">×</button>
+      </div>
+      <p class="dialog-copy">Choisis la couleur d’accent utilisée pour les actions, états actifs et éléments importants.</p>
+
+      <div id="accentPresets" class="accent-presets"></div>
+
+      <div class="color-custom-grid">
+        <label class="color-picker-field">
+          <span>Couleur</span>
+          <input id="accentColorPicker" type="color" value="#F97316" />
+        </label>
+        <label class="hex-field">
+          <span>HEX</span>
+          <input id="accentHexInput" type="text" inputmode="text" maxlength="7" value="#F97316" autocomplete="off" />
+        </label>
+      </div>
+
+      <fieldset class="rgb-fieldset">
+        <legend>RGB</legend>
+        <label>R <input id="accentRInput" type="number" min="0" max="255" inputmode="numeric" /></label>
+        <label>G <input id="accentGInput" type="number" min="0" max="255" inputmode="numeric" /></label>
+        <label>B <input id="accentBInput" type="number" min="0" max="255" inputmode="numeric" /></label>
+      </fieldset>
+
+      <div id="accentPreview" class="accent-preview">APERÇU</div>
+      <p id="settingsValidation" class="validation" aria-live="polite"></p>
+
+      <div class="dialog-actions">
+        <button id="resetAccentBtn" class="secondary-btn" type="button">Couleur par défaut</button>
+        <button class="primary-btn" value="close">Terminé</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="installDialog">
+    <form method="dialog">
+      <h2>Installer sur iPhone</h2>
+      <p>Dans Safari : Partager → Sur l’écran d’accueil. L’app reste ensuite disponible hors ligne après un premier chargement.</p>
+      <button class="primary-btn" value="close">Fermer</button>
+    </form>
+  </dialog>
+
   <script type="module" src="./app.js"></script>
-  <script type="module" src="./js/start-hint.js"></script>
 </body>
 </html>
