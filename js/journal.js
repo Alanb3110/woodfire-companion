@@ -158,10 +158,25 @@ export function buildJournalEntry({ state, recipe, schedule, now = new Date() })
 export function upsertJournalEntry(entry, storage = globalThis.localStorage) {
   if (entry?.isTest) return loadJournal(storage);
   const data = loadJournal(storage);
+  const hasRating = Object.prototype.hasOwnProperty.call(entry || {}, 'rating');
+  const hasNotes = Object.prototype.hasOwnProperty.call(entry || {}, 'notes');
+  const hasFeedbackUpdatedAt = Object.prototype.hasOwnProperty.call(entry || {}, 'feedbackUpdatedAt');
   const normalized = normalizeEntry(entry);
   const index = data.entries.findIndex(item => item.id === normalized.id);
-  if (index >= 0) data.entries[index] = normalizeEntry({ ...data.entries[index], ...normalized });
-  else data.entries.push(normalized);
+
+  if (index >= 0) {
+    const existing = data.entries[index];
+    data.entries[index] = normalizeEntry({
+      ...existing,
+      ...normalized,
+      rating: hasRating ? normalized.rating : existing.rating,
+      notes: hasNotes ? normalized.notes : existing.notes,
+      feedbackUpdatedAt: hasFeedbackUpdatedAt ? normalized.feedbackUpdatedAt : existing.feedbackUpdatedAt
+    });
+  } else {
+    data.entries.push(normalized);
+  }
+
   data.entries.sort((a, b) => new Date(b.servedAt || b.updatedAt) - new Date(a.servedAt || a.updatedAt));
   saveJournal(data, storage);
   return data;
