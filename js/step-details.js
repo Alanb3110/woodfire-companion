@@ -19,7 +19,7 @@ function quantityIsValid(quantity) {
 
 function niceNumber(value) {
   if (Number.isInteger(value)) return String(value);
-  return Number(value.toFixed(1)).toString().replace('.', ',');
+  return Number(value.toFixed(2)).toString().replace('.', ',');
 }
 
 function formatQuantity(quantity, unit, displayUnit = true) {
@@ -30,7 +30,7 @@ function formatQuantity(quantity, unit, displayUnit = true) {
   return `${niceNumber(quantity.min)}–${niceNumber(quantity.max)}${suffix ? ` ${suffix}` : ''}`;
 }
 
-function validateScale(scale, usageLabel, errors) {
+function validateScale(scale, usageLabel, errors, maxServings) {
   if (!scale) return;
   if (!SCALE_TYPES.has(scale.type)) {
     errors.push(`${usageLabel} has invalid scale type ${scale.type}.`);
@@ -48,6 +48,9 @@ function validateScale(scale, usageLabel, errors) {
       return;
     }
     previousMax = breakpoint.maxServings;
+  }
+  if (isFiniteNumber(maxServings) && previousMax < maxServings) {
+    errors.push(`${usageLabel} step scaling must cover servings.max.`);
   }
 }
 
@@ -86,6 +89,7 @@ function materializeText(text, replacements) {
 export function validateStepIngredientUsage(recipe) {
   const errors = [];
   const ingredients = new Map((recipe?.ingredients || []).map(ingredient => [ingredient.id, ingredient]));
+  const maxServings = recipe?.servings?.max;
 
   for (const step of recipe?.steps || []) {
     const usages = step.ingredientUsage;
@@ -112,11 +116,15 @@ export function validateStepIngredientUsage(recipe) {
       else ids.add(usage.id);
 
       const ingredient = ingredients.get(usage.ingredientId);
-      if (!ingredient) errors.push(`${label} references missing ingredient ${usage.ingredientId || '?'}.`);
+      if (!ingredient) {
+        errors.push(`${label} references missing ingredient ${usage.ingredientId || '?'}.`);
+      } else if (usage.unit !== undefined && usage.unit !== ingredient.unit && usage.quantity === undefined) {
+        errors.push(`${label} changes unit without an explicit converted quantity.`);
+      }
       if (usage.quantity !== undefined && !quantityIsValid(usage.quantity)) errors.push(`${label} has invalid quantity.`);
       if (usage.unit !== undefined && (typeof usage.unit !== 'string' || !usage.unit)) errors.push(`${label} unit must be a non-empty string.`);
       if (usage.displayUnit !== undefined && typeof usage.displayUnit !== 'boolean') errors.push(`${label} displayUnit must be boolean.`);
-      validateScale(usage.scale, label, errors);
+      validateScale(usage.scale, label, errors, maxServings);
     }
 
     for (const token of tokens) {
@@ -131,7 +139,11 @@ export function validateStepIngredientUsage(recipe) {
 }
 
 export function materializeStepDetails(recipe, step, servings) {
-  const validation = validateStepIngredientUsage({ ingredients: recipe.ingredients, steps: [step] });
+  const validation = validateStepIngredientUsage({
+    servings: recipe.servings,
+    ingredients: recipe.ingredients,
+    steps: [step]
+  });
   if (!validation.valid) throw new Error(`Invalid step ingredient usage: ${validation.errors.join(' | ')}`);
   if (!Array.isArray(step.details)) return [];
   if (!step.ingredientUsage?.length) return [...step.details];
@@ -140,7 +152,11 @@ export function materializeStepDetails(recipe, step, servings) {
 }
 
 export function materializeStepSummary(recipe, step, servings) {
-  const validation = validateStepIngredientUsage({ ingredients: recipe.ingredients, steps: [step] });
+  const validation = validateStepIngredientUsage({
+    servings: recipe.servings,
+    ingredients: recipe.ingredients,
+    steps: [step]
+  });
   if (!validation.valid) throw new Error(`Invalid step ingredient usage: ${validation.errors.join(' | ')}`);
   if (!step.ingredientUsage?.length) return step.summary;
   return materializeText(step.summary, buildReplacements(recipe, step, servings));
