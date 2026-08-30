@@ -1,4 +1,9 @@
-import { updateJournalFeedback } from './journal.js';
+import {
+  exportJournalBackup,
+  importJournalBackup,
+  loadJournal,
+  updateJournalFeedback
+} from './journal.js';
 
 function formatDate(iso) {
   if (!iso) return 'Date inconnue';
@@ -32,6 +37,85 @@ function buildMetric(label, value) {
   strong.textContent = value;
   metric.append(caption, strong);
   return metric;
+}
+
+function backupFilename(now = new Date()) {
+  const day = now.toISOString().slice(0, 10);
+  return `woodfire-journal-${day}.json`;
+}
+
+function downloadJournalBackup() {
+  const content = exportJournalBackup(loadJournal());
+  const blob = new Blob([content], { type: 'application/json;charset=utf-8' });
+  const href = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = href;
+  link.download = backupFilename();
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(href), 0);
+}
+
+function renderBackupControls(container, entries, renderOptions) {
+  const panel = document.createElement('div');
+  panel.className = 'journal-backup-actions';
+
+  const exportButton = document.createElement('button');
+  exportButton.type = 'button';
+  exportButton.className = 'secondary-btn';
+  exportButton.textContent = 'Exporter JSON';
+  exportButton.disabled = entries.length === 0;
+
+  const importButton = document.createElement('button');
+  importButton.type = 'button';
+  importButton.className = 'secondary-btn';
+  importButton.textContent = 'Importer JSON';
+
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json,application/json';
+  input.hidden = true;
+
+  const status = document.createElement('span');
+  status.className = 'journal-backup-status';
+
+  exportButton.addEventListener('click', () => {
+    try {
+      downloadJournalBackup();
+      status.classList.remove('error');
+      status.textContent = 'Sauvegarde exportée';
+    } catch (error) {
+      status.classList.add('error');
+      status.textContent = error.message || 'Export impossible';
+    }
+  });
+
+  importButton.addEventListener('click', () => input.click());
+  input.addEventListener('change', async () => {
+    const file = input.files?.[0];
+    if (!file) return;
+    status.classList.remove('error');
+    status.textContent = 'Import en cours…';
+    try {
+      const result = importJournalBackup(await file.text());
+      const fresh = loadJournal();
+      renderJournalEntries(fresh.entries, renderOptions);
+      const freshStatus = container.querySelector('.journal-backup-status');
+      if (freshStatus) {
+        const changed = result.added + result.updated;
+        freshStatus.textContent = `${changed} cuisson${changed === 1 ? '' : 's'} importée${changed === 1 ? '' : 's'} · ${result.data.entries.length} au total`;
+      }
+    } catch (error) {
+      status.classList.add('error');
+      status.textContent = error.message || 'Import impossible';
+    } finally {
+      input.value = '';
+    }
+  });
+
+  panel.append(exportButton, importButton, input, status);
+  container.appendChild(panel);
 }
 
 function renderFeedback(entry, container, onSaved = () => {}) {
@@ -231,10 +315,13 @@ function renderEntry(entry) {
 export function renderJournalEntries(entries, { container, countElement, clearButton } = {}) {
   if (!container) return;
   const list = Array.isArray(entries) ? entries : [];
+  const renderOptions = { container, countElement, clearButton };
   container.innerHTML = '';
 
   if (countElement) countElement.textContent = `${list.length} cuisson${list.length === 1 ? '' : 's'}`;
   if (clearButton) clearButton.hidden = list.length === 0;
+
+  renderBackupControls(container, list, renderOptions);
 
   if (!list.length) {
     const empty = document.createElement('p');
