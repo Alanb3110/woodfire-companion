@@ -1,0 +1,47 @@
+# Woodfire Companion — Active Session V3
+
+## Purpose
+Session V3 extends the start/finish lifecycle introduced by Session V2 with two practical recovery/testing concepts:
+- actual step timestamps may be corrected after the fact when the cook forgot to tap at the exact moment;
+- DEV builds may create a synthetic test cook that exercises the real active-cook UI without waiting several hours.
+
+The localStorage namespace remains `woodfire-companion-v1`; the record contains `schemaVersion: 3`.
+
+## Runtime lifecycle
+Each step remains `upcoming`, `active` or `done` using separate `started[stepId]` and `completed[stepId]` maps.
+
+The planner consumes corrected timestamps exactly like timestamps recorded live. Editing an actual time therefore triggers the same dependency-aware replanning after reload; historical facts are not represented as generic +5/+10/+15 delays.
+
+## Correcting actual timestamps
+The expanded task detail exposes the actual start and, when present, actual completion time using local date/time inputs.
+
+Use this only to correct what really happened, for example when a step was started at 18:05 but the cook only remembered to tap at 18:17.
+
+Rules:
+- a corrected completion cannot precede the corrected start;
+- correcting a timestamp never rewrites unrelated completed steps;
+- the earliest known progress timestamp is updated when a corrected start predates the previously recorded cook start;
+- after saving, the application reloads the persisted session and the planner recalculates downstream work from the corrected facts.
+
+## Test sessions
+Session V3 adds `isTest: boolean`, default `false`.
+
+The DEV-only `Cuisson test` tool:
+- selects an executable recipe (preferring the Pork Belly reference because it exercises observations/rechecks);
+- positions the synthetic meal around the current clock time;
+- seeds coherent completed/active steps, a pending recheck and sample temperatures;
+- stores the same recipe snapshot and session structure as a real cook;
+- reloads the normal application so the real planner, active-cook UI and timestamp editor are exercised.
+
+A real active session is backed up before entering test mode and can be restored when leaving it.
+
+Test sessions must never pollute the real Cook Journal. Journal entries carry `isTest`, and journal persistence ignores them.
+
+## Migration
+Schema v2 records migrate to v3 by adding `isTest: false`. Legacy v1 records still migrate through v2 first; existing completed timestamps are preserved and missing historical starts are never fabricated.
+
+## Offline behavior
+The timestamp editor is part of normal app behavior. DEV test tooling is loaded only when a visible DEV build badge is present. Both modules are cached in the PWA shell so development validation also works after the app has been loaded once.
+
+## Non-goals
+Session V3 does not add automatic timers, background notifications, ETA prediction, automatic completion from temperature, or multiple simultaneous real cook sessions.
