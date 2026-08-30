@@ -1,13 +1,13 @@
 # Woodfire Companion — Tacos Barbacoa Meal
 
 ## Status
-Executable curated meal for Woodfire Companion. Recipe file: `recipes/smoked-beef-barbacoa.json`.
+Executable curated meal for Woodfire Companion. Recipe file: `recipes/smoked-beef-barbacoa.json`, current content version **2**.
 
 This meal promotes the previous family barbacoa plan into the shared Recipe Schema V1 / Planner V1 pipeline rather than adding recipe-specific UI or planner logic.
 
 ## Reference meal
 - 8 people.
-- 2.6 kg boneless beef shank, originally two pieces of about 1.3 kg.
+- 2.6 kg boneless beef shank, ideally kept as two pieces for the declared execution structure.
 - Hard taco shells for service.
 - Smoked salsa plus a compact fresh-toppings buffet.
 - No alcohol/flambé.
@@ -31,11 +31,44 @@ Reference marinade for 8:
 
 Marinate ideally overnight, or at least 2 h before cooking.
 
-Covered braise additions:
+Covered braise additions at the 8-person reference:
 - 2 sliced yellow onions;
 - all reserved marinade;
 - 400–500 mL hot beef stock;
 - 2 bay leaves.
+
+## V2 serving-aware preparation and cook quantities
+Content V2 removes reference-8 quantities that previously remained hard-coded when the meal was configured for 6 people.
+
+The same structured `ingredientUsage` mechanism now applies to `advancePrep` as well as Active Cook steps. The pre-cook marinade reminder therefore follows the serving selector before the cooking session starts.
+
+### Marinade examples
+For 6 people:
+- 1.95 kg boneless beef shank;
+- 2 oranges;
+- 1.5 limes, leaving the remaining lime allocation for salsa/service;
+- 5 garlic cloves;
+- 1.5 tbsp tomato paste;
+- 1.5 tbsp cider vinegar;
+- scaled chipotle/cumin/oregano/paprika;
+- 18.75–22.5 g salt;
+- 0.75 tsp black pepper.
+
+For 8 people the original reference remains 2.6 kg beef, 2 oranges, 2 limes, 6 garlic cloves, 2 tbsp tomato paste/vinegar, the original spice amounts and 25–30 g marinade salt.
+
+Garlic shopping quantity now uses a practical step rule: 5 cloves for 6 people and 6 for 7–8, rather than presenting a fractional clove count.
+
+### Salsa, braise and taco bar
+At 6 people the generated instructions now use, among other values:
+- 450 g tomatoes and 1 jalapeño for the smoked salsa;
+- approximately 11.25 g coriander + 3 g salt when blending salsa;
+- 1.5 yellow onions + 300–375 mL beef stock in the braise;
+- 225 g cheddar, 187.5 g lettuce, 2 avocados, approximately 11.25 g coriander and 300 g sour cream for the taco bar;
+- 18 hard taco shells.
+
+At 8 people the original 600 g tomatoes, 400–500 mL stock, 300 g cheddar, 250 g lettuce, 3 avocados, 400 g sour cream and 24 shells remain unchanged.
+
+V2 changes quantities/instruction consistency only. It does not change the reference execution timing, Woodfire configuration, tenderness completion criterion or planner buffers.
 
 ## Woodfire sequence
 ### Smoked salsa vegetables
@@ -87,15 +120,15 @@ After the meat is ready:
 The plan keeps about 55 min of baseline margin between finished shredding and service. Rechecks may consume that margin before service time moves.
 
 ## Salsa and taco bar
-Smoked salsa reference:
+Smoked salsa reference for 8:
 - 600 g tomatoes;
 - 1 white onion;
-- 1–2 jalapeños;
+- 2 jalapeños at the 8-person reference;
 - juice of 1 lime;
 - about 15 g coriander;
 - about 4 g salt.
 
-Taco bar for 8:
+Taco bar reference for 8:
 - 24 hard taco shells (~3/person);
 - 300 g grated cheddar;
 - 250 g shredded lettuce;
@@ -118,10 +151,11 @@ Taco bar for 8:
 - 18:45 — warm hard taco shells;
 - 19:00 — serve.
 
-## Planner semantics exercised
-This third real meal intentionally exercises existing V1 concepts rather than extending the schema:
+## Planner/schema semantics exercised
+This third real meal exercises existing V1 planning concepts and now provides the real use case for serving-aware advance-prep materialization:
 - multiple meal components;
-- same-day advance-prep reminders plus active tasks;
+- serving-aware advance-prep reminders;
+- serving-aware Active Cook quantities;
 - shared exclusive Woodfire resource across salsa, smoke and braise;
 - passive tempering concurrent with Woodfire work;
 - stovetop reduction concurrent with passive meat rest;
