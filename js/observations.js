@@ -106,6 +106,52 @@ export function applyObservation({ observations = [], rechecks = {}, completed =
   };
 }
 
+export function latestObservationForStep(observations = [], stepId) {
+  for (let index = observations.length - 1; index >= 0; index--) {
+    if (observations[index]?.stepId === stepId) return observations[index];
+  }
+  return null;
+}
+
+export function editLatestObservationTimestamp({ observations = [], rechecks = {}, completed = {} }, stepId, at) {
+  if (!stepId) throw new Error('Observation timestamp edit requires a step id.');
+  const nextAt = toDate(at);
+  if (!nextAt) throw new Error('Heure de contrôle invalide.');
+
+  const index = observations.map(item => item?.stepId).lastIndexOf(stepId);
+  if (index < 0) throw new Error('Aucune observation à corriger pour cette étape.');
+
+  const nextObservations = observations.map(item => ({ ...item }));
+  const nextRechecks = { ...rechecks };
+  const nextCompleted = { ...completed };
+  const current = nextObservations[index];
+  const previousAt = toDate(current.timestamp);
+  if (!previousAt) throw new Error('L’heure enregistrée du contrôle est invalide.');
+  const deltaMs = nextAt.getTime() - previousAt.getTime();
+  const previousTimestamp = previousAt.toISOString();
+
+  current.timestamp = nextAt.toISOString();
+
+  if (current.recheckDueAt) {
+    const previousDue = toDate(current.recheckDueAt);
+    if (!previousDue) throw new Error('L’heure de recontrôle enregistrée est invalide.');
+    const shiftedDue = new Date(previousDue.getTime() + deltaMs).toISOString();
+    if (nextRechecks[stepId] === current.recheckDueAt) nextRechecks[stepId] = shiftedDue;
+    current.recheckDueAt = shiftedDue;
+  }
+
+  if (current.outcome === 'complete' && nextCompleted[stepId] === previousTimestamp) {
+    nextCompleted[stepId] = nextAt.toISOString();
+  }
+
+  return {
+    observations: nextObservations,
+    rechecks: nextRechecks,
+    completed: nextCompleted,
+    record: current
+  };
+}
+
 export function clearPendingRecheck(rechecks = {}, stepId) {
   const next = { ...rechecks };
   delete next[stepId];
