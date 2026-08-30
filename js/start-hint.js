@@ -6,6 +6,7 @@ const LIBRARY_URL = './recipes/index.json';
 const recipeCache = new Map();
 let libraryPromise = null;
 let refreshToken = 0;
+let refreshQueued = false;
 
 function $(id) {
   return document.getElementById(id);
@@ -71,14 +72,20 @@ async function refreshStartHint() {
     const recipe = await getRecipe(entry);
     const firstStart = recommendedStartFromPlan(recipe, servings, mealTime);
     if (token !== refreshToken || !firstStart) return;
-    hint.textContent = `Début conseillé vers ${formatTime(firstStart)} · calculé depuis le planning complet.`;
+    const nextText = `Début conseillé vers ${formatTime(firstStart)} · calculé depuis le planning complet.`;
+    if (hint.textContent !== nextText) hint.textContent = nextText;
   } catch (error) {
     console.warn('Impossible de calculer le début conseillé depuis le planner.', error);
   }
 }
 
 function scheduleRefresh() {
-  queueMicrotask(() => refreshStartHint());
+  if (refreshQueued) return;
+  refreshQueued = true;
+  queueMicrotask(() => {
+    refreshQueued = false;
+    refreshStartHint();
+  });
 }
 
 function initStartHint() {
@@ -88,10 +95,12 @@ function initStartHint() {
   $('servingsPlusBtn')?.addEventListener('click', scheduleRefresh);
 
   const observer = new MutationObserver(scheduleRefresh);
-  for (const id of ['recipeView', 'recipeTitle', 'servingsValue']) {
-    const node = $(id);
-    if (node) observer.observe(node, { attributes: true, childList: true, subtree: true });
-  }
+  const view = $('recipeView');
+  const title = $('recipeTitle');
+  const servings = $('servingsValue');
+  if (view) observer.observe(view, { attributes: true, attributeFilter: ['hidden'] });
+  if (title) observer.observe(title, { childList: true });
+  if (servings) observer.observe(servings, { childList: true });
   scheduleRefresh();
 }
 
