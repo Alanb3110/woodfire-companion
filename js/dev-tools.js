@@ -77,7 +77,9 @@ async function buildTestSession() {
   let plan = buildMealSchedule(recipe, { servings: recipe.servings.reference, targetServingAt: targetServingAt.toISOString() });
   const observationItem = plan.find(item => getObservationOptions(item.step, recipe).some(option => option.outcome === 'recheck'));
   if (observationItem) {
-    const desiredObservationStart = addMinutes(now, -5);
+    // Place the planned checkpoint far enough in the past that a +20 min recheck visibly
+    // exceeds the Pork Belly planning buffer. This makes downstream propagation easy to test.
+    const desiredObservationStart = addMinutes(now, -25);
     targetServingAt = new Date(targetServingAt.getTime() + (desiredObservationStart - observationItem.start));
     plan = buildMealSchedule(recipe, { servings: recipe.servings.reference, targetServingAt: targetServingAt.toISOString() });
   }
@@ -102,7 +104,8 @@ async function buildTestSession() {
   let observations = [];
   let rechecks = {};
   if (testObservationItem) {
-    started[testObservationItem.step.id] = testObservationItem.start.toISOString();
+    // The actual control happens now; the planned checkpoint may have been earlier.
+    started[testObservationItem.step.id] = now.toISOString();
     const option = getObservationOptions(testObservationItem.step, recipe).find(item => item.outcome === 'recheck');
     if (option) {
       const result = applyObservation({ observations, rechecks, completed }, testObservationItem.step, option, now);
