@@ -1,5 +1,7 @@
 export const JOURNAL_KEY = 'woodfire-companion-journal-v1';
 export const JOURNAL_SCHEMA_VERSION = 2;
+export const JOURNAL_BACKUP_KIND = 'woodfire-companion-journal-backup';
+export const JOURNAL_BACKUP_VERSION = 1;
 
 function safeIso(value) {
   if (!value) return null;
@@ -45,6 +47,54 @@ function migrateJournalData(parsed) {
   };
 }
 
+function entryFreshness(entry) {
+  const timestamps = [entry?.feedbackUpdatedAt, entry?.updatedAt, entry?.servedAt]
+    .map(value => safeIso(value))
+    .filter(Boolean)
+    .map(value => new Date(value).getTime());
+  return timestamps.length ? Math.max(...timestamps) : 0;
+}
+
+function backupEntryIsValid(entry) {
+  return entry
+    && typeof entry === 'object'
+    && !Array.isArray(entry)
+    && typeof entry.id === 'string'
+    && entry.id.trim().length > 0;
+}
+
+function parseJournalBackup(serialized) {
+  let payload = serialized;
+  if (typeof serialized === 'string') {
+    try {
+      payload = JSON.parse(serialized);
+    } catch {
+      throw new Error('Fichier JSON illisible.');
+    }
+  }
+
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    throw new Error('Sauvegarde de journal invalide.');
+  }
+  if (payload.kind !== JOURNAL_BACKUP_KIND) {
+    throw new Error('Ce fichier n’est pas une sauvegarde Woodfire Companion reconnue.');
+  }
+  if (!Number.isInteger(payload.version) || payload.version < 1 || payload.version > JOURNAL_BACKUP_VERSION) {
+    throw new Error('Version de sauvegarde non prise en charge.');
+  }
+  if (!payload.journal || typeof payload.journal !== 'object' || Array.isArray(payload.journal)) {
+    throw new Error('La sauvegarde ne contient pas de journal valide.');
+  }
+  if (payload.journal.schemaVersion > JOURNAL_SCHEMA_VERSION) {
+    throw new Error('Cette sauvegarde utilise une version de journal plus récente que l’application.');
+  }
+  if (!Array.isArray(payload.journal.entries) || payload.journal.entries.some(entry => !backupEntryIsValid(entry))) {
+    throw new Error('La sauvegarde contient des entrées de journal invalides.');
+  }
+
+  return payload;
+}
+
 export function createSessionId(now = new Date()) {
   const stamp = now.toISOString().replace(/[-:.TZ]/g, '');
   const random = Math.random().toString(36).slice(2, 8);
@@ -69,6 +119,55 @@ export function saveJournal(data, storage = globalThis.localStorage) {
     schemaVersion: JOURNAL_SCHEMA_VERSION,
     entries: Array.isArray(data?.entries) ? data.entries.map(normalizeEntry) : []
   }));
+}
+
+export function exportJournalBackup(data = loadJournal(), now = new Date()) {
+  const journal = migrateJournalData(data);
+  return JSON.stringify({
+    kind: JOURNAL_BACKUP_KIND,
+    version: JOURNAL_BACKUP_VERSION,
+    exportedAt: now.toISOString(),
+    journal
+  }, null, 2);
+}
+
+export function importJournalBackup(serialized, storage = globalThis.localStorage) {
+  const payload = parseJournalBackup(serialized);
+  const imported = migrateJournalData(payload.journal);
+  const existing = loadJournal(storage);
+  const merged = new Map(existing.entries.map(entry => [entry.id, entry]));
+  let added = 0;
+  let updated = 0;
+  let skipped = 0;
+
+  for (const incoming of imported.entries) {
+    if (incoming.isTest) {
+      skipped += 1;
+      continue;
+    }
+    const current = merged.get(incoming.id);
+    if (!current) {
+      merged.set(incoming.id, incoming);
+      added += 1;
+      continue;
+    }
+
+    if (entryFreshness(incoming) > entryFreshness(current)) {
+      merged.set(incoming.id, incoming);
+      updated += 1;
+    } else {
+      skipped += 1;
+    }
+  }
+
+  const data = {
+    schemaVersion: JOURNAL_SCHEMA_VERSION,
+    entries: [...merged.values()]
+      .map(normalizeEntry)
+      .sort((a, b) => entryFreshness(b) - entryFreshness(a))
+  };
+  saveJournal(data, storage);
+  return { data, added, updated, skipped };
 }
 
 function serializeSchedule(schedule) {
