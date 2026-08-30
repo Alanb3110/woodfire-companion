@@ -134,3 +134,8 @@ if (settingsBtn && settingsDialog) {
 
   resetAccentBtn.addEventListener('click', () => setAccent(DEFAULT_ACCENT));
 }
+
+import('./timestamp-editor.js').catch(error => console.warn('Éditeur d’heures indisponible.', error));
+if (document.querySelector('.dev-badge')?.textContent?.trim().startsWith('DEV')) {
+  import('./dev-tools.js').catch(error => console.warn('Outils DEV indisponibles.', error));
+}
