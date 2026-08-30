@@ -4,7 +4,9 @@ import { readFile } from 'node:fs/promises';
 import {
   applyObservation,
   clearPendingRecheck,
+  editLatestObservationTimestamp,
   getObservationOptions,
+  latestObservationForStep,
   pendingRecheckDate,
   resolveObservationDelayMin
 } from '../js/observations.js';
@@ -51,6 +53,25 @@ test('ready observation records actual completion and clears pending recheck', (
   assert.equal(ready.rechecks['first-check'], undefined);
   assert.equal(ready.observations.length, 2);
   assert.equal(ready.record.outcome, 'complete');
+});
+
+test('editing a not-ready control time shifts its pending recheck by the same delta', () => {
+  const options = getObservationOptions(porkCheck, pork);
+  const state = applyObservation({ observations: [], rechecks: {}, completed: {} }, porkCheck, options[0], new Date('2026-08-29T18:15:00.000Z'));
+  const edited = editLatestObservationTimestamp(state, 'first-check', new Date('2026-08-29T18:25:00.000Z'));
+
+  assert.equal(latestObservationForStep(edited.observations, 'first-check').timestamp, '2026-08-29T18:25:00.000Z');
+  assert.equal(latestObservationForStep(edited.observations, 'first-check').recheckDueAt, '2026-08-29T18:45:00.000Z');
+  assert.equal(edited.rechecks['first-check'], '2026-08-29T18:45:00.000Z');
+});
+
+test('editing a ready observation updates the linked completion timestamp', () => {
+  const options = getObservationOptions(porkCheck, pork);
+  const ready = applyObservation({ observations: [], rechecks: {}, completed: {} }, porkCheck, options[2], new Date('2026-08-29T18:28:00.000Z'));
+  const edited = editLatestObservationTimestamp(ready, 'first-check', new Date('2026-08-29T18:31:00.000Z'));
+
+  assert.equal(edited.completed['first-check'], '2026-08-29T18:31:00.000Z');
+  assert.equal(latestObservationForStep(edited.observations, 'first-check').timestamp, '2026-08-29T18:31:00.000Z');
 });
 
 test('pending recheck helpers tolerate stored ISO timestamps', () => {
