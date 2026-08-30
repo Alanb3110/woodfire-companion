@@ -3,10 +3,14 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { buildSchedule } from '../js/planner.js';
 import {
+  JOURNAL_BACKUP_KIND,
+  JOURNAL_BACKUP_VERSION,
   JOURNAL_KEY,
   JOURNAL_SCHEMA_VERSION,
   buildJournalEntry,
   clearJournal,
+  exportJournalBackup,
+  importJournalBackup,
   loadJournal,
   removeJournalEntry,
   updateJournalFeedback,
@@ -160,4 +164,96 @@ test('journal entries can be removed individually or cleared without touching ot
   clearJournal(storage);
   assert.equal(loadJournal(storage).entries.length, 0);
   assert.equal(storage.getItem('woodfire-companion-v1'), '{"keep":true}');
+});
+
+test('journal backup export is self-identifying, versioned and round-trips into empty storage', () => {
+  const source = new MemoryStorage();
+  const state = sessionState();
+  const schedule = buildSchedule(recipe, '20:00', new Date(2026, 7, 29, 12, 0, 0, 0));
+  upsertJournalEntry(buildJournalEntry({ state, recipe, schedule, now: new Date('2026-08-29T20:05:00.000Z') }), source);
+
+  const exportedAt = new Date('2026-08-30T08:00:00.000Z');
+  const backup = exportJournalBackup(loadJournal(source), exportedAt);
+  const payload = JSON.parse(backup);
+  assert.equal(payload.kind, JOURNAL_BACKUP_KIND);
+  assert.equal(payload.version, JOURNAL_BACKUP_VERSION);
+  assert.equal(payload.exportedAt, exportedAt.toISOString());
+  assert.equal(payload.journal.schemaVersion, JOURNAL_SCHEMA_VERSION);
+  assert.equal(payload.journal.entries.length, 1);
+
+  const target = new MemoryStorage();
+  const result = importJournalBackup(backup, target);
+  assert.equal(result.added, 1);
+  assert.equal(result.updated, 0);
+  assert.equal(result.skipped, 0);
+  assert.equal(loadJournal(target).entries[0].id, state.sessionId);
+});
+
+test('journal backup import merges by session id and keeps the newest duplicate', () => {
+  const storage = new MemoryStorage();
+  storage.setItem(JOURNAL_KEY, JSON.stringify({
+    schemaVersion: JOURNAL_SCHEMA_VERSION,
+    entries: [
+      {
+        id: 'same-cook',
+        recipeTitle: 'Local newer feedback',
+        servedAt: '2026-08-20T20:00:00.000Z',
+        updatedAt: '2026-08-20T20:05:00.000Z',
+        feedbackUpdatedAt: '2026-08-22T12:00:00.000Z',
+        notes: 'Keep this local note.'
+      }
+    ]
+  }));
+
+  const backup = JSON.stringify({
+    kind: JOURNAL_BACKUP_KIND,
+    version: JOURNAL_BACKUP_VERSION,
+    exportedAt: '2026-08-30T08:00:00.000Z',
+    journal: {
+      schemaVersion: JOURNAL_SCHEMA_VERSION,
+      entries: [
+        {
+          id: 'same-cook',
+          recipeTitle: 'Older backup copy',
+          servedAt: '2026-08-20T20:00:00.000Z',
+          updatedAt: '2026-08-20T21:00:00.000Z',
+          notes: 'Older note.'
+        },
+        {
+          id: 'backup-only',
+          recipeTitle: 'Imported cook',
+          servedAt: '2026-08-21T20:00:00.000Z',
+          updatedAt: '2026-08-21T20:10:00.000Z'
+        }
+      ]
+    }
+  });
+
+  const result = importJournalBackup(backup, storage);
+  assert.equal(result.added, 1);
+  assert.equal(result.updated, 0);
+  assert.equal(result.skipped, 1);
+  assert.equal(result.data.entries.length, 2);
+  const duplicate = result.data.entries.find(entry => entry.id === 'same-cook');
+  assert.equal(duplicate.notes, 'Keep this local note.');
+});
+
+test('invalid or future journal backup is rejected without mutating local data', () => {
+  const storage = new MemoryStorage();
+  storage.setItem(JOURNAL_KEY, JSON.stringify({
+    schemaVersion: JOURNAL_SCHEMA_VERSION,
+    entries: [{ id: 'local', servedAt: '2026-08-20T20:00:00.000Z' }]
+  }));
+  const before = storage.getItem(JOURNAL_KEY);
+
+  assert.throws(() => importJournalBackup('{broken', storage), /JSON illisible/);
+  assert.equal(storage.getItem(JOURNAL_KEY), before);
+
+  const future = JSON.stringify({
+    kind: JOURNAL_BACKUP_KIND,
+    version: JOURNAL_BACKUP_VERSION,
+    journal: { schemaVersion: JOURNAL_SCHEMA_VERSION + 1, entries: [] }
+  });
+  assert.throws(() => importJournalBackup(future, storage), /plus récente/);
+  assert.equal(storage.getItem(JOURNAL_KEY), before);
 });
