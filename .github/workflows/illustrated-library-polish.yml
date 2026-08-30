@@ -29,53 +29,41 @@ jobs:
                   raise SystemExit(f'{label} marker not found in {path}')
               p.write_text(text.replace(old, new, 1))
 
-          replace_once(
-              'app.js',
-              "const recipeHero = $('recipeHero');\nconst recipeHeroSymbol = $('recipeHeroSymbol');",
-              "const recipeHero = $('recipeHero');\nconst recipeHeroImage = $('recipeHeroImage');\nconst recipeHeroSymbol = $('recipeHeroSymbol');",
-              'hero element'
-          )
+          app = Path('app.js')
+          text = app.read_text()
+          old = "const recipeHero = $('recipeHero');\nconst recipeHeroSymbol = $('recipeHeroSymbol');"
+          new = "const recipeHero = $('recipeHero');\nconst recipeHeroImage = $('recipeHeroImage');\nconst recipeHeroSymbol = $('recipeHeroSymbol');"
+          if old not in text:
+              raise SystemExit('hero element marker not found')
+          text = text.replace(old, new, 1)
 
-          replace_once(
-              'app.js',
-              """    const art = document.createElement('div');
-              art.className = `recipe-card-art theme-${entry.visual?.theme || 'embers'}`;
-              const symbol = document.createElement('span');""".replace('              ', '    '),
-              """    const art = document.createElement('div');
-              art.className = `recipe-card-art theme-${entry.visual?.theme || 'embers'}`;
-              if (entry.visual?.imageUrl) {
-                art.classList.add('has-image');
-                const image = document.createElement('img');
-                image.className = 'recipe-card-image';
-                image.src = entry.visual.imageUrl;
-                image.alt = '';
-                image.loading = 'lazy';
-                image.decoding = 'async';
-                art.appendChild(image);
-              }
-              const symbol = document.createElement('span');""".replace('              ', '    '),
-              'library art'
-          )
+          old = "    art.className = `recipe-card-art theme-${entry.visual?.theme || 'embers'}`;\n"
+          new = old + """    if (entry.visual?.imageUrl) {
+              art.classList.add('has-image');
+              const image = document.createElement('img');
+              image.className = 'recipe-card-image';
+              image.src = entry.visual.imageUrl;
+              image.alt = '';
+              image.loading = 'lazy';
+              image.decoding = 'async';
+              art.appendChild(image);
+            }
+          """
+          if old not in text:
+              raise SystemExit('library art marker not found')
+          text = text.replace(old, new, 1)
 
-          replace_once(
-              'app.js',
-              """function renderRecipeDetail() {
-              const visual = selectedEntry.visual || {};
-              applyVisual(recipeHero, visual);
-              recipeHeroSymbol.textContent = visual.symbol || '🔥';
-              recipeHeroEyebrow.textContent = visual.eyebrow || 'WOODFIRE';""".replace('              ', '  '),
-              """function renderRecipeDetail() {
-              const visual = selectedEntry.visual || {};
-              applyVisual(recipeHero, visual);
-              const heroImageUrl = visual.imageUrl || '';
-              recipeHero.classList.toggle('has-image', Boolean(heroImageUrl));
-              recipeHeroImage.hidden = !heroImageUrl;
-              recipeHeroImage.src = heroImageUrl;
-              recipeHeroSymbol.hidden = Boolean(heroImageUrl);
-              recipeHeroSymbol.textContent = visual.symbol || '🔥';
-              recipeHeroEyebrow.textContent = visual.eyebrow || 'WOODFIRE';""".replace('              ', '  '),
-              'detail hero'
-          )
+          old = "  applyVisual(recipeHero, visual);\n"
+          new = old + """  const heroImageUrl = visual.imageUrl || '';
+            recipeHero.classList.toggle('has-image', Boolean(heroImageUrl));
+            recipeHeroImage.hidden = !heroImageUrl;
+            recipeHeroImage.src = heroImageUrl;
+            recipeHeroSymbol.hidden = Boolean(heroImageUrl);
+          """
+          if old not in text:
+              raise SystemExit('detail hero marker not found')
+          text = text.replace(old, new, 1)
+          app.write_text(text)
 
           styles = Path('styles.css')
           css = styles.read_text()
@@ -106,7 +94,7 @@ jobs:
             z-index: 2;
             text-shadow: 0 2px 10px rgba(0,0,0,.82);
           }
-          .recipe-card-art.has-image { background: #0b0b0b; }
+          .recipe-card-art.has-image,
           .recipe-hero.has-image { background: #0b0b0b; }
           '''
               styles.write_text(css)
