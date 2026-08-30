@@ -1,4 +1,5 @@
 import { buildSchedule, closestMealAnchorDate, nextMealAnchorDate } from './planner.js';
+import { materializeRecipeForServings } from './step-details.js';
 
 function isFiniteNumber(value) {
   return typeof value === 'number' && Number.isFinite(value);
@@ -81,8 +82,9 @@ export function normalizeMealPlanContext(recipe, context = {}) {
 
 export function buildMealSchedule(recipe, context = {}) {
   const normalized = normalizeMealPlanContext(recipe, context);
+  const materializedRecipe = materializeRecipeForServings(recipe, normalized.servings);
   return buildSchedule(
-    recipe,
+    materializedRecipe,
     normalized.mealTime,
     normalized.referenceDate,
     normalized.taskShifts,
