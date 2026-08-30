@@ -1,5 +1,9 @@
 const VALID_STATUSES = new Set(['available', 'coming_soon']);
 
+function isLocalAssetUrl(value) {
+  return typeof value === 'string' && value.startsWith('./') && !value.startsWith('./../');
+}
+
 export function validateLibrary(library) {
   const errors = [];
   if (!library || typeof library !== 'object') return { valid: false, errors: ['Library must be an object.'] };
@@ -14,6 +18,10 @@ export function validateLibrary(library) {
     if (!entry.title) errors.push(`Library entry ${entry.id || '?'} requires a title.`);
     if (!VALID_STATUSES.has(entry.status)) errors.push(`Invalid status for ${entry.id || '?'}.`);
     if (entry.status === 'available' && !entry.recipeUrl) errors.push(`Available recipe ${entry.id || '?'} requires recipeUrl.`);
+
+    const imageUrl = entry.visual?.imageUrl;
+    if (entry.status === 'available' && !imageUrl) errors.push(`Available recipe ${entry.id || '?'} requires visual.imageUrl.`);
+    if (imageUrl && !isLocalAssetUrl(imageUrl)) errors.push(`Recipe ${entry.id || '?'} visual.imageUrl must be a local relative asset URL.`);
   }
 
   return { valid: errors.length === 0, errors };
