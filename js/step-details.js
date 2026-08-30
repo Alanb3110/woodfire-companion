@@ -51,14 +51,45 @@ function validateScale(scale, usageLabel, errors) {
   }
 }
 
+function stepTokens(step) {
+  const fragments = [step?.summary, ...(Array.isArray(step?.details) ? step.details : [])]
+    .filter(value => value !== undefined && value !== null);
+  return fragments.flatMap(fragment => [...String(fragment).matchAll(USAGE_TOKEN)].map(match => match[1]));
+}
+
+function buildReplacements(recipe, step, servings) {
+  const ingredients = new Map((recipe.ingredients || []).map(ingredient => [ingredient.id, ingredient]));
+  const referenceServings = recipe.servings?.reference;
+  const replacements = new Map();
+
+  for (const usage of step.ingredientUsage || []) {
+    const ingredient = ingredients.get(usage.ingredientId);
+    const scaled = scaleIngredient({
+      ...ingredient,
+      quantity: usage.quantity ?? ingredient.quantity,
+      unit: usage.unit ?? ingredient.unit,
+      scale: usage.scale ?? ingredient.scale
+    }, servings, referenceServings);
+    replacements.set(
+      usage.id,
+      formatQuantity(scaled.quantity, usage.unit ?? ingredient.unit, usage.displayUnit !== false)
+    );
+  }
+  return replacements;
+}
+
+function materializeText(text, replacements) {
+  if (text === undefined || text === null) return text;
+  return String(text).replace(USAGE_TOKEN, (_, id) => replacements.get(id));
+}
+
 export function validateStepIngredientUsage(recipe) {
   const errors = [];
   const ingredients = new Map((recipe?.ingredients || []).map(ingredient => [ingredient.id, ingredient]));
 
   for (const step of recipe?.steps || []) {
     const usages = step.ingredientUsage;
-    const details = Array.isArray(step.details) ? step.details : [];
-    const tokens = details.flatMap(detail => [...String(detail).matchAll(USAGE_TOKEN)].map(match => match[1]));
+    const tokens = stepTokens(step);
 
     if (usages === undefined) {
       if (tokens.length) errors.push(`Step ${step.id || '?'} uses quantity tokens without ingredientUsage.`);
@@ -89,10 +120,10 @@ export function validateStepIngredientUsage(recipe) {
     }
 
     for (const token of tokens) {
-      if (!ids.has(token)) errors.push(`Step ${step.id || '?'} detail references missing ingredientUsage token ${token}.`);
+      if (!ids.has(token)) errors.push(`Step ${step.id || '?'} text references missing ingredientUsage token ${token}.`);
     }
     for (const id of ids) {
-      if (!tokens.includes(id)) errors.push(`Step ${step.id || '?'} ingredientUsage ${id} is not referenced by step details.`);
+      if (!tokens.includes(id)) errors.push(`Step ${step.id || '?'} ingredientUsage ${id} is not referenced by step text.`);
     }
   }
 
@@ -102,27 +133,17 @@ export function validateStepIngredientUsage(recipe) {
 export function materializeStepDetails(recipe, step, servings) {
   const validation = validateStepIngredientUsage({ ingredients: recipe.ingredients, steps: [step] });
   if (!validation.valid) throw new Error(`Invalid step ingredient usage: ${validation.errors.join(' | ')}`);
-  if (!Array.isArray(step.details) || !step.ingredientUsage?.length) return [...(step.details || [])];
+  if (!Array.isArray(step.details)) return [];
+  if (!step.ingredientUsage?.length) return [...step.details];
+  const replacements = buildReplacements(recipe, step, servings);
+  return step.details.map(detail => materializeText(detail, replacements));
+}
 
-  const ingredients = new Map((recipe.ingredients || []).map(ingredient => [ingredient.id, ingredient]));
-  const referenceServings = recipe.servings?.reference;
-  const replacements = new Map();
-
-  for (const usage of step.ingredientUsage) {
-    const ingredient = ingredients.get(usage.ingredientId);
-    const scaled = scaleIngredient({
-      ...ingredient,
-      quantity: usage.quantity ?? ingredient.quantity,
-      unit: usage.unit ?? ingredient.unit,
-      scale: usage.scale ?? ingredient.scale
-    }, servings, referenceServings);
-    replacements.set(
-      usage.id,
-      formatQuantity(scaled.quantity, usage.unit ?? ingredient.unit, usage.displayUnit !== false)
-    );
-  }
-
-  return step.details.map(detail => String(detail).replace(USAGE_TOKEN, (_, id) => replacements.get(id)));
+export function materializeStepSummary(recipe, step, servings) {
+  const validation = validateStepIngredientUsage({ ingredients: recipe.ingredients, steps: [step] });
+  if (!validation.valid) throw new Error(`Invalid step ingredient usage: ${validation.errors.join(' | ')}`);
+  if (!step.ingredientUsage?.length) return step.summary;
+  return materializeText(step.summary, buildReplacements(recipe, step, servings));
 }
 
 export function materializeRecipeForServings(recipe, servings) {
@@ -132,6 +153,7 @@ export function materializeRecipeForServings(recipe, servings) {
     ...recipe,
     steps: (recipe.steps || []).map(step => ({
       ...step,
+      summary: materializeStepSummary(recipe, step, servings),
       details: materializeStepDetails(recipe, step, servings)
     }))
   };
