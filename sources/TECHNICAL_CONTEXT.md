@@ -153,9 +153,11 @@ The normal `PROCHAINE ÉTAPE` selector excludes already-started timed work; a pe
 The +5/+10/+15 controls apply only to the next actionable upcoming task, or to a pending recheck when that is the next action.
 
 ## Temperature tracking
-Temperature tracking is now split out of `app.js` without changing the user workflow.
+Temperature tracking is split out of `app.js` and is now an optional recipe capability.
 
-`js/temperature.js` owns pure/testable temperature data operations:
+`js/temperature.js` owns pure/testable temperature data operations and feature semantics:
+- recipe tracking enabled/disabled resolution;
+- default target resolution;
 - manual-value validation (0–150 °C);
 - target clamping (30–120 °C);
 - immutable measurement append/remove helpers;
@@ -163,7 +165,9 @@ Temperature tracking is now split out of `app.js` without changing the user work
 
 `js/temperature-ui.js` owns the DOM controller for fast entry, target editing, latest-measurement display, recent-measurement list, SVG chart, undo/new-series actions and CSV download. It receives the current session through callbacks, so the temperature layer does not own session persistence or journal semantics.
 
-Manual logging remains value → Add/Enter → automatic timestamp. The existing session fields `temperatureTarget`, `measurements` and `cookStartedAt` are unchanged, preserving stored data compatibility.
+A recipe without `temperature` metadata has no temperature tab. `enabled: false` is an explicit opt-out. Existing recipes that only declare numeric `defaultTargetC` remain enabled for backward compatibility; `enabled: true` requires a 30–120 °C target. A new no-temperature session stores `temperatureTarget: null` rather than fabricating the historic 93 °C default.
+
+Manual logging remains value → Add/Enter → automatic timestamp for enabled recipes. Existing stored sessions remain compatible.
 
 Both current executable recipes benefit from temperature logging, although the role differs: Pork Belly uses temperature as supporting information for a tenderness-driven cook, while the turkey meal uses a 74 °C core target as the decisive endpoint.
 
@@ -191,14 +195,13 @@ npm test
 
 GitHub Actions runs the suite on `main`, supported feature/fix/chore pushes and pull requests.
 
-Coverage includes hardened recipe contracts, generic available-recipe acceptance, actionable ingredient quantities, recipe-specific timelines, shopping/pre-cook, offline caching, version consistency, DOM contracts, dependency/resource planning, buffers/service slippage, actual start/completion propagation, session v1→v2→v3 migration, step lifecycle transitions, frozen recipe snapshots, timestamp correction, observation/recheck behavior, journal v1→v2 migration, feedback persistence/resync protection, test-session exclusion, active-cook wiring and extracted temperature validation/measurement/CSV behavior.
+Coverage includes hardened recipe contracts, generic available-recipe acceptance, actionable ingredient quantities, recipe-specific timelines, shopping/pre-cook, offline caching, version consistency, DOM contracts, dependency/resource planning, buffers/service slippage, actual start/completion propagation, session v1→v2→v3 migration, step lifecycle transitions, frozen recipe snapshots, timestamp correction, observation/recheck behavior, journal v1→v2 migration, feedback persistence/resync protection, test-session exclusion, active-cook wiring, optional temperature capability semantics and extracted temperature validation/measurement/CSV behavior.
 
 ## Current technical debt / next work
 1. Continue splitting active-cook/session orchestration out of the growing `app.js` without introducing a framework; temperature orchestration is now extracted.
-2. Make temperature tracking explicitly optional before adding recipes that do not benefit from core-temperature logging.
-3. Reduce scaling-sensitive quantities duplicated inside step prose by referencing structured ingredient usage where useful.
-4. Add journal JSON backup/import when useful.
-5. Add a flexible planning-window concept only when a real recipe demonstrates the need.
-6. Extend conflict handling beyond Woodfire only when real meals demonstrate a shared-resource collision.
-7. Introduce reusable external components/batching only when real recipes prove the need.
-8. Add predictive ETA later from temperature/history with uncertainty, never false precision.
+2. Reduce scaling-sensitive quantities duplicated inside step prose by referencing structured ingredient usage where useful.
+3. Add journal JSON backup/import when useful.
+4. Add a flexible planning-window concept only when a real recipe demonstrates the need.
+5. Extend conflict handling beyond Woodfire only when real meals demonstrate a shared-resource collision.
+6. Introduce reusable external components/batching only when real recipes prove the need.
+7. Add predictive ETA later from temperature/history with uncertainty, never false precision.

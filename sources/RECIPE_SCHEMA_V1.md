@@ -25,6 +25,27 @@ Serving bounds must satisfy:
 
 Until Planner V1 supports batch synthesis, `max` must remain within a quantity that can follow the same declared execution/resource structure.
 
+## Optional temperature tracking
+Temperature logging is a recipe capability, not a universal application assumption.
+
+Supported top-level semantics:
+
+```json
+"temperature": {
+  "enabled": true,
+  "defaultTargetC": 74
+}
+```
+
+Rules:
+- no `temperature` object means temperature tracking is disabled;
+- `temperature.enabled: false` explicitly disables tracking and must not also declare `defaultTargetC`;
+- `temperature.enabled: true` requires `defaultTargetC` between 30 and 120 °C;
+- for backward compatibility, an existing recipe with numeric `defaultTargetC` and no `enabled` flag is treated as enabled;
+- a step using `completion.type: "temperature"` requires enabled recipe temperature tracking with a valid target.
+
+When tracking is disabled, Active Cook hides the temperature tab, stores no fabricated 93 °C target for a new session and redirects any stale `temperature` tab state back to Planning.
+
 ## Ingredients and scaling
 Each ingredient has a stable `id`, display name, quantity/unit, scaling rule, shopping category and optional preparation note.
 
@@ -153,6 +174,7 @@ Critical appliance state must not live only in prose.
 ## Validation summary
 `validateRecipe()` now rejects at least:
 - invalid serving bounds/timing ranges;
+- invalid/contradictory temperature tracking metadata or temperature completion without a target;
 - duplicate ingredient/component/equipment/advance-prep/step ids;
 - malformed scaling or incomplete step breakpoints;
 - component/step ownership mismatches;
@@ -174,7 +196,6 @@ See `sources/MULTI_RECIPE_CONTRACT.md` and `sources/OBSERVATIONS_V1.md`.
 ## Next schema work
 1. Pass serving/configuration context into the planner for capacity/batch-dependent timing.
 2. Add structured ingredient usage by step to eliminate scaling-sensitive quantities duplicated in prose.
-3. Make temperature tracking explicitly optional per recipe.
-4. Add a flexible planning-window concept when a real recipe requires it.
-5. Add curated observation labels only if a real recipe cannot be represented clearly by V1-derived controls.
-6. Add richer resources such as user attention only when real meal plans demonstrate the need.
+3. Add a flexible planning-window concept when a real recipe requires it.
+4. Add curated observation labels only if a real recipe cannot be represented clearly by V1-derived controls.
+5. Add richer resources such as user attention only when real meal plans demonstrate the need.
