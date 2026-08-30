@@ -1,3 +1,5 @@
+import { updateJournalFeedback } from './journal.js';
+
 function formatDate(iso) {
   if (!iso) return 'Date inconnue';
   return new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(iso));
@@ -30,6 +32,94 @@ function buildMetric(label, value) {
   strong.textContent = value;
   metric.append(caption, strong);
   return metric;
+}
+
+function renderFeedback(entry, container) {
+  const section = document.createElement('section');
+  section.className = 'journal-feedback';
+
+  const heading = document.createElement('div');
+  heading.className = 'journal-feedback-heading';
+  const title = document.createElement('h4');
+  title.textContent = 'Retour sur cette cuisson';
+  const status = document.createElement('span');
+  status.className = 'journal-feedback-status';
+  heading.append(title, status);
+
+  const ratingLabel = document.createElement('span');
+  ratingLabel.className = 'journal-feedback-label';
+  ratingLabel.textContent = 'Note du repas';
+
+  const ratingRow = document.createElement('div');
+  ratingRow.className = 'journal-rating';
+  ratingRow.setAttribute('role', 'group');
+  ratingRow.setAttribute('aria-label', 'Noter cette cuisson de 1 à 5');
+  let selectedRating = Number.isInteger(entry.rating) ? entry.rating : null;
+  const ratingButtons = [];
+
+  function syncRatingButtons() {
+    for (let index = 0; index < ratingButtons.length; index++) {
+      const value = index + 1;
+      const active = selectedRating !== null && value <= selectedRating;
+      ratingButtons[index].classList.toggle('active', active);
+      ratingButtons[index].setAttribute('aria-pressed', value === selectedRating ? 'true' : 'false');
+    }
+  }
+
+  for (let value = 1; value <= 5; value++) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'journal-rating-btn';
+    button.textContent = '★';
+    button.setAttribute('aria-label', `${value} sur 5`);
+    button.addEventListener('click', () => {
+      selectedRating = selectedRating === value ? null : value;
+      syncRatingButtons();
+      status.textContent = 'À enregistrer';
+    });
+    ratingButtons.push(button);
+    ratingRow.appendChild(button);
+  }
+  syncRatingButtons();
+
+  const notesLabel = document.createElement('label');
+  notesLabel.className = 'journal-feedback-label';
+  notesLabel.textContent = 'Notes pour la prochaine fois';
+  const textarea = document.createElement('textarea');
+  textarea.className = 'journal-notes';
+  textarea.rows = 3;
+  textarea.maxLength = 2000;
+  textarea.placeholder = 'Ex. morceaux plus gros, moins de cuisson découverte, plus de sauce…';
+  textarea.value = entry.notes || '';
+  textarea.addEventListener('input', () => { status.textContent = 'À enregistrer'; });
+  notesLabel.appendChild(textarea);
+
+  const actions = document.createElement('div');
+  actions.className = 'journal-feedback-actions';
+  const save = document.createElement('button');
+  save.type = 'button';
+  save.className = 'secondary-btn';
+  save.textContent = 'Enregistrer';
+  save.addEventListener('click', () => {
+    try {
+      const updated = updateJournalFeedback(entry.id, {
+        rating: selectedRating,
+        notes: textarea.value
+      });
+      entry.rating = updated.rating;
+      entry.notes = updated.notes;
+      entry.feedbackUpdatedAt = updated.feedbackUpdatedAt;
+      status.classList.remove('error');
+      status.textContent = 'Enregistré';
+    } catch (error) {
+      status.classList.add('error');
+      status.textContent = error.message || 'Erreur';
+    }
+  });
+  actions.append(save, status);
+
+  section.append(heading, ratingLabel, ratingRow, notesLabel, actions);
+  container.appendChild(section);
 }
 
 function renderStepHistory(entry, container) {
@@ -104,6 +194,12 @@ function renderEntry(entry) {
   service.className = 'journal-service';
   service.textContent = serviceLabel(entry);
   copy.append(eyebrow, title, service);
+  if (entry.rating) {
+    const rating = document.createElement('span');
+    rating.className = 'journal-summary-rating';
+    rating.textContent = `★ ${entry.rating}/5`;
+    copy.appendChild(rating);
+  }
 
   const chevron = document.createElement('span');
   chevron.className = 'journal-chevron';
@@ -121,6 +217,7 @@ function renderEntry(entry) {
     buildMetric('Mesures', String((entry.measurements || []).length))
   );
   body.appendChild(metrics);
+  renderFeedback(entry, body);
   renderStepHistory(entry, body);
   renderTemperatureHistory(entry, body);
 
