@@ -7,7 +7,7 @@ The storage namespace remains:
 
 `woodfire-companion-journal-v1`
 
-The stored object now uses `schemaVersion: 2`.
+The stored object uses `schemaVersion: 2`.
 
 ## Migration
 Journal V1 data and legacy root arrays remain readable. Migration adds per entry:
@@ -38,11 +38,24 @@ Each expanded journal card exposes:
 
 When a rating is saved it is also visible in the collapsed journal summary.
 
+The journal also exposes local JSON export/import controls. Backup transport semantics are defined separately in `sources/JOURNAL_BACKUP_V1.md`; they do not change the Journal V2 storage schema.
+
 ## Resynchronisation rule
 A served active session may be re-upserted into the journal after later state changes such as an added temperature measurement. Such automatic cook-data synchronisation must never erase feedback previously entered by the user when the new cook snapshot does not explicitly contain feedback fields.
 
 ## Test sessions
-DEV/test sessions remain excluded from journal persistence and therefore cannot create or overwrite real feedback.
+DEV/test sessions remain excluded from journal persistence and therefore cannot create or overwrite real feedback. Journal backup import also ignores entries explicitly marked as test sessions.
+
+## Local backup
+Journal data remains local-first but can now be exported to a versioned JSON file and restored later.
+
+Import is a validated merge rather than a destructive replace:
+- unknown/future backup formats are rejected before local data changes;
+- new cook-session ids are added;
+- duplicate ids keep the freshest copy;
+- existing non-conflicting local history is preserved.
+
+This protects completed-cook history against Safari/site-data loss without adding a backend or cloud account.
 
 ## Non-goals
 Journal V2 does not yet add:
@@ -50,7 +63,6 @@ Journal V2 does not yet add:
 - structured ingredient substitutions;
 - per-step notes;
 - search/filter;
-- JSON backup/import;
 - cloud sync;
 - automatic learning or ETA adjustment from ratings/notes.
 
