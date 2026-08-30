@@ -12,6 +12,7 @@ const APP_ASSETS = [
   './js/meal-planner.js',
   './js/recipe.js',
   './js/recipe-loader.js',
+  './js/step-details.js',
   './js/library.js',
   './js/settings.js',
   './js/shopping.js',
