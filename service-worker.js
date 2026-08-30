@@ -20,6 +20,8 @@ const APP_ASSETS = [
   './js/journal-ui.js',
   './js/observations.js',
   './js/session.js',
+  './js/timestamp-editor.js',
+  './js/dev-tools.js',
   './recipes/index.json',
   './manifest.webmanifest',
   './icons/icon-192.png',
