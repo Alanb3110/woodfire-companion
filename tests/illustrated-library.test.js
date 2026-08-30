@@ -7,14 +7,15 @@ const app = await readFile(new URL('../app.js', import.meta.url), 'utf8');
 const indexHtml = await readFile(new URL('../index.html', import.meta.url), 'utf8');
 const styles = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
 
-test('every executable recipe cover exists and is responsive SVG artwork', async () => {
+test('every executable recipe has a local non-empty WebP cover', async () => {
   for (const entry of library.recipes.filter(item => item.status === 'available')) {
     const imageUrl = entry.visual.imageUrl;
+    assert.match(imageUrl, /^\.\/assets\/recipes\/.+\.webp$/);
     const assetUrl = new URL(`../${imageUrl.replace(/^\.\//, '')}`, import.meta.url);
-    const svg = await readFile(assetUrl, 'utf8');
-    assert.match(svg, /<svg\b/);
-    assert.match(svg, /viewBox="0 0 1200 675"/);
-    assert.doesNotMatch(svg, /<text\b/i, `Cover ${imageUrl} should not bake UI text into artwork.`);
+    const bytes = await readFile(assetUrl);
+    assert.ok(bytes.length > 5000, `Cover ${imageUrl} should contain a real food image.`);
+    assert.equal(bytes.subarray(0, 4).toString('ascii'), 'RIFF');
+    assert.equal(bytes.subarray(8, 12).toString('ascii'), 'WEBP');
   }
 });
 
