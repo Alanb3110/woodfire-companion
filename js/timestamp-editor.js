@@ -1,3 +1,4 @@
+import { editLatestObservationTimestamp, latestObservationForStep } from './observations.js';
 import { editStepTimestamps, loadSessionState, saveSessionState } from './session.js';
 
 function toLocalInputValue(value) {
@@ -29,6 +30,7 @@ function ensureStyles() {
     .actual-time-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
     .actual-time-message{font-size:.82rem;color:var(--muted)}
     .actual-time-message.error{color:var(--danger)}
+    .observation-time-note{grid-column:1/-1;font-size:.8rem;color:var(--muted);line-height:1.35}
     @media(max-width:620px){.actual-time-fields{grid-template-columns:1fr}}
   `;
   document.head.appendChild(style);
@@ -54,7 +56,8 @@ function enhanceCard(card, state) {
   if (!stepId) return;
   const startedAt = state.started?.[stepId] || null;
   const completedAt = state.completed?.[stepId] || null;
-  if (!startedAt && !completedAt) return;
+  const latestObservation = latestObservationForStep(state.observations || [], stepId);
+  if (!startedAt && !completedAt && !latestObservation) return;
 
   const detail = card.querySelector('.task-detail');
   if (!detail) return;
@@ -69,14 +72,25 @@ function enhanceCard(card, state) {
   title.textContent = 'Heures réelles';
   const hint = document.createElement('span');
   hint.className = 'actual-time-message';
-  hint.textContent = 'À corriger si la validation a été faite en retard.';
+  hint.textContent = 'À corriger si une validation ou un contrôle a été saisi en retard.';
   heading.append(title, hint);
 
   const fields = document.createElement('div');
   fields.className = 'actual-time-fields';
-  const startField = createField('Début réel', startedAt, true);
-  const endField = createField('Fin réelle', completedAt, Boolean(completedAt));
-  fields.append(startField.label, endField.label);
+  const startField = startedAt ? createField('Début de l’étape', startedAt, true) : null;
+  const endField = completedAt ? createField('Fin réelle', completedAt, true) : null;
+  const observationField = latestObservation ? createField('Dernier contrôle / observation', latestObservation.timestamp, true) : null;
+  if (startField) fields.appendChild(startField.label);
+  if (endField) fields.appendChild(endField.label);
+  if (observationField) {
+    fields.appendChild(observationField.label);
+    const note = document.createElement('div');
+    note.className = 'observation-time-note';
+    note.textContent = latestObservation.recheckDueAt
+      ? 'Modifier cette heure décale aussi le recontrôle associé et le planning aval si le buffer disponible est dépassé.'
+      : 'Cette heure correspond à l’observation enregistrée pour cette étape.';
+    fields.appendChild(note);
+  }
 
   const actions = document.createElement('div');
   actions.className = 'actual-time-actions';
@@ -90,11 +104,26 @@ function enhanceCard(card, state) {
 
   save.addEventListener('click', () => {
     try {
-      const latest = loadSessionState();
-      const next = editStepTimestamps(latest, stepId, {
-        startedAt: localInputToDate(startField.input.value),
-        completedAt: completedAt ? localInputToDate(endField.input.value) : undefined
-      });
+      let next = loadSessionState();
+      if (startField || endField) {
+        next = editStepTimestamps(next, stepId, {
+          startedAt: startField ? localInputToDate(startField.input.value) : undefined,
+          completedAt: endField ? localInputToDate(endField.input.value) : undefined
+        });
+      }
+      if (observationField) {
+        const edited = editLatestObservationTimestamp({
+          observations: next.observations,
+          rechecks: next.rechecks,
+          completed: next.completed
+        }, stepId, localInputToDate(observationField.input.value));
+        next = {
+          ...next,
+          observations: edited.observations,
+          rechecks: edited.rechecks,
+          completed: edited.completed
+        };
+      }
       saveSessionState(next);
       message.classList.remove('error');
       message.textContent = 'Enregistré · recalcul du planning…';
