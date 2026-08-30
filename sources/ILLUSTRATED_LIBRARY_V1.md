@@ -3,7 +3,7 @@
 ## Goal
 The recipe library should feel like a cooking product rather than a text catalogue while remaining fully local-first and GitHub Pages compatible.
 
-V1 adds one local illustrated cover to every executable recipe. Illustration metadata belongs to the library manifest because it is discovery/UI metadata, not cooking semantics.
+V1 adds one local food cover to every executable recipe. Visual metadata belongs to the library manifest because it is discovery/UI metadata, not cooking semantics.
 
 ## Manifest contract
 Each `available` entry in `recipes/index.json` requires:
@@ -13,7 +13,7 @@ Each `available` entry in `recipes/index.json` requires:
   "theme": "...",
   "symbol": "...",
   "eyebrow": "...",
-  "imageUrl": "./assets/recipes/example.svg"
+  "imageUrl": "./assets/recipes/example.webp"
 }
 ```
 
@@ -22,19 +22,21 @@ Each `available` entry in `recipes/index.json` requires:
 `theme`, `symbol` and `eyebrow` remain useful fallback/decorative metadata. The image is the primary cover when present; the symbol remains the fallback if an image is absent in future non-executable/coming-soon content.
 
 ## Asset strategy
-V1 uses local SVG covers:
-- small repository/cache footprint;
-- sharp rendering on iPhone Retina displays;
+V1 uses local WebP food covers:
+- realistic, appetizing food presentation rather than diagram/clipart artwork;
+- small repository/cache footprint through compressed WebP;
 - no third-party host or CORS dependency;
 - safe GitHub Pages subpath behavior through relative URLs;
-- easy replacement later by another local format without changing planner/content semantics.
+- the same source asset can be cropped responsively for compact cards and the larger recipe hero.
 
 Current covers:
-- `assets/recipes/pork-belly-burnt-ends.svg`;
-- `assets/recipes/sweet-savory-turkey-zucchini-gratin.svg`;
-- `assets/recipes/smoked-beef-barbacoa.svg`.
+- `assets/recipes/pork-belly-burnt-ends.webp`;
+- `assets/recipes/sweet-savory-turkey-zucchini-gratin.webp`;
+- `assets/recipes/smoked-beef-barbacoa.webp`.
 
 The assets intentionally contain no recipe title or UI text. Titles, status, timing and tags remain accessible HTML rather than baked into artwork.
+
+The display contract does not depend on exact raster dimensions. Covers are composed as landscape food photography and rendered with `object-fit: cover`, so replacement assets can be upgraded later without changing planner/content semantics.
 
 ## UI behavior
 Library card:
@@ -62,10 +64,15 @@ The PWA therefore keeps recipe covers available after installation/offline use w
 ## Acceptance
 CI should protect the following:
 - every available recipe has a local `visual.imageUrl`;
-- each declared cover exists in the repository;
-- cover SVGs expose a `viewBox` for responsive rendering;
+- each declared cover exists in the repository and is a valid non-empty WebP asset;
 - service-worker preloading remains manifest-driven and includes `visual.imageUrl`;
 - the app contains both library-card and detail-hero image paths while retaining fallbacks.
+
+Visual acceptance on iPhone checks:
+- food remains recognizable in the compact horizontal crop;
+- hero crop does not hide the main subject;
+- eyebrow remains readable over the image;
+- no overflow or layout regression on long recipe titles.
 
 ## Non-goals
 V1 does not add:
