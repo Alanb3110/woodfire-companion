@@ -88,7 +88,7 @@ function initStartHint() {
   $('servingsPlusBtn')?.addEventListener('click', scheduleRefresh);
 
   const observer = new MutationObserver(scheduleRefresh);
-  for (const id of ['recipeView', 'recipeTitle', 'servingsValue', 'startTimeHint']) {
+  for (const id of ['recipeView', 'recipeTitle', 'servingsValue']) {
     const node = $(id);
     if (node) observer.observe(node, { attributes: true, childList: true, subtree: true });
   }
