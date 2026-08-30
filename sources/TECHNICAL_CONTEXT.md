@@ -126,7 +126,7 @@ Automatic resynchronisation of a served cook preserves previously saved feedback
 See `sources/COOK_JOURNAL_V2.md`.
 
 ## UI preferences
-The library now uses manifest-driven local SVG covers through `visual.imageUrl`. Each executable recipe cover is reused in the library card and recipe-detail hero, while the existing theme/symbol remains a fallback. Cover assets are decorative and contain no baked UI text. See `sources/ILLUSTRATED_LIBRARY_V1.md`.
+The library now uses manifest-driven local WebP food covers through `visual.imageUrl`. Each executable recipe cover is reused in the library card and recipe-detail hero, while the existing theme/symbol remains a fallback. Cover assets are decorative and contain no baked UI text. See `sources/ILLUSTRATED_LIBRARY_V1.md`.
 
 Visual preferences remain separate under `woodfire-companion-settings-v1`.
 

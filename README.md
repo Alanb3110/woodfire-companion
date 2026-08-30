@@ -89,7 +89,7 @@ After the first successful online load, the service worker caches the applicatio
 
 ### Library / pre-cook
 - manifest-driven multi-recipe library;
-- local illustrated SVG covers for every executable recipe, reused in cards and recipe heroes;
+- local realistic WebP covers for every executable recipe, reused in cards and recipe heroes;
 - available vs coming-soon status;
 - recipe metadata/components;
 - serving-size selector;
