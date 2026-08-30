@@ -1,0 +1,318 @@
+{
+  "schemaVersion": 1,
+  "id": "smoked-beef-barbacoa",
+  "version": 1,
+  "serviceStepId": "serve",
+  "title": "Tacos barbacoa de bœuf fumée",
+  "description": "Jarret de bœuf fumé puis braisé très lentement au Woodfire, effiloché dans son jus et servi en tacos à coques rigides avec salsa fumée et garnitures fraîches.",
+  "heroImage": null,
+  "tags": ["bœuf", "fumé", "longue-cuisson", "tacos", "repas-complet"],
+  "difficulty": "intermédiaire",
+  "servings": { "reference": 8, "min": 6, "max": 8 },
+  "timing": {
+    "activePrepMin": 90,
+    "elapsedRangeMin": [650, 720]
+  },
+  "temperature": {
+    "defaultTargetC": 93
+  },
+  "advancePrep": [
+    {
+      "id": "marinate-ahead",
+      "title": "Mariner le bœuf en avance",
+      "timing": "Idéalement la veille · sinon ≥ 2 h avant",
+      "details": "Pour 2,6 kg de jarret désossé en 2 morceaux d’environ 1,3 kg : jus de 2 oranges + 2 citrons verts, 6 gousses d’ail, 2 c. à soupe de concentré de tomate, 2 c. à soupe de vinaigre de cidre, 1½–2 c. à café de chipotle en poudre, 2 c. à café de cumin, 2 c. à café d’origan, 1 c. à soupe de paprika fumé, 25–30 g de sel et 1 c. à café de poivre. Enduire, couvrir et garder au frais."
+    },
+    {
+      "id": "taco-buffet-ahead",
+      "title": "Préparer le buffet à tacos en avance",
+      "timing": "Possible 1 à 2 h avant le service",
+      "details": "Le fromage peut être râpé, la salade émincée et la crème préparée en avance. Couper l’avocat au dernier moment et garder les coques rigides au sec."
+    }
+  ],
+  "components": [
+    {
+      "id": "barbacoa",
+      "type": "main",
+      "title": "Barbacoa de jarret de bœuf",
+      "ingredientIds": ["beef-shank", "orange", "lime", "garlic", "tomato-paste", "cider-vinegar", "chipotle", "cumin", "oregano", "smoked-paprika", "salt", "black-pepper", "yellow-onion", "beef-stock", "bay-leaf"],
+      "stepIds": ["take-out-beef", "smoke-beef", "covered-braise", "first-check", "rest-beef", "reduce-juices", "shred-beef"]
+    },
+    {
+      "id": "smoked-salsa",
+      "type": "sauce",
+      "title": "Salsa fumée",
+      "ingredientIds": ["tomatoes", "white-onion", "jalapeno", "lime", "coriander", "salt"],
+      "stepIds": ["smoke-salsa", "blend-salsa"]
+    },
+    {
+      "id": "taco-bar",
+      "type": "side",
+      "title": "Coques & garnitures",
+      "ingredientIds": ["hard-shells", "cheddar", "lettuce", "avocado", "red-onion", "coriander", "lime", "sour-cream"],
+      "stepIds": ["prepare-toppings", "warm-shells"]
+    }
+  ],
+  "ingredients": [
+    { "id": "beef-shank", "name": "Jarret de bœuf désossé", "quantity": 2600, "unit": "g", "scale": { "type": "linear" }, "category": "viande", "preparation": "Référence 8 personnes : 2 morceaux d’environ 1,3 kg" },
+    { "id": "orange", "name": "Oranges", "quantity": 2, "unit": "piece", "scale": { "type": "fixed" }, "category": "fruits-legumes", "preparation": "Jus pour la marinade" },
+    { "id": "lime", "name": "Citrons verts", "quantity": 4, "unit": "piece", "scale": { "type": "step", "breakpoints": [{ "maxServings": 6, "quantity": 3 }, { "maxServings": 8, "quantity": 4 }] }, "category": "fruits-legumes", "preparation": "2 marinade, 1 salsa, 1 service pour 8" },
+    { "id": "garlic", "name": "Gousses d’ail", "quantity": 6, "unit": "piece", "scale": { "type": "linear" }, "category": "fruits-legumes", "preparation": "Marinade" },
+    { "id": "tomato-paste", "name": "Concentré de tomate", "quantity": 2, "unit": "tbsp", "scale": { "type": "linear" }, "category": "epicerie" },
+    { "id": "cider-vinegar", "name": "Vinaigre de cidre", "quantity": 2, "unit": "tbsp", "scale": { "type": "linear" }, "category": "epicerie" },
+    { "id": "chipotle", "name": "Chipotle en poudre", "quantity": { "min": 1.5, "max": 2 }, "unit": "tsp", "scale": { "type": "range" }, "category": "epicerie" },
+    { "id": "cumin", "name": "Cumin moulu", "quantity": 2, "unit": "tsp", "scale": { "type": "linear" }, "category": "epicerie" },
+    { "id": "oregano", "name": "Origan séché", "quantity": 2, "unit": "tsp", "scale": { "type": "linear" }, "category": "epicerie" },
+    { "id": "smoked-paprika", "name": "Paprika fumé", "quantity": 1, "unit": "tbsp", "scale": { "type": "linear" }, "category": "epicerie" },
+    { "id": "salt", "name": "Sel", "quantity": { "min": 34, "max": 38 }, "unit": "g", "scale": { "type": "range" }, "category": "epicerie", "preparation": "25–30 g marinade + ~4 g salsa + marge garnitures" },
+    { "id": "black-pepper", "name": "Poivre noir", "quantity": 1, "unit": "tsp", "scale": { "type": "linear" }, "category": "epicerie" },
+    { "id": "yellow-onion", "name": "Oignons jaunes", "quantity": 2, "unit": "piece", "scale": { "type": "linear" }, "category": "fruits-legumes", "preparation": "Émincés dans le braisage" },
+    { "id": "beef-stock", "name": "Bouillon de bœuf", "quantity": { "min": 400, "max": 500 }, "unit": "mL", "scale": { "type": "linear" }, "category": "epicerie" },
+    { "id": "bay-leaf", "name": "Feuilles de laurier", "quantity": 2, "unit": "piece", "scale": { "type": "fixed" }, "category": "epicerie" },
+    { "id": "tomatoes", "name": "Tomates", "quantity": 600, "unit": "g", "scale": { "type": "linear" }, "category": "fruits-legumes", "preparation": "Coupées en deux pour la salsa" },
+    { "id": "white-onion", "name": "Oignon blanc", "quantity": 1, "unit": "piece", "scale": { "type": "fixed" }, "category": "fruits-legumes", "preparation": "En quartiers pour la salsa" },
+    { "id": "jalapeno", "name": "Jalapeños frais", "quantity": 2, "unit": "piece", "scale": { "type": "step", "breakpoints": [{ "maxServings": 6, "quantity": 1 }, { "maxServings": 8, "quantity": 2 }] }, "category": "fruits-legumes" },
+    { "id": "coriander", "name": "Coriandre fraîche", "quantity": 30, "unit": "g", "scale": { "type": "linear" }, "category": "fruits-legumes", "preparation": "Environ moitié salsa, moitié garniture" },
+    { "id": "hard-shells", "name": "Coques rigides pour tacos", "quantity": 24, "unit": "piece", "scale": { "type": "linear" }, "category": "epicerie", "preparation": "Environ 3 par personne" },
+    { "id": "cheddar", "name": "Cheddar râpé", "quantity": 300, "unit": "g", "scale": { "type": "linear" }, "category": "produits-frais" },
+    { "id": "lettuce", "name": "Laitue croquante", "quantity": 250, "unit": "g", "scale": { "type": "linear" }, "category": "fruits-legumes", "preparation": "Finement émincée" },
+    { "id": "avocado", "name": "Avocats", "quantity": 3, "unit": "piece", "scale": { "type": "step", "breakpoints": [{ "maxServings": 6, "quantity": 2 }, { "maxServings": 8, "quantity": 3 }] }, "category": "fruits-legumes" },
+    { "id": "red-onion", "name": "Oignon rouge", "quantity": 1, "unit": "piece", "scale": { "type": "fixed" }, "category": "fruits-legumes", "preparation": "Très finement émincé" },
+    { "id": "sour-cream", "name": "Crème fraîche épaisse ou sour cream", "quantity": 400, "unit": "g", "scale": { "type": "linear" }, "category": "produits-frais" }
+  ],
+  "equipment": [
+    { "id": "woodfire", "name": "Ninja Woodfire" },
+    { "id": "grill-surface", "name": "Grille/plaque de cuisson Woodfire" },
+    { "id": "large-roasting-dish", "name": "Grand plat profond compatible Woodfire" },
+    { "id": "foil", "name": "Papier aluminium" },
+    { "id": "thermometer", "name": "Thermomètre/sonde à cœur" },
+    { "id": "blender", "name": "Blender ou mixeur" },
+    { "id": "saucepan", "name": "Casserole pour réduire le jus" },
+    { "id": "oven", "name": "Four pour réchauffer les coques" },
+    { "id": "pellets", "name": "Pellets Woodfire", "consumable": true, "displayQuantity": "1 dose" }
+  ],
+  "steps": [
+    {
+      "id": "take-out-beef",
+      "component": "barbacoa",
+      "title": "Sortir le bœuf du réfrigérateur",
+      "summary": "45 min · garder la marinade",
+      "durationMin": 45,
+      "resources": ["passive"],
+      "details": [
+        "Sortir les 2 morceaux de jarret marinés et conserver toute la marinade.",
+        "Éponger seulement l’excès de surface pour favoriser la fumée; ne pas rincer.",
+        "Placer la sonde au cœur du morceau le plus épais."
+      ],
+      "completion": { "type": "manual", "description": "Bœuf tempéré, surface non détrempée et sonde placée" }
+    },
+    {
+      "id": "smoke-salsa",
+      "component": "smoked-salsa",
+      "title": "Fumer les légumes de la salsa",
+      "summary": "20 min pendant que le bœuf tempère",
+      "durationMin": 20,
+      "resources": ["woodfire"],
+      "woodfire": {
+        "mode": "GRILL",
+        "temperatureC": 200,
+        "temperatureRangeC": [190, 210],
+        "smoke": true,
+        "pellets": true,
+        "support": "grill_surface",
+        "covered": false,
+        "placement": "Tomates coupées en deux, oignon en quartiers et jalapeños directement sur la grille, face coupée vers le bas pour les tomates."
+      },
+      "details": [
+        "Déposer 600 g de tomates, 1 oignon blanc en quartiers et 1–2 jalapeños directement sur la grille.",
+        "Griller avec fumée jusqu’à légère coloration et début d’attendrissement; éviter de dessécher complètement les tomates.",
+        "Retirer les légumes pour libérer immédiatement le Woodfire pour le bœuf."
+      ],
+      "completion": { "type": "appearance", "description": "Légumes légèrement marqués, assouplis et nettement fumés" }
+    },
+    {
+      "id": "blend-salsa",
+      "component": "smoked-salsa",
+      "title": "Mixer la salsa fumée",
+      "summary": "10 min · puis au frais",
+      "durationMin": 10,
+      "plan": { "anchor": "serve", "anchorOffsetMin": -630 },
+      "dependencies": [{ "stepId": "smoke-salsa", "relation": "after_finish", "lagMin": 0 }],
+      "resources": ["fridge"],
+      "details": [
+        "Mixer les légumes fumés avec le jus d’1 citron vert, ~15 g de coriandre et ~4 g de sel.",
+        "Garder une texture légèrement grossière plutôt qu’une purée parfaitement lisse.",
+        "Goûter, ajuster le sel ou le citron vert puis réserver au frais."
+      ],
+      "completion": { "type": "manual", "description": "Salsa mixée, assaisonnée et placée au frais" }
+    },
+    {
+      "id": "smoke-beef",
+      "component": "barbacoa",
+      "title": "Fumer le jarret de bœuf",
+      "summary": "1 h 30 · directement sur la grille",
+      "durationMin": 90,
+      "dependencies": [
+        { "stepId": "take-out-beef", "relation": "after_finish", "lagMin": 0 },
+        { "stepId": "smoke-salsa", "relation": "after_finish", "lagMin": 0 }
+      ],
+      "resources": ["woodfire"],
+      "woodfire": {
+        "mode": "SMOKER",
+        "temperatureC": 125,
+        "temperatureRangeC": [125, 130],
+        "smoke": true,
+        "pellets": true,
+        "support": "grill_surface",
+        "covered": false,
+        "placement": "Deux morceaux espacés directement sur la grille; pas de plat pendant la phase de fumage."
+      },
+      "details": [
+        "Passer en mode SMOKER à 125–130 °C, fumée activée, pellets chargés.",
+        "Déposer les deux morceaux directement sur la grille et fumer environ 1 h 30.",
+        "Objectif : surface brunie et fumée; la température à cœur n’est pas le critère de fin de cette phase."
+      ],
+      "completion": { "type": "appearance", "description": "Surface bien fumée et colorée sur les deux morceaux" }
+    },
+    {
+      "id": "covered-braise",
+      "component": "barbacoa",
+      "title": "Passer en braisage couvert",
+      "summary": "BAKE/ROAST 140 °C · jusqu’au contrôle",
+      "durationRangeMin": [300, 420],
+      "durationPlanMin": 420,
+      "dependencies": [{ "stepId": "smoke-beef", "relation": "after_finish", "lagMin": 0 }],
+      "resources": ["woodfire"],
+      "woodfire": {
+        "mode": "BAKE_ROAST",
+        "temperatureC": 140,
+        "temperatureRangeC": [135, 140],
+        "smoke": false,
+        "pellets": false,
+        "support": "large_roasting_dish",
+        "covered": true,
+        "placement": "Deux morceaux dans un grand plat profond avec oignons, marinade et bouillon; fermeture hermétique à l’aluminium."
+      },
+      "details": [
+        "Placer le bœuf dans le plat avec 2 oignons jaunes émincés, toute la marinade, 400–500 mL de bouillon de bœuf chaud et 2 feuilles de laurier.",
+        "Le liquide doit entourer le bœuf sans le noyer complètement.",
+        "Fermer très hermétiquement avec de l’aluminium et cuire à 140 °C, fumée coupée.",
+        "La durée est très variable : commencer à juger l’état de la viande en fin de fenêtre; 93 °C à cœur est un repère, la tendreté reste prioritaire."
+      ],
+      "completion": { "type": "checkpoint", "description": "Atteindre le premier vrai contrôle de tendreté" }
+    },
+    {
+      "id": "first-check",
+      "component": "barbacoa",
+      "title": "Contrôler la tendreté de la barbacoa",
+      "summary": "93 °C indicatif · la sonde doit entrer sans résistance",
+      "durationMin": 0,
+      "dependencies": [{ "stepId": "covered-braise", "relation": "after_finish", "lagMin": 0 }],
+      "resources": [],
+      "details": [
+        "Découvrir prudemment et tester les deux morceaux à plusieurs endroits.",
+        "La cible ~93 °C est indicative : continuer tant que la sonde ou une fourchette rencontre une résistance nette.",
+        "Si encore ferme, refermer hermétiquement et poursuivre à 140 °C par tranches de 20–30 min."
+      ],
+      "completion": { "type": "tenderness", "description": "Très tendre : la sonde/fourchette entre presque sans résistance et la viande s’effiloche facilement" },
+      "recheck": { "notReadyMin": [20, 30] }
+    },
+    {
+      "id": "rest-beef",
+      "component": "barbacoa",
+      "title": "Laisser reposer le bœuf",
+      "summary": "45 min · couvert sans serrer",
+      "durationMin": 45,
+      "dependencies": [{ "stepId": "first-check", "relation": "after_finish", "lagMin": 0 }],
+      "resources": ["passive"],
+      "details": [
+        "Sortir les morceaux du plat et les couvrir légèrement d’aluminium.",
+        "Laisser reposer 45 min avant effilochage pour limiter les pertes de jus.",
+        "Conserver tout le jus de braisage pour l’étape parallèle de réduction."
+      ],
+      "completion": { "type": "time", "description": "45 min de repos écoulées" }
+    },
+    {
+      "id": "reduce-juices",
+      "component": "barbacoa",
+      "title": "Réduire le jus de braisage",
+      "summary": "20 min · en parallèle du repos",
+      "durationMin": 20,
+      "plan": { "placement": "earliest" },
+      "dependencies": [{ "stepId": "first-check", "relation": "after_finish", "lagMin": 0 }],
+      "resources": ["stovetop"],
+      "details": [
+        "Retirer le laurier puis verser le jus et les oignons dans une casserole.",
+        "Dégraisser si nécessaire puis réduire doucement 15–20 min pour concentrer sans devenir trop salé.",
+        "Garder suffisamment de jus pour humidifier généreusement la viande effilochée."
+      ],
+      "completion": { "type": "appearance", "description": "Jus concentré, nappant mais encore suffisamment fluide pour enrober la viande" }
+    },
+    {
+      "id": "shred-beef",
+      "component": "barbacoa",
+      "title": "Effilocher et remettre dans le jus",
+      "summary": "20 min · garder très juteux",
+      "durationMin": 20,
+      "dependencies": [
+        { "stepId": "rest-beef", "relation": "after_finish", "lagMin": 0 },
+        { "stepId": "reduce-juices", "relation": "after_finish", "lagMin": 0 }
+      ],
+      "resources": [],
+      "details": [
+        "Effilocher grossièrement le jarret en retirant les gros morceaux de tissu résiduel si nécessaire.",
+        "Ajouter progressivement le jus réduit jusqu’à obtenir une viande très moelleuse et brillante; ne pas assécher la barbacoa.",
+        "Garder couvert et chaud jusqu’au montage des tacos."
+      ],
+      "completion": { "type": "manual", "description": "Barbacoa effilochée, généreusement réhydratée avec son jus et prête à servir" }
+    },
+    {
+      "id": "prepare-toppings",
+      "component": "taco-bar",
+      "title": "Préparer le buffet à tacos",
+      "summary": "30 min · garnitures fraîches",
+      "durationMin": 30,
+      "resources": ["fridge"],
+      "details": [
+        "Râper ou disposer 300 g de cheddar, émincer 250 g de laitue et 1 oignon rouge très finement.",
+        "Couper 2–3 avocats juste avant le service et préparer ~15 g de coriandre fraîche.",
+        "Mettre 400 g de crème fraîche/sour cream, quartiers de citron vert et salsa fumée dans des bols séparés."
+      ],
+      "completion": { "type": "manual", "description": "Toutes les garnitures sont prêtes et disposées pour le service" }
+    },
+    {
+      "id": "warm-shells",
+      "component": "taco-bar",
+      "title": "Réchauffer les coques rigides",
+      "summary": "10 min · juste avant le service",
+      "durationMin": 10,
+      "resources": ["oven"],
+      "details": [
+        "Réchauffer environ 24 coques rigides selon les indications du paquet, idéalement 5–8 min dans un four modéré.",
+        "Ne les garnir qu’au dernier moment pour conserver leur croustillant."
+      ],
+      "completion": { "type": "time", "description": "Coques chaudes et croustillantes" }
+    },
+    {
+      "id": "serve",
+      "component": "meal",
+      "title": "Servir les tacos barbacoa",
+      "summary": "Barbacoa chaude · coques croustillantes · buffet prêt",
+      "durationMin": 0,
+      "plan": { "anchor": "serve", "anchorOffsetMin": 0 },
+      "dependencies": [
+        { "stepId": "shred-beef", "relation": "after_finish", "lagMin": 0, "planningBufferMin": 55 },
+        { "stepId": "blend-salsa", "relation": "after_finish", "lagMin": 0 },
+        { "stepId": "prepare-toppings", "relation": "after_finish", "lagMin": 0, "planningBufferMin": 30 },
+        { "stepId": "warm-shells", "relation": "after_finish", "lagMin": 0, "planningBufferMin": 5 }
+      ],
+      "resources": [],
+      "details": [
+        "Servir la barbacoa dans son jus à part des coques pour éviter qu’elles ramollissent.",
+        "Assembler à table : coque, bœuf, salsa, cheddar, laitue, avocat, oignon rouge, coriandre, crème et citron vert.",
+        "La qualité de la viande prime sur l’heure : si elle n’est pas probe-tender, prolonger le braisage et accepter de décaler le service."
+      ],
+      "completion": { "type": "manual", "description": "Repas servi" }
+    }
+  ]
+}

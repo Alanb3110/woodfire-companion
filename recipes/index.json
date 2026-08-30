@@ -29,12 +29,16 @@
     },
     {
       "id": "smoked-beef-barbacoa",
-      "status": "coming_soon",
-      "title": "Barbacoa de bœuf fumée",
-      "description": "Bœuf fumé puis longuement attendri, conçu pour un repas tacos complet avec accompagnements.",
-      "tags": ["Bœuf", "Fumé", "Longue cuisson"],
+      "status": "available",
+      "recipeUrl": "./recipes/smoked-beef-barbacoa.json",
+      "title": "Tacos barbacoa de bœuf fumée",
+      "description": "Jarret fumé puis braisé jusqu’à être très tendre, servi en coques rigides avec salsa fumée et garnitures fraîches.",
+      "tags": ["Bœuf", "Fumé", "Tacos", "Repas complet"],
       "difficulty": "Intermédiaire",
-      "visual": { "theme": "barbacoa", "symbol": "🌮", "eyebrow": "BIENTÔT" }
+      "activePrepMin": 90,
+      "elapsedRangeMin": [650, 720],
+      "servings": { "min": 6, "max": 8, "reference": 8 },
+      "visual": { "theme": "barbacoa", "symbol": "🌮", "eyebrow": "GRILL · SMOKER · BRAISE" }
     }
   ]
 }
