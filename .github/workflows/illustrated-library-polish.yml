@@ -1,0 +1,170 @@
+name: Illustrated library polish
+
+on:
+  push:
+    branches:
+      - feature/illustrated-recipe-library
+    paths:
+      - .github/workflows/illustrated-library-polish.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/illustrated-recipe-library
+      - name: Wire illustrated covers into UI and docs
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new, label):
+              p = Path(path)
+              text = p.read_text()
+              if old not in text:
+                  raise SystemExit(f'{label} marker not found in {path}')
+              p.write_text(text.replace(old, new, 1))
+
+          replace_once(
+              'app.js',
+              "const recipeHero = $('recipeHero');\nconst recipeHeroSymbol = $('recipeHeroSymbol');",
+              "const recipeHero = $('recipeHero');\nconst recipeHeroImage = $('recipeHeroImage');\nconst recipeHeroSymbol = $('recipeHeroSymbol');",
+              'hero element'
+          )
+
+          replace_once(
+              'app.js',
+              """    const art = document.createElement('div');
+              art.className = `recipe-card-art theme-${entry.visual?.theme || 'embers'}`;
+              const symbol = document.createElement('span');""".replace('              ', '    '),
+              """    const art = document.createElement('div');
+              art.className = `recipe-card-art theme-${entry.visual?.theme || 'embers'}`;
+              if (entry.visual?.imageUrl) {
+                art.classList.add('has-image');
+                const image = document.createElement('img');
+                image.className = 'recipe-card-image';
+                image.src = entry.visual.imageUrl;
+                image.alt = '';
+                image.loading = 'lazy';
+                image.decoding = 'async';
+                art.appendChild(image);
+              }
+              const symbol = document.createElement('span');""".replace('              ', '    '),
+              'library art'
+          )
+
+          replace_once(
+              'app.js',
+              """function renderRecipeDetail() {
+              const visual = selectedEntry.visual || {};
+              applyVisual(recipeHero, visual);
+              recipeHeroSymbol.textContent = visual.symbol || '🔥';
+              recipeHeroEyebrow.textContent = visual.eyebrow || 'WOODFIRE';""".replace('              ', '  '),
+              """function renderRecipeDetail() {
+              const visual = selectedEntry.visual || {};
+              applyVisual(recipeHero, visual);
+              const heroImageUrl = visual.imageUrl || '';
+              recipeHero.classList.toggle('has-image', Boolean(heroImageUrl));
+              recipeHeroImage.hidden = !heroImageUrl;
+              recipeHeroImage.src = heroImageUrl;
+              recipeHeroSymbol.hidden = Boolean(heroImageUrl);
+              recipeHeroSymbol.textContent = visual.symbol || '🔥';
+              recipeHeroEyebrow.textContent = visual.eyebrow || 'WOODFIRE';""".replace('              ', '  '),
+              'detail hero'
+          )
+
+          styles = Path('styles.css')
+          css = styles.read_text()
+          marker = '/* Illustrated recipe covers V1 */'
+          if marker not in css:
+              css += '''\n\n/* Illustrated recipe covers V1 */
+          .recipe-card-image,
+          .recipe-hero-image {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 0;
+          }
+          .recipe-card-art.has-image::before,
+          .recipe-hero.has-image::before {
+            inset: 0;
+            z-index: 1;
+            filter: none;
+            background: linear-gradient(180deg, rgba(7,7,7,.04) 26%, rgba(7,7,7,.22) 58%, rgba(7,7,7,.78) 100%);
+          }
+          .recipe-card-art.has-image .card-symbol,
+          .recipe-hero.has-image .hero-symbol { display: none; }
+          .recipe-card-art.has-image .card-art-label,
+          .recipe-hero.has-image .hero-eyebrow {
+            position: relative;
+            z-index: 2;
+            text-shadow: 0 2px 10px rgba(0,0,0,.82);
+          }
+          .recipe-card-art.has-image { background: #0b0b0b; }
+          .recipe-hero.has-image { background: #0b0b0b; }
+          '''
+              styles.write_text(css)
+
+          replace_once(
+              'index.html',
+              '<span class="dev-badge">DEV · v0.3.0-dev.9</span>',
+              '<span class="dev-badge">DEV · v0.3.0-dev.10</span>',
+              'UI version'
+          )
+          replace_once(
+              'index.html',
+              '<div id="recipeHero" class="recipe-hero theme-embers">\n          <span id="recipeHeroSymbol" class="hero-symbol">🔥</span>',
+              '<div id="recipeHero" class="recipe-hero theme-embers">\n          <img id="recipeHeroImage" class="recipe-hero-image" alt="" decoding="async" hidden />\n          <span id="recipeHeroSymbol" class="hero-symbol">🔥</span>',
+              'hero markup'
+          )
+
+          replace_once(
+              'README.md',
+              '- manifest-driven multi-recipe library;\n- available vs coming-soon status;',
+              '- manifest-driven multi-recipe library;\n- local illustrated SVG covers for every executable recipe, reused in cards and recipe heroes;\n- available vs coming-soon status;',
+              'README feature list'
+          )
+          replace_once(
+              'README.md',
+              '├── recipes/\n│   ├── index.json',
+              '├── assets/\n│   └── recipes/                 # local illustrated recipe covers\n├── recipes/\n│   ├── index.json',
+              'README tree'
+          )
+
+          tech = Path('sources/TECHNICAL_CONTEXT.md')
+          text = tech.read_text()
+          old = '''Executable meals currently include:
+          - `recipes/pork-belly-burnt-ends.json`, content version 4;
+          - `recipes/sweet-savory-turkey-zucchini-gratin.json`, content version 2.
+
+          The Pork Belly meal remains the long-cook reference. The turkey + zucchini-gratin meal is a structurally different case: a temperature-driven poultry cook on the Woodfire runs in parallel with a conventional-oven side dish and both chains converge on one service milestone.'''
+          new = '''Executable meals currently include:
+          - `recipes/pork-belly-burnt-ends.json`, content version 4;
+          - `recipes/sweet-savory-turkey-zucchini-gratin.json`, content version 2;
+          - `recipes/smoked-beef-barbacoa.json`, content version 1.
+
+          The Pork Belly meal remains the first long-cook reference. The turkey + zucchini-gratin meal adds a temperature-driven poultry cook in parallel with a conventional-oven side dish. The barbacoa meal adds a much longer tenderness-driven beef braise, observation rechecks, smoked salsa and parallel meat-rest/stovetop reduction before service.'''
+          if old not in text:
+              raise SystemExit('technical executable meals marker not found')
+          text = text.replace(old, new, 1)
+          text = text.replace('- `sources/MULTI_RECIPE_CONTRACT.md`;\n', '- `sources/MULTI_RECIPE_CONTRACT.md`;\n- `sources/ILLUSTRATED_LIBRARY_V1.md`;\n', 1)
+          text = text.replace('## UI preferences\nVisual preferences remain separate under `woodfire-companion-settings-v1`.', '## UI preferences\nThe library now uses manifest-driven local SVG covers through `visual.imageUrl`. Each executable recipe cover is reused in the library card and recipe-detail hero, while the existing theme/symbol remains a fallback. Cover assets are decorative and contain no baked UI text. See `sources/ILLUSTRATED_LIBRARY_V1.md`.\n\nVisual preferences remain separate under `woodfire-companion-settings-v1`.', 1)
+          text = text.replace('Current dev version: `0.3.0-dev.8`.', 'Current dev version: `0.3.0-dev.10`.', 1)
+          text = text.replace('Executable recipe JSON is discovered from `recipes/index.json` and preloaded automatically for every `available` entry.', 'Executable recipe JSON and each available recipe\'s local `visual.imageUrl` cover are discovered from `recipes/index.json` and preloaded automatically.', 1)
+          text = text.replace('Both current executable recipes benefit from temperature logging, although the role differs: Pork Belly uses temperature as supporting information for a tenderness-driven cook, while the turkey meal uses a 74 °C core target as the decisive endpoint.', 'Current recipes use temperature differently: Pork Belly and barbacoa treat temperature as supporting information for tenderness-driven cooks, while the turkey meal uses a 74 °C core target as the decisive endpoint.', 1)
+          tech.write_text(text)
+          PY
+      - name: Commit UI wiring
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.js styles.css index.html README.md sources/TECHNICAL_CONTEXT.md
+          git diff --cached --quiet && exit 0
+          git commit -m "feat: render local illustrated recipe covers"
+          git push
