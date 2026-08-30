@@ -1,4 +1,4 @@
-name: Optional temperature codemod
+name: Optional temperature docs sync
 
 on:
   push:
@@ -11,23 +11,19 @@ permissions:
   contents: write
 
 jobs:
-  codemod:
+  docs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: feature/optional-temperature-tracking
-      - name: Apply codemod
+      - name: Update source contracts
         run: python .github/optional_temperature_codemod.py
-      - name: Validate syntax
-        run: |
-          node --check app.js
-          node --check js/recipe.js
-      - name: Commit wiring
+      - name: Commit docs
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app.js js/recipe.js
+          git add sources/RECIPE_SCHEMA_V1.md sources/TECHNICAL_CONTEXT.md
           git diff --cached --quiet && exit 0
-          git commit -m "feat: hide temperature tracking when recipe disables it"
+          git commit -m "docs: define optional temperature tracking"
           git push
