@@ -1,0 +1,155 @@
+name: Optional temperature codemod
+
+on:
+  push:
+    branches:
+      - feature/optional-temperature-tracking
+    paths:
+      - .github/workflows/optional-temperature-codemod.yml
+
+permissions:
+  contents: write
+
+jobs:
+  codemod:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/optional-temperature-tracking
+      - name: Apply recipe and active-cook temperature semantics
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          app = Path('app.js')
+          text = app.read_text()
+
+          old = "import { createTemperatureController } from './js/temperature-ui.js';"
+          new = "import { createTemperatureController } from './js/temperature-ui.js';\nimport { defaultTemperatureTarget, temperatureTrackingEnabled } from './js/temperature.js';"
+          if old not in text:
+              raise SystemExit('temperature controller import not found')
+          text = text.replace(old, new, 1)
+
+          old = "const resetChecklistBtn = $('resetChecklistBtn');\nconst installHelpBtn = $('installHelpBtn');"
+          new = "const resetChecklistBtn = $('resetChecklistBtn');\nconst temperatureTab = document.querySelector('.tab[data-tab=\"temperature\"]');\nconst temperaturePanel = $('temperature');\nconst installHelpBtn = $('installHelpBtn');"
+          if old not in text:
+              raise SystemExit('temperature DOM insertion marker not found')
+          text = text.replace(old, new, 1)
+
+          old = "getDefaultTarget: () => recipe?.temperature?.defaultTargetC || 93,"
+          new = "getDefaultTarget: () => defaultTemperatureTarget(recipe) ?? 93,"
+          if old not in text:
+              raise SystemExit('temperature default-target callback not found')
+          text = text.replace(old, new, 1)
+
+          old = """  state.servings = configServings;
+          state.mealTime = configMealTime;
+          state.temperatureTarget = resetSession ? (recipe.temperature?.defaultTargetC || 93) : state.temperatureTarget;
+          state.view = 'cook';"""
+          new = """  state.servings = configServings;
+          state.mealTime = configMealTime;
+          const temperatureEnabled = temperatureTrackingEnabled(recipe);
+          if (resetSession) state.temperatureTarget = temperatureEnabled ? defaultTemperatureTarget(recipe) : null;
+          if (!temperatureEnabled && state.activeTab === 'temperature') state.activeTab = 'planning';
+          state.view = 'cook';"""
+          if old not in text:
+              raise SystemExit('activateRecipe temperature target block not found')
+          text = text.replace(old, new, 1)
+
+          old = """  syncJournal();
+          renderTasks();
+          temperatureController.render();
+          switchTab(state.activeTab || 'planning', false);"""
+          new = """  syncJournal();
+          renderTasks();
+          if (temperatureEnabled) temperatureController.render();
+          switchTab(state.activeTab || 'planning', false);"""
+          if old not in text:
+              raise SystemExit('activateRecipe temperature render block not found')
+          text = text.replace(old, new, 1)
+
+          old = """function renderCookShell() {
+          cookTitle.textContent = recipe.title;
+          cookSubtitle.textContent = `${state.servings} personne${state.servings > 1 ? 's' : ''} · service ${state.mealTime}`;
+          fillTimePicker(cookMealHour, cookMealMinute, state.mealTime);
+          }"""
+          new = """function renderCookShell() {
+          cookTitle.textContent = recipe.title;
+          cookSubtitle.textContent = `${state.servings} personne${state.servings > 1 ? 's' : ''} · service ${state.mealTime}`;
+          fillTimePicker(cookMealHour, cookMealMinute, state.mealTime);
+          const enabled = temperatureTrackingEnabled(recipe);
+          temperatureTab.hidden = !enabled;
+          temperaturePanel.hidden = !enabled;
+          }"""
+          if old not in text:
+              raise SystemExit('renderCookShell block not found')
+          text = text.replace(old, new, 1)
+
+          old = """function switchTab(tabName, persist = true) {
+          state.activeTab = tabName;
+          if (persist) saveState();
+          document.querySelectorAll('.tab').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabName));
+          document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.toggle('active', panel.id === tabName));
+          if (tabName === 'temperature' && !cookView.hidden) temperatureController.focus();
+          }"""
+          new = """function switchTab(tabName, persist = true) {
+          const resolvedTab = tabName === 'temperature' && !temperatureTrackingEnabled(recipe) ? 'planning' : tabName;
+          state.activeTab = resolvedTab;
+          if (persist) saveState();
+          document.querySelectorAll('.tab').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === resolvedTab));
+          document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.toggle('active', panel.id === resolvedTab));
+          if (resolvedTab === 'temperature' && !cookView.hidden) temperatureController.focus();
+          }"""
+          if old not in text:
+              raise SystemExit('switchTab block not found')
+          text = text.replace(old, new, 1)
+          app.write_text(text)
+
+          recipe = Path('js/recipe.js')
+          text = recipe.read_text()
+          old = """  if (recipe.temperature?.defaultTargetC !== undefined && !isFiniteNumber(recipe.temperature.defaultTargetC)) {
+            errors.push('temperature.defaultTargetC must be numeric when provided.');
+          }"""
+          new = """  if (recipe.temperature?.enabled !== undefined && typeof recipe.temperature.enabled !== 'boolean') {
+            errors.push('temperature.enabled must be boolean when provided.');
+          }
+          if (recipe.temperature?.defaultTargetC !== undefined
+            && (!isFiniteNumber(recipe.temperature.defaultTargetC)
+              || recipe.temperature.defaultTargetC < 30
+              || recipe.temperature.defaultTargetC > 120)) {
+            errors.push('temperature.defaultTargetC must be between 30 and 120 °C when provided.');
+          }
+          if (recipe.temperature?.enabled === true && !isFiniteNumber(recipe.temperature.defaultTargetC)) {
+            errors.push('temperature.defaultTargetC is required when temperature tracking is enabled.');
+          }
+          if (recipe.temperature?.enabled === false && recipe.temperature.defaultTargetC !== undefined) {
+            errors.push('temperature.defaultTargetC must be omitted when temperature tracking is disabled.');
+          }"""
+          if old not in text:
+              raise SystemExit('recipe temperature validation block not found')
+          text = text.replace(old, new, 1)
+
+          old = """      if (!COMPLETION_TYPES.has(step.completion.type)) errors.push(`Invalid completion type for step ${step.id || '?'}: ${step.completion.type}`);
+              if (!step.completion.description || typeof step.completion.description !== 'string') {"""
+          new = """      if (!COMPLETION_TYPES.has(step.completion.type)) errors.push(`Invalid completion type for step ${step.id || '?'}: ${step.completion.type}`);
+              if (step.completion.type === 'temperature'
+                && (recipe.temperature?.enabled === false || !isFiniteNumber(recipe.temperature?.defaultTargetC))) {
+                errors.push(`Temperature completion for step ${step.id || '?'} requires enabled recipe temperature tracking with defaultTargetC.`);
+              }
+              if (!step.completion.description || typeof step.completion.description !== 'string') {"""
+          if old not in text:
+              raise SystemExit('completion validation marker not found')
+          text = text.replace(old, new, 1)
+          recipe.write_text(text)
+          PY
+          node --check app.js
+          node --check js/recipe.js
+      - name: Commit wiring
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.js js/recipe.js
+          git diff --cached --quiet && exit 0
+          git commit -m "feat: hide temperature tracking when recipe disables it"
+          git push
