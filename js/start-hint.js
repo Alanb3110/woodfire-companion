@@ -36,6 +36,15 @@ function formatTime(date) {
   }).format(date);
 }
 
+export function recommendedStartFromPlan(recipe, servings, mealTime) {
+  const plan = buildMealSchedule(recipe, {
+    servings,
+    targetServingAt: targetServingAt(mealTime).toISOString()
+  });
+  if (!plan.length) return null;
+  return plan.reduce((earliest, item) => item.start < earliest ? item.start : earliest, plan[0].start);
+}
+
 async function getLibrary() {
   libraryPromise ||= loadLibrary(LIBRARY_URL);
   return libraryPromise;
@@ -60,12 +69,8 @@ async function refreshStartHint() {
     const entry = library.recipes.find(item => item.status === 'available' && item.title === title && item.recipeUrl);
     if (!entry) return;
     const recipe = await getRecipe(entry);
-    const plan = buildMealSchedule(recipe, {
-      servings,
-      targetServingAt: targetServingAt(mealTime).toISOString()
-    });
-    if (token !== refreshToken || !plan.length) return;
-    const firstStart = plan.reduce((earliest, item) => item.start < earliest ? item.start : earliest, plan[0].start);
+    const firstStart = recommendedStartFromPlan(recipe, servings, mealTime);
+    if (token !== refreshToken || !firstStart) return;
     hint.textContent = `Début conseillé vers ${formatTime(firstStart)} · calculé depuis le planning complet.`;
   } catch (error) {
     console.warn('Impossible de calculer le début conseillé depuis le planner.', error);
@@ -90,4 +95,4 @@ function initStartHint() {
   scheduleRefresh();
 }
 
-initStartHint();
+if (typeof document !== 'undefined' && typeof MutationObserver !== 'undefined') initStartHint();
