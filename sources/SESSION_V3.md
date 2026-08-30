@@ -17,9 +17,15 @@ The expanded task detail exposes the actual start and, when present, actual comp
 
 Use this only to correct what really happened, for example when a step was started at 18:05 but the cook only remembered to tap at 18:17.
 
+Observation-driven steps also expose `Dernier contrôle / observation`. This is distinct from the lifecycle start timestamp. If a not-ready observation has a pending recheck, correcting the control time shifts the associated recheck by the same delta. The planner then propagates that updated expected completion when it exceeds any remaining planning buffer.
+
+For example, Pork Belly intentionally has a 35 min planning buffer between the first tenderness checkpoint and uncovered finishing. A corrected control/recheck that still fits inside that buffer may leave the finishing time unchanged; once the updated recheck exceeds the buffer, the pork finishing chain moves downstream.
+
 Rules:
 - a corrected completion cannot precede the corrected start;
 - correcting a timestamp never rewrites unrelated completed steps;
+- correcting a linked ready observation also updates its matching completion timestamp;
+- correcting a linked not-ready observation shifts its pending recheck by the same amount;
 - the earliest known progress timestamp is updated when a corrected start predates the previously recorded cook start;
 - after saving, the application reloads the persisted session and the planner recalculates downstream work from the corrected facts.
 
@@ -30,6 +36,7 @@ The DEV-only `Cuisson test` tool:
 - selects an executable recipe (preferring the Pork Belly reference because it exercises observations/rechecks);
 - positions the synthetic meal around the current clock time;
 - seeds coherent completed/active steps, a pending recheck and sample temperatures;
+- deliberately places the Pork Belly tenderness checkpoint late enough that its pending recheck exceeds the built-in buffer, so downstream propagation is visible without waiting in real time;
 - stores the same recipe snapshot and session structure as a real cook;
 - reloads the normal application so the real planner, active-cook UI and timestamp editor are exercised.
 
