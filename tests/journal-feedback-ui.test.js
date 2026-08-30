@@ -19,3 +19,13 @@ test('journal feedback controls keep mobile-friendly star targets', () => {
   assert.match(css, /\.journal-rating-btn[\s\S]*min-height:\s*42px/);
   assert.match(css, /\.journal-notes/);
 });
+
+test('journal UI exposes local JSON backup and restore controls', () => {
+  assert.match(ui, /exportJournalBackup/);
+  assert.match(ui, /importJournalBackup/);
+  assert.match(ui, /Exporter JSON/);
+  assert.match(ui, /Importer JSON/);
+  assert.match(ui, /input\.accept = '\.json,application\/json'/);
+  assert.match(ui, /await file\.text\(\)/);
+  assert.match(css, /\.journal-backup-actions[\s\S]*flex-wrap:\s*wrap/);
+});

@@ -47,6 +47,7 @@ Relevant source contracts:
 - `sources/SESSION_V3.md`;
 - `sources/COOK_JOURNAL_V1.md`;
 - `sources/COOK_JOURNAL_V2.md`;
+- `sources/JOURNAL_BACKUP_V1.md`;
 - `sources/MULTI_RECIPE_CONTRACT.md`;
 - `sources/ILLUSTRATED_LIBRARY_V1.md`;
 - `sources/PORK_BELLY_MEAL.md`;
@@ -111,9 +112,9 @@ The pending recheck timestamp is also passed to the planner as an expected compl
 Observation timestamps are editable historical facts. Editing the latest observation shifts its linked pending recheck by the same delta; if the edited observation was the completion event, the linked completion timestamp follows it.
 
 ## Cook Journal V2
-Completed meal sessions remain stored separately under `woodfire-companion-journal-v1`; the stored journal object now carries `schemaVersion: 2`.
+Completed meal sessions remain stored separately under `woodfire-companion-journal-v1`; the stored journal object carries `schemaVersion: 2`.
 
-`js/journal.js` owns journal serialization/store, migration, feedback persistence and service-milestone resolution. Journal V1/root-array data migrates without losing cook history.
+`js/journal.js` owns journal serialization/store, migration, feedback persistence, service-milestone resolution and versioned JSON backup/import. Journal V1/root-array data migrates without losing cook history.
 
 A journal entry includes recipe identity/version/title, servings, target/actual service timestamps, temperature samples, structured observations, actual step starts/completions, explicit delays, baseline/final schedule timestamps, plus optional meal-level feedback:
 - `rating` — 1–5 or null;
@@ -124,10 +125,12 @@ Automatic resynchronisation of a served cook preserves previously saved feedback
 
 `js/journal-ui.js` renders compact history cards in the library. Expanded cards expose five-star rating and `Notes pour la prochaine fois`; a saved rating is visible in the collapsed summary. Test sessions are never persisted to the real journal.
 
-See `sources/COOK_JOURNAL_V2.md`.
+The same journal view now exposes local `Exporter JSON` / `Importer JSON` actions. Backup files use an explicit `woodfire-companion-journal-backup` wrapper and independent backup version. Import validates the whole payload before writing, rejects future formats, ignores test entries and merges by stable session id while keeping the freshest duplicate. Active session, shopping and settings stores are deliberately not included.
+
+See `sources/COOK_JOURNAL_V2.md` and `sources/JOURNAL_BACKUP_V1.md`.
 
 ## UI preferences
-The library now uses manifest-driven local WebP food covers through `visual.imageUrl`. Each executable recipe cover is reused in the library card and recipe-detail hero, while the existing theme/symbol remains a fallback. Cover assets are decorative and contain no baked UI text. See `sources/ILLUSTRATED_LIBRARY_V1.md`.
+The library uses manifest-driven local WebP food covers through `visual.imageUrl`. Each executable recipe cover is reused in the library card and recipe-detail hero, while the existing theme/symbol remains a fallback. Cover assets are decorative and contain no baked UI text. See `sources/ILLUSTRATED_LIBRARY_V1.md`.
 
 Visual preferences remain separate under `woodfire-companion-settings-v1`.
 
@@ -200,13 +203,12 @@ npm test
 
 GitHub Actions runs the suite on `main`, supported feature/fix/chore pushes and pull requests.
 
-Coverage includes hardened recipe contracts, generic available-recipe acceptance, actionable ingredient quantities, recipe-specific timelines, shopping/pre-cook, offline caching, version consistency, DOM contracts, dependency/resource planning, buffers/service slippage, actual start/completion propagation, session v1→v2→v3 migration, step lifecycle transitions, frozen recipe snapshots, timestamp correction, observation/recheck behavior, journal v1→v2 migration, feedback persistence/resync protection, test-session exclusion, active-cook wiring, optional temperature capability semantics and extracted temperature validation/measurement/CSV behavior.
+Coverage includes hardened recipe contracts, generic available-recipe acceptance, actionable ingredient quantities, recipe-specific timelines, shopping/pre-cook, offline caching, version consistency, DOM contracts, dependency/resource planning, buffers/service slippage, actual start/completion propagation, session v1→v2→v3 migration, step lifecycle transitions, frozen recipe snapshots, timestamp correction, observation/recheck behavior, journal v1→v2 migration, feedback persistence/resync protection, versioned journal JSON export/import and safe merge/rejection behavior, test-session exclusion, active-cook wiring, optional temperature capability semantics and extracted temperature validation/measurement/CSV behavior.
 
 ## Current technical debt / next work
 1. Continue splitting active-cook/session orchestration out of the growing `app.js` without introducing a framework; temperature orchestration is now extracted.
 2. Reduce scaling-sensitive quantities duplicated inside step prose by referencing structured ingredient usage where useful.
-3. Add journal JSON backup/import when useful.
-4. Add a flexible planning-window concept only when a real recipe demonstrates the need.
-5. Extend conflict handling beyond Woodfire only when real meals demonstrate a shared-resource collision.
-6. Introduce reusable external components/batching only when real recipes prove the need.
-7. Add predictive ETA later from temperature/history with uncertainty, never false precision.
+3. Add a flexible planning-window concept only when a real recipe demonstrates the need.
+4. Extend conflict handling beyond Woodfire only when real meals demonstrate a shared-resource collision.
+5. Introduce reusable external components/batching only when real recipes prove the need.
+6. Add predictive ETA later from temperature/history with uncertainty, never false precision.
