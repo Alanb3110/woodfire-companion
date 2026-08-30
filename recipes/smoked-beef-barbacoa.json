@@ -238,6 +238,7 @@
       "title": "Réduire le jus de braisage",
       "summary": "20 min · en parallèle du repos",
       "durationMin": 20,
+      "plan": { "placement": "earliest" },
       "dependencies": [{ "stepId": "first-check", "relation": "after_finish", "lagMin": 0 }],
       "resources": ["stovetop"],
       "details": [

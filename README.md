@@ -14,10 +14,8 @@ The library is driven by `recipes/index.json`.
 
 Executable now:
 - **Pork Belly Burnt Ends** + smashed grenaille potatoes + fresh lemon-yogurt sauce;
-- **Roulé de dinde sucré-salé & gratin de courgettes**.
-
-Visible as future content:
-- **Barbacoa de bœuf fumée**.
+- **Roulé de dinde sucré-salé & gratin de courgettes**;
+- **Tacos barbacoa de bœuf fumée** + salsa fumée + garnitures fraîches.
 
 Recipe content lives in structured JSON under `recipes/` rather than being hard-coded into `app.js`.
 
@@ -156,7 +154,8 @@ woodfire-companion/
 ├── recipes/
 │   ├── index.json
 │   ├── pork-belly-burnt-ends.json
-│   └── sweet-savory-turkey-zucchini-gratin.json
+│   ├── sweet-savory-turkey-zucchini-gratin.json
+│   └── smoked-beef-barbacoa.json
 ├── tests/
 ├── sources/                   # product/technical source of truth
 └── icons/
