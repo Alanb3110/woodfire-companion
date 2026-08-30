@@ -23,6 +23,8 @@ const APP_ASSETS = [
   './js/timestamp-editor.js',
   './js/dev-tools.js',
   './js/start-hint.js',
+  './js/temperature.js',
+  './js/temperature-ui.js',
   './recipes/index.json',
   './manifest.webmanifest',
   './icons/icon-192.png',
