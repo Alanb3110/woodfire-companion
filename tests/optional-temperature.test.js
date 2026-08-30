@@ -27,6 +27,14 @@ test('temperature tracking can be explicitly disabled', () => {
   assert.equal(temperatureTrackingEnabled(recipe), false);
 });
 
+test('temperature metadata must be an object', () => {
+  const recipe = copyRecipe();
+  recipe.temperature = '74';
+  const validation = validateRecipe(recipe);
+  assert.equal(validation.valid, false);
+  assert.ok(validation.errors.some(error => error.includes('temperature must be an object')));
+});
+
 test('enabled tracking requires a valid 30–120 °C default target', () => {
   const missing = copyRecipe();
   missing.temperature = { enabled: true };
