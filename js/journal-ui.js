@@ -34,7 +34,7 @@ function buildMetric(label, value) {
   return metric;
 }
 
-function renderFeedback(entry, container) {
+function renderFeedback(entry, container, onSaved = () => {}) {
   const section = document.createElement('section');
   section.className = 'journal-feedback';
 
@@ -111,6 +111,7 @@ function renderFeedback(entry, container) {
       entry.feedbackUpdatedAt = updated.feedbackUpdatedAt;
       status.classList.remove('error');
       status.textContent = 'Enregistré';
+      onSaved(updated);
     } catch (error) {
       status.classList.add('error');
       status.textContent = error.message || 'Erreur';
@@ -193,13 +194,15 @@ function renderEntry(entry) {
   const service = document.createElement('span');
   service.className = 'journal-service';
   service.textContent = serviceLabel(entry);
-  copy.append(eyebrow, title, service);
-  if (entry.rating) {
-    const rating = document.createElement('span');
-    rating.className = 'journal-summary-rating';
-    rating.textContent = `★ ${entry.rating}/5`;
-    copy.appendChild(rating);
+  const summaryRating = document.createElement('span');
+  summaryRating.className = 'journal-summary-rating';
+  copy.append(eyebrow, title, service, summaryRating);
+
+  function syncSummaryRating(updated = entry) {
+    summaryRating.hidden = !updated.rating;
+    summaryRating.textContent = updated.rating ? `★ ${updated.rating}/5` : '';
   }
+  syncSummaryRating();
 
   const chevron = document.createElement('span');
   chevron.className = 'journal-chevron';
@@ -217,7 +220,7 @@ function renderEntry(entry) {
     buildMetric('Mesures', String((entry.measurements || []).length))
   );
   body.appendChild(metrics);
-  renderFeedback(entry, body);
+  renderFeedback(entry, body, syncSummaryRating);
   renderStepHistory(entry, body);
   renderTemperatureHistory(entry, body);
 
