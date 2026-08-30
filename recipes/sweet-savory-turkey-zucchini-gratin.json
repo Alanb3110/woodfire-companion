@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "sweet-savory-turkey-zucchini-gratin",
-  "version": 2,
+  "version": 3,
   "serviceStepId": "serve",
   "title": "Roulé de dinde sucré-salé & gratin de courgettes",
   "description": "Roulé de dinde fumé puis rôti au Woodfire avec marinade soja-miel-paprika, servi avec un gratin de courgettes crémeux cuit au four en parallèle.",
@@ -64,7 +64,7 @@
     { "id": "eggs", "name": "Œufs", "quantity": 3, "unit": "piece", "scale": { "type": "step", "breakpoints": [{ "maxServings": 5, "quantity": 3 }, { "maxServings": 6, "quantity": 4 }] }, "category": "produits-frais" },
     { "id": "grated-cheese", "name": "Fromage râpé", "quantity": 100, "unit": "g", "scale": { "type": "linear" }, "category": "produits-frais", "preparation": "Comté, emmental ou gruyère" },
     { "id": "parmesan", "name": "Parmesan râpé", "quantity": 30, "unit": "g", "scale": { "type": "linear" }, "category": "produits-frais", "optional": true },
-    { "id": "salt", "name": "Sel", "quantity": 8, "unit": "g", "scale": { "type": "linear" }, "category": "epicerie", "preparation": "Base pour 5 : ~5 g pour faire dégorger + ~3 g dans l’appareil; ajuster selon le fromage" },
+    { "id": "salt", "name": "Sel", "quantity": 8, "unit": "g", "scale": { "type": "linear" }, "category": "epicerie", "preparation": "Réparti entre dégorgement et appareil; quantités détaillées dans l’étape du gratin" },
     { "id": "nutmeg", "name": "Noix de muscade", "quantity": 0.25, "unit": "tsp", "scale": { "type": "fixed" }, "category": "epicerie", "optional": true }
   ],
   "equipment": [
@@ -227,10 +227,34 @@
       "summary": "Courgettes · crème · œufs · fromage",
       "durationMin": 45,
       "resources": [],
+      "ingredientUsage": [
+        { "id": "gratin-zucchini", "ingredientId": "zucchini" },
+        { "id": "gratin-cream", "ingredientId": "cream" },
+        { "id": "gratin-eggs", "ingredientId": "eggs", "displayUnit": false },
+        {
+          "id": "gratin-garlic",
+          "ingredientId": "garlic",
+          "quantity": 2,
+          "unit": "piece",
+          "displayUnit": false,
+          "scale": {
+            "type": "step",
+            "breakpoints": [
+              { "maxServings": 5, "quantity": 2 },
+              { "maxServings": 6, "quantity": 3 }
+            ]
+          }
+        },
+        { "id": "gratin-cheese", "ingredientId": "grated-cheese" },
+        { "id": "gratin-degorge-salt", "ingredientId": "salt", "quantity": 5, "unit": "g", "scale": { "type": "linear" } },
+        { "id": "gratin-mix-salt", "ingredientId": "salt", "quantity": 3, "unit": "g", "scale": { "type": "linear" } },
+        { "id": "gratin-pepper", "ingredientId": "black-pepper", "quantity": 0.5, "unit": "tsp", "scale": { "type": "fixed" } },
+        { "id": "gratin-nutmeg", "ingredientId": "nutmeg" }
+      ],
       "details": [
-        "Pour 5 personnes : environ 1,2 kg de courgettes, 300 mL de crème, 3 œufs, 2 gousses d’ail et 100 g de fromage râpé; parmesan facultatif.",
-        "Couper les courgettes en rondelles fines, utiliser environ 5 g de sel pour les faire dégorger 15–20 min, puis bien égoutter.",
-        "Mélanger crème, œufs, ail, environ 3 g de sel, ~½ c. à café de poivre et éventuellement ¼ c. à café de muscade.",
+        "Pour le gratin : environ {{use:gratin-zucchini}} de courgettes, {{use:gratin-cream}} de crème, {{use:gratin-eggs}} œuf(s), {{use:gratin-garlic}} gousse(s) d’ail et {{use:gratin-cheese}} de fromage râpé; parmesan facultatif.",
+        "Couper les courgettes en rondelles fines, utiliser environ {{use:gratin-degorge-salt}} de sel pour les faire dégorger 15–20 min, puis bien égoutter.",
+        "Mélanger crème, œufs, ail, environ {{use:gratin-mix-salt}} de sel, {{use:gratin-pepper}} de poivre et éventuellement {{use:gratin-nutmeg}} de muscade.",
         "Huiler légèrement le plat, disposer les courgettes, verser l’appareil et terminer par le fromage.",
         "Préchauffer le four à 180–185 °C chaleur tournante pendant la préparation."
       ],
