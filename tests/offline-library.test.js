@@ -17,8 +17,8 @@ test('service worker does not hard-code executable recipe or cover filenames', (
   assert.doesNotMatch(serviceWorker, /assets\/recipes\/pork-belly-burnt-ends\.svg/);
 });
 
-test('iOS detail hotfix gets a fresh shell cache and bypasses stale HTTP cache', () => {
-  assert.match(serviceWorker, /CACHE_REVISION = 'ios-recipe-detail-hotfix-1'/);
-  assert.match(serviceWorker, /'\.\/js\/recipe-hero\.js'/);
+test('hotfix shell gets a fresh cache revision and bypasses stale HTTP cache', () => {
+  assert.match(serviceWorker, /CACHE_REVISION = 'start-hint-loop-hotfix-2'/);
+  assert.match(serviceWorker, /'\.\/js\/start-hint\.js'/);
   assert.match(serviceWorker, /fetch\(event\.request, \{ cache: 'no-store' \}\)/);
 });
