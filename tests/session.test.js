@@ -4,6 +4,7 @@ import {
   SESSION_SCHEMA_VERSION,
   completeStep,
   createDefaultSessionState,
+  editStepTimestamps,
   hasSessionProgress,
   migrateSessionState,
   resetStep,
@@ -12,7 +13,7 @@ import {
   stepLifecycle
 } from '../js/session.js';
 
-test('legacy session migrates to schema v2 without inventing step starts', () => {
+test('legacy session migrates to schema v3 without inventing step starts or test state', () => {
   const migrated = migrateSessionState({
     recipeId: 'legacy-recipe',
     completed: { cook: '2026-08-29T18:00:00.000Z' },
@@ -23,7 +24,14 @@ test('legacy session migrates to schema v2 without inventing step starts', () =>
   assert.equal(migrated.schemaVersion, SESSION_SCHEMA_VERSION);
   assert.deepEqual(migrated.started, {});
   assert.equal(migrated.completed.cook, '2026-08-29T18:00:00.000Z');
+  assert.equal(migrated.isTest, false);
   assert.equal(migrated.view, 'cook');
+});
+
+test('schema v2 session migrates explicit isTest default to false', () => {
+  const migrated = migrateSessionState({ schemaVersion: 2, started: {}, completed: {} });
+  assert.equal(migrated.schemaVersion, 3);
+  assert.equal(migrated.isTest, false);
 });
 
 test('timed step lifecycle distinguishes upcoming, active and done', () => {
@@ -42,6 +50,28 @@ test('timed step lifecycle distinguishes upcoming, active and done', () => {
   assert.equal(stepLifecycle(state, 'smoke'), 'upcoming');
   assert.equal(state.started.smoke, undefined);
   assert.equal(state.completed.smoke, undefined);
+});
+
+test('actual start/end timestamps can be corrected after the fact', () => {
+  let state = createDefaultSessionState();
+  state = startStep(state, 'smoke', new Date('2026-08-29T18:05:00.000Z'));
+  state = completeStep(state, 'smoke', new Date('2026-08-29T20:20:00.000Z'));
+
+  state = editStepTimestamps(state, 'smoke', {
+    startedAt: new Date('2026-08-29T18:00:00.000Z'),
+    completedAt: new Date('2026-08-29T20:12:00.000Z')
+  });
+
+  assert.equal(state.started.smoke, '2026-08-29T18:00:00.000Z');
+  assert.equal(state.completed.smoke, '2026-08-29T20:12:00.000Z');
+  assert.equal(state.cookStartedAt, '2026-08-29T18:00:00.000Z');
+});
+
+test('timestamp correction rejects a completion before its start', () => {
+  const state = startStep(createDefaultSessionState(), 'smoke', new Date('2026-08-29T18:00:00.000Z'));
+  assert.throws(() => editStepTimestamps(state, 'smoke', {
+    completedAt: new Date('2026-08-29T17:59:00.000Z')
+  }), /fin réelle/i);
 });
 
 test('starting a step counts as session progress', () => {

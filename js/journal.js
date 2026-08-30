@@ -102,6 +102,7 @@ export function buildJournalEntry({ state, recipe, schedule, now = new Date() })
   return {
     schemaVersion: JOURNAL_SCHEMA_VERSION,
     id: state.sessionId,
+    isTest: Boolean(state.isTest),
     recipeId: recipe.id,
     recipeVersion: recipe.version,
     recipeTitle: recipe.title,
@@ -124,6 +125,7 @@ export function buildJournalEntry({ state, recipe, schedule, now = new Date() })
 }
 
 export function upsertJournalEntry(entry, storage = globalThis.localStorage) {
+  if (entry?.isTest) return loadJournal(storage);
   const data = loadJournal(storage);
   const index = data.entries.findIndex(item => item.id === entry.id);
   if (index >= 0) data.entries[index] = { ...data.entries[index], ...entry };

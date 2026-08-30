@@ -1,5 +1,5 @@
 export const SESSION_STORAGE_KEY = 'woodfire-companion-v1';
-export const SESSION_SCHEMA_VERSION = 2;
+export const SESSION_SCHEMA_VERSION = 3;
 
 export function createDefaultSessionState() {
   return {
@@ -23,7 +23,8 @@ export function createDefaultSessionState() {
     recipeId: null,
     recipeVersion: null,
     activeRecipeUrl: null,
-    recipeSnapshot: null
+    recipeSnapshot: null,
+    isTest: false
   };
 }
 
@@ -33,6 +34,14 @@ function migrateV1ToV2(value) {
     schemaVersion: 2,
     started: value.started && typeof value.started === 'object' ? value.started : {},
     recipeSnapshot: value.recipeSnapshot && typeof value.recipeSnapshot === 'object' ? value.recipeSnapshot : null
+  };
+}
+
+function migrateV2ToV3(value) {
+  return {
+    ...value,
+    schemaVersion: 3,
+    isTest: Boolean(value.isTest)
   };
 }
 
@@ -48,6 +57,7 @@ export function migrateSessionState(value) {
 
   while (version < SESSION_SCHEMA_VERSION) {
     if (version === 1) migrated = migrateV1ToV2(migrated);
+    else if (version === 2) migrated = migrateV2ToV3(migrated);
     version = migrated.schemaVersion;
   }
 
@@ -64,7 +74,8 @@ export function migrateSessionState(value) {
     measurements: Array.isArray(migrated.measurements) ? migrated.measurements.map(item => ({ ...item })) : [],
     recipeSnapshot: migrated.recipeSnapshot && typeof migrated.recipeSnapshot === 'object'
       ? structuredClone(migrated.recipeSnapshot)
-      : null
+      : null,
+    isTest: Boolean(migrated.isTest)
   };
   if (!hadExplicitView && hasSessionProgress(result)) result.view = 'cook';
   return result;
@@ -123,6 +134,14 @@ function validIso(value, fallback = new Date()) {
   return date.toISOString();
 }
 
+function earliestProgressTimestamp(started, completed, fallback = null) {
+  const values = [...Object.values(started || {}), ...Object.values(completed || {})]
+    .filter(Boolean)
+    .map(value => validIso(value))
+    .sort();
+  return values[0] || fallback;
+}
+
 export function startStep(state, stepId, at = new Date()) {
   if (!stepId) throw new Error('startStep requires stepId.');
   if (state.completed?.[stepId]) return state;
@@ -147,6 +166,39 @@ export function completeStep(state, stepId, at = new Date(), { ensureStarted = t
   };
 }
 
+export function editStepTimestamps(state, stepId, { startedAt, completedAt } = {}) {
+  if (!stepId) throw new Error('editStepTimestamps requires stepId.');
+  const started = { ...(state.started || {}) };
+  const completed = { ...(state.completed || {}) };
+
+  const nextStart = startedAt === undefined
+    ? started[stepId] || null
+    : startedAt === null || startedAt === ''
+      ? null
+      : validIso(startedAt);
+  const nextEnd = completedAt === undefined
+    ? completed[stepId] || null
+    : completedAt === null || completedAt === ''
+      ? null
+      : validIso(completedAt);
+
+  if (nextStart && nextEnd && new Date(nextEnd) < new Date(nextStart)) {
+    throw new Error('La fin réelle ne peut pas précéder le début réel.');
+  }
+
+  if (nextStart) started[stepId] = nextStart;
+  else delete started[stepId];
+  if (nextEnd) completed[stepId] = nextEnd;
+  else delete completed[stepId];
+
+  return {
+    ...state,
+    started,
+    completed,
+    cookStartedAt: earliestProgressTimestamp(started, completed, state.cookStartedAt)
+  };
+}
+
 export function resetStep(state, stepId) {
   const started = { ...(state.started || {}) };
   const completed = { ...(state.completed || {}) };
@@ -167,7 +219,8 @@ export function resetCookProgress(state) {
     rechecks: {},
     measurements: [],
     cookStartedAt: null,
-    sessionServedAt: null
+    sessionServedAt: null,
+    isTest: false
   };
 }
 
