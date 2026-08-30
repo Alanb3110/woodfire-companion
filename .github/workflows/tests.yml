@@ -5,6 +5,8 @@ on:
     branches:
       - main
       - 'feature/**'
+      - 'fix/**'
+      - 'chore/**'
   pull_request:
 
 jobs:

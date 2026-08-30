@@ -16,22 +16,38 @@ function saveShoppingState(state) {
   localStorage.setItem(SHOPPING_KEY, JSON.stringify(state));
 }
 
-function checkedFor(recipeId) {
-  const state = loadShoppingState();
-  return state[recipeId] || {};
+function recipeShoppingKey(recipe) {
+  return `${recipe.id}@${recipe.version ?? 1}`;
 }
 
-function setChecked(recipeId, itemId, checked) {
+function checkedFor(recipe) {
   const state = loadShoppingState();
-  state[recipeId] ||= {};
-  if (checked) state[recipeId][itemId] = true;
-  else delete state[recipeId][itemId];
+  const key = recipeShoppingKey(recipe);
+  if (state[key]) return state[key];
+
+  // One-time compatibility path for shopping checks saved before recipe-version scoping.
+  if (state[recipe.id]) {
+    state[key] = { ...state[recipe.id] };
+    delete state[recipe.id];
+    saveShoppingState(state);
+    return state[key];
+  }
+  return {};
+}
+
+function setChecked(recipe, itemId, checked) {
+  const state = loadShoppingState();
+  const key = recipeShoppingKey(recipe);
+  state[key] ||= {};
+  if (checked) state[key][itemId] = true;
+  else delete state[key][itemId];
   saveShoppingState(state);
 }
 
-function resetRecipeShopping(recipeId) {
+function resetRecipeShopping(recipe) {
   const state = loadShoppingState();
-  delete state[recipeId];
+  delete state[recipeShoppingKey(recipe)];
+  delete state[recipe.id];
   saveShoppingState(state);
 }
 
@@ -49,10 +65,10 @@ function mergeIngredientAndShoppingSections(servings) {
   if (title) title.textContent = `Pour ${servings} personne${servings > 1 ? 's' : ''}`;
 }
 
-function updateProgress(recipeId, groups) {
+function updateProgress(recipe, groups) {
   const progress = $('shoppingProgress');
   if (!progress) return;
-  const checked = checkedFor(recipeId);
+  const checked = checkedFor(recipe);
   const total = countShoppingItems(groups);
   const done = groups.flatMap(group => group.items).filter(item => checked[item.id]).length;
   progress.textContent = `${done}/${total}`;
@@ -64,7 +80,7 @@ function renderShopping(recipe, servings, formatQuantity) {
   if (!container) return;
 
   const groups = buildShoppingGroups(recipe, servings);
-  const checked = checkedFor(recipe.id);
+  const checked = checkedFor(recipe);
   container.innerHTML = '';
 
   for (const group of groups) {
@@ -99,9 +115,9 @@ function renderShopping(recipe, servings, formatQuantity) {
       quantity.textContent = item.type === 'ingredient' ? formatQuantity(item) : item.displayQuantity;
 
       checkbox.addEventListener('change', () => {
-        setChecked(recipe.id, item.id, checkbox.checked);
+        setChecked(recipe, item.id, checkbox.checked);
         label.classList.toggle('checked', checkbox.checked);
-        updateProgress(recipe.id, groups);
+        updateProgress(recipe, groups);
       });
 
       label.append(checkbox, copy, quantity);
@@ -110,10 +126,10 @@ function renderShopping(recipe, servings, formatQuantity) {
     container.appendChild(section);
   }
 
-  updateProgress(recipe.id, groups);
+  updateProgress(recipe, groups);
   if (resetButton) {
     resetButton.onclick = () => {
-      resetRecipeShopping(recipe.id);
+      resetRecipeShopping(recipe);
       renderShopping(recipe, servings, formatQuantity);
     };
   }

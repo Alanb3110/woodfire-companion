@@ -17,7 +17,7 @@ Canonical flow:
 5. **Offline capable.** Recipe viewing, planning, active cooking and logging must work without network access once assets are cached.
 6. **Structured content.** Recipes must live in reusable structured data, not UI code.
 7. **Dependency-aware scheduling.** Plans are generated from durations, dependencies, resource constraints and serving time rather than a fixed list of offsets.
-8. **Adaptive rather than brittle.** Cooking durations are estimates. User observations, temperature and actual completion times may change the remaining plan.
+8. **Adaptive rather than brittle.** Cooking durations are estimates. User observations, temperature and actual start/completion times may change the remaining plan.
 9. **Explicit hardware state.** For Woodfire steps specify mode, setpoint, smoke on/off, pellets, support/accessory, covered/uncovered and relevant placement.
 10. **Food quality over false punctuality.** Use buffers and completion criteria; do not sacrifice doneness to preserve an arbitrary timestamp.
 11. **Simple architecture first.** Keep the static GitHub Pages/PWA model until a backend solves a demonstrated need.
@@ -72,7 +72,11 @@ Prioritize:
 6. detailed instructions on demand;
 7. upcoming steps.
 
-Some cooking phases should end by observation rather than timer alone. Example responses may include `Encore ferme`, `Presque prêt`, `Très tendre`; the planner can schedule the next check or recompute downstream timing.
+Steps use an explicit lifecycle: `upcoming → active → done`, with separate actual start and completion timestamps. Instant/manual actions may complete in one interaction; long phases should remain visibly active until actually finished.
+
+Some cooking phases end by observation rather than timer alone. Example responses may include `Encore ferme`, `Presque prêt`, `Très tendre`; the planner schedules the next check and recomputes downstream timing when needed.
+
+Actual step/control timestamps must remain editable so a late tap can be corrected without turning a historical fact into an arbitrary delay.
 
 ### 6. Journal
 Retain completed cook sessions locally with recipe/version, servings, planned vs actual timing, temperature samples and freeform notes/rating where useful.
@@ -88,21 +92,24 @@ Use a hybrid model:
 The application must not require AI/API access to execute a recipe.
 
 ## Planning maturity
-### V1
+### V1 — implemented foundation
 - dependencies;
 - durations/windows;
-- resource conflicts;
+- Woodfire resource conflicts;
 - buffers;
 - serving-time back-planning;
 - dependency-aware delay propagation;
+- actual start/completion timestamps;
 - manual temperature logging;
-- local persistence.
+- local persistence with migrations.
 
-### V1.5
-- observation-driven checkpoints;
-- adaptive rechecks;
-- improved cook journal/history;
-- reusable meal components.
+### V1.5 — current product work
+- observation-driven checkpoints and adaptive rechecks;
+- explicit current-step/Woodfire state;
+- stronger journal/history UX;
+- reusable meal components where proven useful;
+- richer test/dev tooling for active-cook scenarios;
+- continued removal of duplicate timing/content sources of truth.
 
 ### V2+
 - ETA estimation from temperature evolution and historical sessions;
@@ -119,7 +126,8 @@ For every recipe:
 - internal-temperature targets only where meaningful;
 - sensory/tenderness criteria where time or temperature alone is insufficient;
 - placement/spacing/covering/liquid-level instructions when relevant;
-- no contradiction between overview, ingredient quantities, task timeline and active-cook cards.
+- no contradiction between overview, ingredient quantities, task timeline and active-cook cards;
+- user-facing ingredient lists must include actionable baseline quantities/ranges instead of only `au goût`.
 
 Known house preferences should be treated as defaults, not universal recipe facts: generous sauces, sweet-savoury profiles welcome, thyme generally avoided, alcohol/flambé avoided unless explicitly wanted.
 
@@ -129,20 +137,21 @@ Known house preferences should be treated as defaults, not universal recipe fact
 - Separate recipe data, planner, session state/persistence and UI.
 - Planner logic should be pure/testable without DOM access.
 - Version storage schemas and migrate existing local data where practical.
+- Freeze an active cook on a recipe snapshot so later recipe deployments cannot alter a session in progress.
 - Preserve offline support.
 - Test meaningful UX changes on iPhone/Safari/PWA.
 - Use focused branches/PRs for non-trivial changes.
 - Update sources when product semantics or data models change.
 
 ## Current priorities
-1. Freeze a usable recipe/meal/component data model.
-2. Extract the demo meal from `app.js`.
-3. Build an illustrated multi-recipe library.
-4. Add servings + serving-time configuration.
-5. Generate consolidated ingredients/shopping list.
-6. Replace fixed offsets with dependency/resource-aware planning.
-7. Rebuild active-cook UX on top of the planner while preserving fast temperature logging.
-8. Add local cook history/journal.
+1. Keep recipe configuration and active-cook timing derived from the same planner source of truth.
+2. Continue extracting session/active-cook/temperature responsibilities from the growing `app.js` orchestrator without introducing a framework.
+3. Improve journal usefulness with notes/rating and previous-cook feedback where it reduces future cooking uncertainty.
+4. Make temperature tracking explicitly optional before promoting recipes where probe logging is not useful.
+5. Add another structurally different executable recipe (barbacoa is a good long-cook/recheck candidate) to keep exercising the generic contract.
+6. Introduce reusable components/batching/resource extensions only when real recipes demonstrate the need.
+7. Keep DEV test-cook scenarios representative enough to exercise midnight, rechecks, parallel tasks, timestamp correction and replanning quickly.
+8. Defer predictive ETA until enough clean historical cook data exists to express uncertainty honestly.
 
 ## Out of scope for the initial product
 - accounts/cloud backend;

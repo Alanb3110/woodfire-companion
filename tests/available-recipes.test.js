@@ -25,6 +25,14 @@ for (const entry of library.recipes.filter(item => item.status === 'available'))
     assert.equal(recipe.title, entry.title, 'Manifest and recipe titles must match.');
     assert.deepEqual(recipe.servings, entry.servings, 'Manifest and recipe serving ranges must match.');
 
+    for (const ingredient of recipe.ingredients) {
+      assert.notEqual(
+        ingredient.quantity,
+        null,
+        `${recipe.id}:${ingredient.id} must expose an actionable baseline quantity or range instead of only “au goût”.`
+      );
+    }
+
     const { min, reference, max } = recipe.servings;
     assert.ok(min > 0 && min <= reference && reference <= max, 'Serving bounds must contain the reference serving count.');
 
