@@ -1,4 +1,5 @@
 import { editLatestObservationTimestamp, latestObservationForStep } from './observations.js';
+import { plannedDurationMin } from './planner.js';
 import { editStepTimestamps, loadSessionState, saveSessionState } from './session.js';
 
 function toLocalInputValue(value) {
@@ -63,6 +64,9 @@ function enhanceCard(card, state) {
   if (!detail) return;
   card.dataset.timestampEditor = '1';
 
+  const step = state.recipeSnapshot?.steps?.find(item => item.id === stepId) || null;
+  const instantObservationCheckpoint = Boolean(latestObservation && step && plannedDurationMin(step) === 0);
+
   const editor = document.createElement('section');
   editor.className = 'actual-time-editor';
 
@@ -77,9 +81,12 @@ function enhanceCard(card, state) {
 
   const fields = document.createElement('div');
   fields.className = 'actual-time-fields';
-  const startField = startedAt ? createField('Début de l’étape', startedAt, true) : null;
-  const endField = completedAt ? createField('Fin réelle', completedAt, true) : null;
-  const observationField = latestObservation ? createField('Dernier contrôle / observation', latestObservation.timestamp, true) : null;
+  const startField = startedAt && !instantObservationCheckpoint ? createField('Début de l’étape', startedAt, true) : null;
+  const endField = completedAt && !instantObservationCheckpoint ? createField('Fin réelle', completedAt, true) : null;
+  const observationField = latestObservation
+    ? createField(instantObservationCheckpoint ? 'Heure du contrôle / observation' : 'Dernier contrôle / observation', latestObservation.timestamp, true)
+    : null;
+
   if (startField) fields.appendChild(startField.label);
   if (endField) fields.appendChild(endField.label);
   if (observationField) {
@@ -115,12 +122,14 @@ function enhanceCard(card, state) {
         const edited = editLatestObservationTimestamp({
           observations: next.observations,
           rechecks: next.rechecks,
+          started: next.started,
           completed: next.completed
         }, stepId, localInputToDate(observationField.input.value));
         next = {
           ...next,
           observations: edited.observations,
           rechecks: edited.rechecks,
+          started: edited.started,
           completed: edited.completed
         };
       }
