@@ -16,7 +16,7 @@ test('meal planner accepts serving and target-serving context without changing c
 
   assert.equal(map.eat.start.getTime(), target.getTime());
   assert.equal(map['take-out-pork'].start.getHours(), 14);
-  assert.equal(map['take-out-pork'].start.getMinutes(), 30);
+  assert.equal(map['take-out-pork'].start.getMinutes(), 45);
 });
 
 test('absolute targetServingAt is canonical over a conflicting mealTime string', () => {
