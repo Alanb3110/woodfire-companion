@@ -26,9 +26,10 @@ State remains local-first/offline.
 
 Executable meals currently include:
 - `recipes/pork-belly-burnt-ends.json`, content version 4;
-- `recipes/sweet-savory-turkey-zucchini-gratin.json`, content version 2.
+- `recipes/sweet-savory-turkey-zucchini-gratin.json`, content version 2;
+- `recipes/smoked-beef-barbacoa.json`, content version 1.
 
-The Pork Belly meal remains the long-cook reference. The turkey + zucchini-gratin meal is a structurally different case: a temperature-driven poultry cook on the Woodfire runs in parallel with a conventional-oven side dish and both chains converge on one service milestone.
+The Pork Belly meal remains the first long-cook reference. The turkey + zucchini-gratin meal adds a temperature-driven poultry cook in parallel with a conventional-oven side dish. The barbacoa meal adds a much longer tenderness-driven beef braise, observation rechecks, smoked salsa and parallel meat-rest/stovetop reduction before service.
 
 `js/recipe.js` owns recipe validation, ingredient scaling and Woodfire summary formatting. Validation protects serving bounds, component ownership, duration ranges, completion/recheck semantics, dependency connectivity, service milestones and Woodfire configuration consistency.
 
@@ -47,6 +48,7 @@ Relevant source contracts:
 - `sources/COOK_JOURNAL_V1.md`;
 - `sources/COOK_JOURNAL_V2.md`;
 - `sources/MULTI_RECIPE_CONTRACT.md`;
+- `sources/ILLUSTRATED_LIBRARY_V1.md`;
 - `sources/TURKEY_ZUCCHINI_MEAL.md`.
 
 ## Multi-recipe acceptance
@@ -124,6 +126,8 @@ Automatic resynchronisation of a served cook preserves previously saved feedback
 See `sources/COOK_JOURNAL_V2.md`.
 
 ## UI preferences
+The library now uses manifest-driven local SVG covers through `visual.imageUrl`. Each executable recipe cover is reused in the library card and recipe-detail hero, while the existing theme/symbol remains a fallback. Cover assets are decorative and contain no baked UI text. See `sources/ILLUSTRATED_LIBRARY_V1.md`.
+
 Visual preferences remain separate under `woodfire-companion-settings-v1`.
 
 `js/settings.js` owns accent presets, native color picker, HEX/RGB input and reset to Woodfire orange.
@@ -169,7 +173,7 @@ A recipe without `temperature` metadata has no temperature tab. `enabled: false`
 
 Manual logging remains value → Add/Enter → automatic timestamp for enabled recipes. Existing stored sessions remain compatible.
 
-Both current executable recipes benefit from temperature logging, although the role differs: Pork Belly uses temperature as supporting information for a tenderness-driven cook, while the turkey meal uses a 74 °C core target as the decisive endpoint.
+Current recipes use temperature differently: Pork Belly and barbacoa treat temperature as supporting information for tenderness-driven cooks, while the turkey meal uses a 74 °C core target as the decisive endpoint.
 
 Observation controls do not automatically infer readiness from a measurement; the cook explicitly confirms completion state.
 
@@ -178,9 +182,9 @@ No ETA is currently inferred from temperature slope.
 ## PWA/offline
 The service worker uses a network-first cache with offline fallback.
 
-Current dev version: `0.3.0-dev.8`.
+Current dev version: `0.3.0-dev.10`.
 
-Static shell/modules are listed in `APP_ASSETS`, including session, meal-planner, observation, timestamp-editor, DEV-tool, planner-derived start-hint, journal and temperature modules. Executable recipe JSON is discovered from `recipes/index.json` and preloaded automatically for every `available` entry.
+Static shell/modules are listed in `APP_ASSETS`, including session, meal-planner, observation, timestamp-editor, DEV-tool, planner-derived start-hint, journal and temperature modules. Executable recipe JSON and each available recipe's local `visual.imageUrl` cover are discovered from `recipes/index.json` and preloaded automatically.
 
 `recipes/index.json` remains the source of truth for recipe discovery and recipe-JSON offline preloading.
 

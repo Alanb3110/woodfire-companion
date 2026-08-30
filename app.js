@@ -69,6 +69,7 @@ const journalList = $('journalList');
 const journalCount = $('journalCount');
 const clearJournalBtn = $('clearJournalBtn');
 const recipeHero = $('recipeHero');
+const recipeHeroImage = $('recipeHeroImage');
 const recipeHeroSymbol = $('recipeHeroSymbol');
 const recipeHeroEyebrow = $('recipeHeroEyebrow');
 const recipeTags = $('recipeTags');
@@ -234,6 +235,16 @@ function renderLibrary() {
 
     const art = document.createElement('div');
     art.className = `recipe-card-art theme-${entry.visual?.theme || 'embers'}`;
+    if (entry.visual?.imageUrl) {
+    art.classList.add('has-image');
+    const image = document.createElement('img');
+    image.className = 'recipe-card-image';
+    image.src = entry.visual.imageUrl;
+    image.alt = '';
+    image.loading = 'lazy';
+    image.decoding = 'async';
+    art.appendChild(image);
+  }
     const symbol = document.createElement('span');
     symbol.className = 'card-symbol';
     symbol.textContent = entry.visual?.symbol || '🔥';
@@ -305,6 +316,11 @@ async function openRecipe(entry) {
 function renderRecipeDetail() {
   const visual = selectedEntry.visual || {};
   applyVisual(recipeHero, visual);
+  const heroImageUrl = visual.imageUrl || '';
+  recipeHero.classList.toggle('has-image', Boolean(heroImageUrl));
+  recipeHeroImage.hidden = !heroImageUrl;
+  recipeHeroImage.src = heroImageUrl;
+  recipeHeroSymbol.hidden = Boolean(heroImageUrl);
   recipeHeroSymbol.textContent = visual.symbol || '🔥';
   recipeHeroEyebrow.textContent = visual.eyebrow || 'WOODFIRE';
   recipeTitle.textContent = selectedRecipe.title;
