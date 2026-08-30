@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "smoked-beef-barbacoa",
-  "version": 1,
+  "version": 2,
   "serviceStepId": "serve",
   "title": "Tacos barbacoa de bœuf fumée",
   "description": "Jarret de bœuf fumé puis braisé très lentement au Woodfire, effiloché dans son jus et servi en tacos à coques rigides avec salsa fumée et garnitures fraîches.",
@@ -21,7 +21,32 @@
       "id": "marinate-ahead",
       "title": "Mariner le bœuf en avance",
       "timing": "Idéalement la veille · sinon ≥ 2 h avant",
-      "details": "Pour 2,6 kg de jarret désossé en 2 morceaux d’environ 1,3 kg : jus de 2 oranges + 2 citrons verts, 6 gousses d’ail, 2 c. à soupe de concentré de tomate, 2 c. à soupe de vinaigre de cidre, 1½–2 c. à café de chipotle en poudre, 2 c. à café de cumin, 2 c. à café d’origan, 1 c. à soupe de paprika fumé, 25–30 g de sel et 1 c. à café de poivre. Enduire, couvrir et garder au frais."
+      "ingredientUsage": [
+        { "id": "marinade-beef", "ingredientId": "beef-shank", "quantity": 2.6, "unit": "kg", "scale": { "type": "linear" } },
+        { "id": "marinade-orange", "ingredientId": "orange", "displayUnit": false },
+        {
+          "id": "marinade-lime",
+          "ingredientId": "lime",
+          "displayUnit": false,
+          "scale": {
+            "type": "step",
+            "breakpoints": [
+              { "maxServings": 6, "quantity": 1.5 },
+              { "maxServings": 8, "quantity": 2 }
+            ]
+          }
+        },
+        { "id": "marinade-garlic", "ingredientId": "garlic", "displayUnit": false },
+        { "id": "marinade-tomato-paste", "ingredientId": "tomato-paste" },
+        { "id": "marinade-vinegar", "ingredientId": "cider-vinegar" },
+        { "id": "marinade-chipotle", "ingredientId": "chipotle" },
+        { "id": "marinade-cumin", "ingredientId": "cumin" },
+        { "id": "marinade-oregano", "ingredientId": "oregano" },
+        { "id": "marinade-paprika", "ingredientId": "smoked-paprika" },
+        { "id": "marinade-salt", "ingredientId": "salt", "quantity": { "min": 25, "max": 30 }, "unit": "g", "scale": { "type": "linear" } },
+        { "id": "marinade-pepper", "ingredientId": "black-pepper" }
+      ],
+      "details": "Pour {{use:marinade-beef}} de jarret désossé, idéalement réparti en 2 morceaux : jus de {{use:marinade-orange}} orange(s) + {{use:marinade-lime}} citron(s) vert(s), {{use:marinade-garlic}} gousse(s) d’ail, {{use:marinade-tomato-paste}} de concentré de tomate, {{use:marinade-vinegar}} de vinaigre de cidre, {{use:marinade-chipotle}} de chipotle en poudre, {{use:marinade-cumin}} de cumin, {{use:marinade-oregano}} d’origan, {{use:marinade-paprika}} de paprika fumé, {{use:marinade-salt}} de sel et {{use:marinade-pepper}} de poivre. Enduire, couvrir et garder au frais."
     },
     {
       "id": "taco-buffet-ahead",
@@ -54,17 +79,17 @@
     }
   ],
   "ingredients": [
-    { "id": "beef-shank", "name": "Jarret de bœuf désossé", "quantity": 2600, "unit": "g", "scale": { "type": "linear" }, "category": "viande", "preparation": "Référence 8 personnes : 2 morceaux d’environ 1,3 kg" },
+    { "id": "beef-shank", "name": "Jarret de bœuf désossé", "quantity": 2600, "unit": "g", "scale": { "type": "linear" }, "category": "viande", "preparation": "Idéalement réparti en 2 morceaux pour une cuisson homogène" },
     { "id": "orange", "name": "Oranges", "quantity": 2, "unit": "piece", "scale": { "type": "fixed" }, "category": "fruits-legumes", "preparation": "Jus pour la marinade" },
-    { "id": "lime", "name": "Citrons verts", "quantity": 4, "unit": "piece", "scale": { "type": "step", "breakpoints": [{ "maxServings": 6, "quantity": 3 }, { "maxServings": 8, "quantity": 4 }] }, "category": "fruits-legumes", "preparation": "2 marinade, 1 salsa, 1 service pour 8" },
-    { "id": "garlic", "name": "Gousses d’ail", "quantity": 6, "unit": "piece", "scale": { "type": "linear" }, "category": "fruits-legumes", "preparation": "Marinade" },
+    { "id": "lime", "name": "Citrons verts", "quantity": 4, "unit": "piece", "scale": { "type": "step", "breakpoints": [{ "maxServings": 6, "quantity": 3 }, { "maxServings": 8, "quantity": 4 }] }, "category": "fruits-legumes", "preparation": "Marinade + salsa + quartiers de service" },
+    { "id": "garlic", "name": "Gousses d’ail", "quantity": 6, "unit": "piece", "scale": { "type": "step", "breakpoints": [{ "maxServings": 6, "quantity": 5 }, { "maxServings": 8, "quantity": 6 }] }, "category": "fruits-legumes", "preparation": "Marinade" },
     { "id": "tomato-paste", "name": "Concentré de tomate", "quantity": 2, "unit": "tbsp", "scale": { "type": "linear" }, "category": "epicerie" },
     { "id": "cider-vinegar", "name": "Vinaigre de cidre", "quantity": 2, "unit": "tbsp", "scale": { "type": "linear" }, "category": "epicerie" },
     { "id": "chipotle", "name": "Chipotle en poudre", "quantity": { "min": 1.5, "max": 2 }, "unit": "tsp", "scale": { "type": "range" }, "category": "epicerie" },
     { "id": "cumin", "name": "Cumin moulu", "quantity": 2, "unit": "tsp", "scale": { "type": "linear" }, "category": "epicerie" },
     { "id": "oregano", "name": "Origan séché", "quantity": 2, "unit": "tsp", "scale": { "type": "linear" }, "category": "epicerie" },
     { "id": "smoked-paprika", "name": "Paprika fumé", "quantity": 1, "unit": "tbsp", "scale": { "type": "linear" }, "category": "epicerie" },
-    { "id": "salt", "name": "Sel", "quantity": { "min": 34, "max": 38 }, "unit": "g", "scale": { "type": "range" }, "category": "epicerie", "preparation": "25–30 g marinade + ~4 g salsa + marge garnitures" },
+    { "id": "salt", "name": "Sel", "quantity": { "min": 34, "max": 38 }, "unit": "g", "scale": { "type": "range" }, "category": "epicerie", "preparation": "Marinade + salsa + petite marge d’ajustement; quantités détaillées dans les instructions" },
     { "id": "black-pepper", "name": "Poivre noir", "quantity": 1, "unit": "tsp", "scale": { "type": "linear" }, "category": "epicerie" },
     { "id": "yellow-onion", "name": "Oignons jaunes", "quantity": 2, "unit": "piece", "scale": { "type": "linear" }, "category": "fruits-legumes", "preparation": "Émincés dans le braisage" },
     { "id": "beef-stock", "name": "Bouillon de bœuf", "quantity": { "min": 400, "max": 500 }, "unit": "mL", "scale": { "type": "linear" }, "category": "epicerie" },
@@ -123,8 +148,13 @@
         "covered": false,
         "placement": "Tomates coupées en deux, oignon en quartiers et jalapeños directement sur la grille, face coupée vers le bas pour les tomates."
       },
+      "ingredientUsage": [
+        { "id": "salsa-tomatoes", "ingredientId": "tomatoes" },
+        { "id": "salsa-white-onion", "ingredientId": "white-onion", "displayUnit": false },
+        { "id": "salsa-jalapeno", "ingredientId": "jalapeno", "displayUnit": false }
+      ],
       "details": [
-        "Déposer 600 g de tomates, 1 oignon blanc en quartiers et 1–2 jalapeños directement sur la grille.",
+        "Déposer {{use:salsa-tomatoes}} de tomates, {{use:salsa-white-onion}} oignon blanc en quartiers et {{use:salsa-jalapeno}} jalapeño(s) directement sur la grille.",
         "Griller avec fumée jusqu’à légère coloration et début d’attendrissement; éviter de dessécher complètement les tomates.",
         "Retirer les légumes pour libérer immédiatement le Woodfire pour le bœuf."
       ],
@@ -139,8 +169,13 @@
       "plan": { "anchor": "serve", "anchorOffsetMin": -630 },
       "dependencies": [{ "stepId": "smoke-salsa", "relation": "after_finish", "lagMin": 0 }],
       "resources": ["fridge"],
+      "ingredientUsage": [
+        { "id": "salsa-lime", "ingredientId": "lime", "quantity": 1, "unit": "piece", "displayUnit": false, "scale": { "type": "fixed" } },
+        { "id": "salsa-coriander", "ingredientId": "coriander", "quantity": 15, "unit": "g", "scale": { "type": "linear" } },
+        { "id": "salsa-salt", "ingredientId": "salt", "quantity": 4, "unit": "g", "scale": { "type": "linear" } }
+      ],
       "details": [
-        "Mixer les légumes fumés avec le jus d’1 citron vert, ~15 g de coriandre et ~4 g de sel.",
+        "Mixer les légumes fumés avec le jus de {{use:salsa-lime}} citron vert, {{use:salsa-coriander}} de coriandre et {{use:salsa-salt}} de sel.",
         "Garder une texture légèrement grossière plutôt qu’une purée parfaitement lisse.",
         "Goûter, ajuster le sel ou le citron vert puis réserver au frais."
       ],
@@ -193,8 +228,13 @@
         "covered": true,
         "placement": "Deux morceaux dans un grand plat profond avec oignons, marinade et bouillon; fermeture hermétique à l’aluminium."
       },
+      "ingredientUsage": [
+        { "id": "braise-onion", "ingredientId": "yellow-onion", "displayUnit": false },
+        { "id": "braise-stock", "ingredientId": "beef-stock" },
+        { "id": "braise-bay", "ingredientId": "bay-leaf", "displayUnit": false }
+      ],
       "details": [
-        "Placer le bœuf dans le plat avec 2 oignons jaunes émincés, toute la marinade, 400–500 mL de bouillon de bœuf chaud et 2 feuilles de laurier.",
+        "Placer le bœuf dans le plat avec {{use:braise-onion}} oignon(s) jaune(s) émincé(s), toute la marinade, {{use:braise-stock}} de bouillon de bœuf chaud et {{use:braise-bay}} feuilles de laurier.",
         "Le liquide doit entourer le bœuf sans le noyer complètement.",
         "Fermer très hermétiquement avec de l’aluminium et cuire à 140 °C, fumée coupée.",
         "La durée est très variable : commencer à juger l’état de la viande en fin de fenêtre; 93 °C à cœur est un repère, la tendreté reste prioritaire."
@@ -273,10 +313,18 @@
       "summary": "30 min · garnitures fraîches",
       "durationMin": 30,
       "resources": ["fridge"],
+      "ingredientUsage": [
+        { "id": "topping-cheddar", "ingredientId": "cheddar" },
+        { "id": "topping-lettuce", "ingredientId": "lettuce" },
+        { "id": "topping-red-onion", "ingredientId": "red-onion", "displayUnit": false },
+        { "id": "topping-avocado", "ingredientId": "avocado", "displayUnit": false },
+        { "id": "topping-coriander", "ingredientId": "coriander", "quantity": 15, "unit": "g", "scale": { "type": "linear" } },
+        { "id": "topping-sour-cream", "ingredientId": "sour-cream" }
+      ],
       "details": [
-        "Râper ou disposer 300 g de cheddar, émincer 250 g de laitue et 1 oignon rouge très finement.",
-        "Couper 2–3 avocats juste avant le service et préparer ~15 g de coriandre fraîche.",
-        "Mettre 400 g de crème fraîche/sour cream, quartiers de citron vert et salsa fumée dans des bols séparés."
+        "Râper ou disposer {{use:topping-cheddar}} de cheddar, émincer {{use:topping-lettuce}} de laitue et {{use:topping-red-onion}} oignon rouge très finement.",
+        "Couper {{use:topping-avocado}} avocat(s) juste avant le service et préparer {{use:topping-coriander}} de coriandre fraîche.",
+        "Mettre {{use:topping-sour-cream}} de crème fraîche/sour cream, quartiers de citron vert et salsa fumée dans des bols séparés."
       ],
       "completion": { "type": "manual", "description": "Toutes les garnitures sont prêtes et disposées pour le service" }
     },
@@ -287,8 +335,11 @@
       "summary": "10 min · juste avant le service",
       "durationMin": 10,
       "resources": ["oven"],
+      "ingredientUsage": [
+        { "id": "shell-count", "ingredientId": "hard-shells", "displayUnit": false }
+      ],
       "details": [
-        "Réchauffer environ 24 coques rigides selon les indications du paquet, idéalement 5–8 min dans un four modéré.",
+        "Réchauffer environ {{use:shell-count}} coques rigides selon les indications du paquet, idéalement 5–8 min dans un four modéré.",
         "Ne les garnir qu’au dernier moment pour conserver leur croustillant."
       ],
       "completion": { "type": "time", "description": "Coques chaudes et croustillantes" }
