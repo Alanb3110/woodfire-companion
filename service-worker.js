@@ -1,5 +1,6 @@
 const APP_VERSION = '0.3.0-dev.10';
-const CACHE_NAME = `woodfire-companion-${APP_VERSION}`;
+const CACHE_REVISION = 'ios-recipe-detail-hotfix-1';
+const CACHE_NAME = `woodfire-companion-${APP_VERSION}-${CACHE_REVISION}`;
 const APP_ASSETS = [
   './',
   './index.html',
@@ -13,6 +14,7 @@ const APP_ASSETS = [
   './js/recipe.js',
   './js/recipe-loader.js',
   './js/library.js',
+  './js/recipe-hero.js',
   './js/settings.js',
   './js/shopping.js',
   './js/prep-ui.js',
@@ -66,7 +68,7 @@ self.addEventListener('fetch', event => {
   if (requestUrl.origin !== self.location.origin) return;
 
   event.respondWith(
-    fetch(event.request)
+    fetch(event.request, { cache: 'no-store' })
       .then(response => {
         if (response.ok) {
           const copy = response.clone();
