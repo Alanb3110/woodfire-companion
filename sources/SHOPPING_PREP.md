@@ -55,9 +55,18 @@ Each entry may contain:
 - short `title`;
 - `timing` display guidance;
 - `details`;
+- optional `ingredientUsage` for quantities that must follow the selected serving count;
 - optional flag.
 
-Advance preparation is informative in the current model. It does not automatically become a planner node. If an advance-prep item later needs formal scheduling/dependencies, migrate it into planner semantics rather than duplicating schedule logic in the UI.
+Serving-aware advance-prep text uses the same `{{use:<id>}}` token contract as executable steps. `getAdvancePrep(recipe, servings)` materializes those tokens before the pre-cook UI renders the cards, so a serving change cannot leave a reference-serving marinade or preparation quantity in the reminder.
+
+This was introduced for Barbacoa V2, where the shopping list for 6 people correctly scaled the beef below the 8-person reference but the marinade reminder previously still said `2,6 kg` and displayed all reference-8 seasoning quantities.
+
+Advance preparation remains informative in the planner model. Serving-aware text does **not** automatically turn an advance-prep record into a planner node. If an item later needs formal scheduling/dependencies/resources, migrate it into planner semantics rather than duplicating schedule logic in the UI.
+
+Top-level ingredient quantities remain authoritative for shopping totals. `advancePrep.ingredientUsage` only controls instructional text and does not independently aggregate or reserve ingredients.
+
+See `sources/STEP_INGREDIENT_USAGE_V1.md`.
 
 ## Persistence
 Shopping check state uses its own local-storage namespace rather than the active cook state. A shopping reset must not clear cooking progress, temperature history or visual settings.
@@ -84,7 +93,7 @@ On the recipe/configuration page, the user should be able to answer before press
 - what ingredients/consumables do I need?;
 - which of them do I already have?;
 - what equipment/accessories do I need?;
-- is anything better prepared in advance?;
+- is anything better prepared in advance, with quantities matching my selected servings?;
 - when should I begin according to the generated plan?;
 - what exactly is in the meal?
 
