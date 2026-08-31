@@ -1,43 +1,25 @@
+import { createActiveCookController } from './js/active-cook-controller.js';
 import { loadLibrary, findLibraryRecipe } from './js/library.js';
 import { loadRecipe } from './js/recipe-loader.js';
 import { formatWoodfireSummary, scaleIngredients, validateRecipe } from './js/recipe.js';
 import { renderPreCook } from './js/prep-ui.js';
-import {
-  buildJournalEntry,
-  clearJournal,
-  createSessionId,
-  loadJournal,
-  removeJournalEntry,
-  resolveServiceStep,
-  upsertJournalEntry
-} from './js/journal.js';
+import { clearJournal, createSessionId, loadJournal } from './js/journal.js';
 import { renderJournalEntries } from './js/journal-ui.js';
-import { buildMealSchedule, recommendedStartFromPlan, resolveSessionServingTarget } from './js/meal-planner.js';
+import { recommendedStartFromPlan, resolveSessionServingTarget } from './js/meal-planner.js';
+import { getNextScheduledTask, plannedDurationMin } from './js/planner.js';
 import {
-  addStepDelay,
-  findDependencyIssues,
-  findResourceConflicts,
-  getNextScheduledTask,
-  plannedDurationMin
-} from './js/planner.js';
-import {
-  applyObservation,
-  clearPendingRecheck,
   getObservationOptions,
   observationsForStep,
   pendingRecheckDate,
   resolveObservationDelayMin
 } from './js/observations.js';
 import {
-  completeStep,
   firstKnownSessionTimestamp,
   hasSessionProgress as sessionHasProgress,
   loadSessionState,
   resetCookProgress,
-  resetStep,
   saveSessionState,
   snapshotRecipe,
-  startStep,
   stepLifecycle
 } from './js/session.js';
 import { createTemperatureController } from './js/temperature-ui.js';
@@ -52,7 +34,6 @@ let selectedRecipe = null;
 let selectedEntry = null;
 let configServings = 4;
 let configMealTime = '20:00';
-let schedule = [];
 let state = repairLoadedSession(loadSessionState());
 saveSessionState(state);
 
@@ -99,6 +80,13 @@ const temperaturePanel = $('temperature');
 const installHelpBtn = $('installHelpBtn');
 const installDialog = $('installDialog');
 
+const activeCookController = createActiveCookController({
+  getRecipe: () => recipe,
+  getState: () => state,
+  setState: next => { state = next; },
+  saveState
+});
+
 const temperatureController = createTemperatureController({
   elements: {
     input: $('temperatureInput'),
@@ -118,7 +106,7 @@ const temperatureController = createTemperatureController({
   getDefaultTarget: () => defaultTemperatureTarget(recipe) ?? 93,
   commit: () => {
     saveState();
-    syncJournal();
+    activeCookController.syncJournal();
   },
   formatTime,
   confirmAction: message => confirm(message)
@@ -236,15 +224,15 @@ function renderLibrary() {
     const art = document.createElement('div');
     art.className = `recipe-card-art theme-${entry.visual?.theme || 'embers'}`;
     if (entry.visual?.imageUrl) {
-    art.classList.add('has-image');
-    const image = document.createElement('img');
-    image.className = 'recipe-card-image';
-    image.src = entry.visual.imageUrl;
-    image.alt = '';
-    image.loading = 'lazy';
-    image.decoding = 'async';
-    art.appendChild(image);
-  }
+      art.classList.add('has-image');
+      const image = document.createElement('img');
+      image.className = 'recipe-card-image';
+      image.src = entry.visual.imageUrl;
+      image.alt = '';
+      image.loading = 'lazy';
+      image.decoding = 'async';
+      art.appendChild(image);
+    }
     const symbol = document.createElement('span');
     symbol.className = 'card-symbol';
     symbol.textContent = entry.visual?.symbol || '🔥';
@@ -450,8 +438,7 @@ async function activateRecipe(entry, loadedRecipe, resetSession) {
   state.view = 'cook';
   saveState();
   renderCookShell();
-  recomputeSchedule();
-  syncJournal();
+  activeCookController.refresh();
   renderTasks();
   if (temperatureEnabled) temperatureController.render();
   switchTab(state.activeTab || 'planning', false);
@@ -508,66 +495,8 @@ function renderCookShell() {
   temperaturePanel.hidden = !enabled;
 }
 
-function recomputeSchedule() {
-  if (!recipe) return;
-  schedule = buildMealSchedule(recipe, {
-    servings: state.servings,
-    targetServingAt: state.targetServingAt,
-    taskShifts: state.taskShifts,
-    actualStartTimes: state.started,
-    actualCompletionTimes: state.completed,
-    expectedCompletionTimes: state.rechecks
-  });
-  const dependencyIssues = findDependencyIssues(recipe, schedule);
-  const woodfireConflicts = findResourceConflicts(schedule, 'woodfire');
-  if (dependencyIssues.length) console.warn('Planning dependency issues:', dependencyIssues);
-  if (woodfireConflicts.length) console.warn('Planning Woodfire conflicts:', woodfireConflicts);
-}
-
-function serveStep() {
-  if (!recipe) return null;
-  try {
-    return resolveServiceStep(recipe);
-  } catch (error) {
-    console.warn('Service step resolution failed:', error);
-    return null;
-  }
-}
-
-function syncJournal() {
-  if (!recipe || !state.sessionId) return;
-  const serve = serveStep();
-  const servedAt = serve ? state.completed?.[serve.id] : null;
-
-  if (!servedAt) {
-    state.sessionServedAt = null;
-    removeJournalEntry(state.sessionId);
-    saveState();
-    return;
-  }
-
-  state.sessionServedAt = servedAt;
-  const entry = buildJournalEntry({ state, recipe, schedule });
-  upsertJournalEntry(entry);
-  saveState();
-}
-
 function applyStepObservation(step, option) {
-  const now = new Date();
-  if (!state.started[step.id]) state = startStep(state, step.id, now);
-  const result = applyObservation({
-    observations: state.observations,
-    rechecks: state.rechecks,
-    completed: state.completed
-  }, step, option, now);
-
-  state.observations = result.observations;
-  state.rechecks = result.rechecks;
-  state.completed = result.completed;
-  if (!state.cookStartedAt) state.cookStartedAt = result.record.timestamp;
-  saveState();
-  recomputeSchedule();
-  syncJournal();
+  activeCookController.applyStepObservation(step, option);
   renderTasks();
   renderLibrary();
 }
@@ -632,27 +561,13 @@ function renderObservationControls(detail, step) {
 }
 
 function handleStepToggle(step) {
-  const lifecycle = stepLifecycle(state, step.id);
-  const now = new Date();
-  if (lifecycle === 'done') {
-    state = resetStep(state, step.id);
-  } else if (lifecycle === 'active') {
-    state = completeStep(state, step.id, now);
-    state.rechecks = clearPendingRecheck(state.rechecks, step.id);
-  } else if (plannedDurationMin(step) > 0) {
-    state = startStep(state, step.id, now);
-  } else {
-    state = completeStep(state, step.id, now);
-    state.rechecks = clearPendingRecheck(state.rechecks, step.id);
-  }
-  saveState();
-  recomputeSchedule();
-  syncJournal();
+  activeCookController.toggleStep(step);
   renderTasks();
   renderLibrary();
 }
 
 function renderTasks() {
+  const schedule = activeCookController.getSchedule();
   taskList.innerHTML = '';
   for (const item of schedule) {
     const step = item.step;
@@ -764,6 +679,7 @@ function renderTasks() {
 }
 
 function activeScheduleItems() {
+  const schedule = activeCookController.getSchedule();
   return schedule.filter(item => state.started[item.step.id] && !state.completed[item.step.id]);
 }
 
@@ -787,6 +703,7 @@ function renderCurrentTask() {
 
 function updateNextTask() {
   if (!recipe) return;
+  const schedule = activeCookController.getSchedule();
   const next = getNextScheduledTask(schedule, state.completed, state.rechecks, state.started);
   if (!next) {
     if (activeScheduleItems().length) {
@@ -818,18 +735,7 @@ function updateNextTask() {
 }
 
 function shiftRemainingTasks(minutes) {
-  const nextTask = getNextScheduledTask(schedule, state.completed, state.rechecks, state.started);
-  if (!nextTask) return;
-
-  const pending = pendingRecheckDate(state.rechecks, nextTask.step.id);
-  if (pending) {
-    state.rechecks[nextTask.step.id] = new Date(pending.getTime() + minutes * 60000).toISOString();
-  } else {
-    state.taskShifts = addStepDelay(state.taskShifts, nextTask.step.id, minutes);
-  }
-  saveState();
-  recomputeSchedule();
-  renderTasks();
+  if (activeCookController.delayNext(minutes)) renderTasks();
 }
 
 function switchTab(tabName, persist = true) {
@@ -851,11 +757,9 @@ function updateCookTime() {
   }).toISOString();
   saveState();
   renderCookShell();
-  recomputeSchedule();
-  syncJournal();
+  activeCookController.refresh();
   renderTasks();
 }
-
 
 function bindEvents() {
   $('backToLibraryBtn').addEventListener('click', () => { renderLibrary(); showView('library'); });
@@ -874,15 +778,7 @@ function bindEvents() {
 
   resetChecklistBtn.addEventListener('click', () => {
     if (!confirm('Réinitialiser les étapes, observations et décalages du planning ?')) return;
-    state.started = {};
-    state.completed = {};
-    state.taskShifts = {};
-    state.observations = [];
-    state.rechecks = {};
-    state.sessionServedAt = null;
-    saveState();
-    recomputeSchedule();
-    syncJournal();
+    activeCookController.resetPlanning();
     renderTasks();
   });
 
