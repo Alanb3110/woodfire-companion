@@ -1,5 +1,5 @@
 const APP_VERSION = '0.3.0-dev.10';
-const CACHE_REVISION = 'recipe-view-start-hint-1';
+const CACHE_REVISION = 'stable-update-lifecycle-1';
 const CACHE_NAME = `woodfire-companion-${APP_VERSION}-${CACHE_REVISION}`;
 const APP_ASSETS = [
   './',
@@ -52,13 +52,18 @@ self.addEventListener('install', event => {
     await cache.addAll(APP_ASSETS);
     await cacheAvailableRecipeContent(cache);
   })());
-  self.skipWaiting();
+  // Do not call skipWaiting(): an update must not replace the worker that
+  // controls an already-open multi-hour cook. The new worker activates after
+  // existing controlled clients close, while its separate cache is prepared.
 });
 
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))))
   );
+  // Claim is retained so a first installation can control the already-open
+  // page as soon as activation is allowed. For updates, activation itself is
+  // deferred by the normal service-worker lifecycle until old clients close.
   self.clients.claim();
 });
 
