@@ -92,3 +92,9 @@ export function buildMealSchedule(recipe, context = {}) {
     }
   );
 }
+
+export function recommendedStartFromPlan(recipe, context = {}) {
+  const plan = buildMealSchedule(recipe, context);
+  if (!plan.length) return null;
+  return plan.reduce((earliest, item) => item.start < earliest ? item.start : earliest, plan[0].start);
+}
