@@ -1,5 +1,5 @@
 const APP_VERSION = '0.3.0-dev.10';
-const CACHE_REVISION = 'scaled-step-details-3';
+const CACHE_REVISION = 'recipe-view-start-hint-1';
 const CACHE_NAME = `woodfire-companion-${APP_VERSION}-${CACHE_REVISION}`;
 const APP_ASSETS = [
   './',
@@ -25,7 +25,6 @@ const APP_ASSETS = [
   './js/session.js',
   './js/timestamp-editor.js',
   './js/dev-tools.js',
-  './js/start-hint.js',
   './js/temperature.js',
   './js/temperature-ui.js',
   './recipes/index.json',
