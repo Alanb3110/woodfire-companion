@@ -1,5 +1,5 @@
 const APP_VERSION = '0.3.0-dev.10';
-const CACHE_REVISION = 'stable-update-lifecycle-1';
+const CACHE_REVISION = 'active-cook-controller-1';
 const CACHE_NAME = `woodfire-companion-${APP_VERSION}-${CACHE_REVISION}`;
 const APP_ASSETS = [
   './',
@@ -9,6 +9,7 @@ const APP_ASSETS = [
   './journal.css',
   './observations.css',
   './app.js',
+  './js/active-cook-controller.js',
   './js/planner.js',
   './js/meal-planner.js',
   './js/recipe.js',
