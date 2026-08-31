@@ -24,6 +24,10 @@ function byStepId(schedule, id) {
   return item;
 }
 
+function scheduleText(schedule) {
+  return schedule.flatMap(item => [item.step.summary || '', ...(item.step.details || [])]).join('\n');
+}
+
 for (const [name, path] of Object.entries(recipeFiles)) {
   test(`${name} expansion recipe satisfies Recipe Schema V1 and Planner V1`, async () => {
     const recipe = await loadJson(path);
@@ -37,6 +41,7 @@ for (const [name, path] of Object.entries(recipeFiles)) {
       assert.equal(scaleIngredients(recipe, servings).length, recipe.ingredients.length);
       const schedule = buildMealSchedule(recipe, { servings, targetServingAt });
       assert.equal(schedule.length, recipe.steps.length);
+      assert.doesNotMatch(scheduleText(schedule), /\{\{use:/, `Unresolved step quantity token at ${servings} servings.`);
       assert.deepEqual(findDependencyIssues(recipe, schedule), []);
       assert.deepEqual(findResourceConflicts(schedule, 'woodfire'), []);
     }
@@ -91,14 +96,14 @@ test('wings leaves two Woodfire branches unordered in recipe data and lets Plann
   assert.ok(wingsItem.end <= potatoesItem.start || potatoesItem.end <= wingsItem.start);
 });
 
-test('new library candidates stay coming soon until real local covers are added', async () => {
+test('planner-pattern recipes are promoted with truthful local WebP covers', async () => {
   const library = await loadJson('../recipes/index.json');
   const ids = new Set(Object.values(recipeFiles).map(path => path.match(/\/([^/]+)\.json$/)[1]));
   const entries = library.recipes.filter(entry => ids.has(entry.id));
   assert.equal(entries.length, 4);
   for (const entry of entries) {
-    assert.equal(entry.status, 'coming_soon');
+    assert.equal(entry.status, 'available');
     assert.match(entry.recipeUrl || '', /^\.\/recipes\/.+\.json$/);
-    assert.equal(entry.visual?.imageUrl, undefined);
+    assert.match(entry.visual?.imageUrl || '', /^\.\/assets\/recipes\/.+\.webp$/);
   }
 });
