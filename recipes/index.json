@@ -12,12 +12,7 @@
       "activePrepMin": 45,
       "elapsedRangeMin": [300, 360],
       "servings": { "min": 2, "max": 8, "reference": 4 },
-      "visual": {
-        "theme": "embers",
-        "symbol": "🔥",
-        "eyebrow": "SMOKER · ROAST · AIR FRY",
-        "imageUrl": "./assets/recipes/pork-belly-burnt-ends-v2.webp"
-      }
+      "visual": { "theme": "embers", "symbol": "🔥", "eyebrow": "SMOKER · ROAST · AIR FRY", "imageUrl": "./assets/recipes/pork-belly-burnt-ends-v2.webp" }
     },
     {
       "id": "sweet-savory-turkey-zucchini-gratin",
@@ -30,12 +25,7 @@
       "activePrepMin": 60,
       "elapsedRangeMin": [210, 240],
       "servings": { "min": 4, "max": 6, "reference": 5 },
-      "visual": {
-        "theme": "korean",
-        "symbol": "🍗",
-        "eyebrow": "SMOKER · ROAST · FOUR",
-        "imageUrl": "./assets/recipes/sweet-savory-turkey-zucchini-gratin.webp"
-      }
+      "visual": { "theme": "korean", "symbol": "🍗", "eyebrow": "SMOKER · ROAST · FOUR", "imageUrl": "./assets/recipes/sweet-savory-turkey-zucchini-gratin.webp" }
     },
     {
       "id": "smoked-beef-barbacoa",
@@ -48,12 +38,7 @@
       "activePrepMin": 90,
       "elapsedRangeMin": [650, 720],
       "servings": { "min": 6, "max": 8, "reference": 8 },
-      "visual": {
-        "theme": "barbacoa",
-        "symbol": "🌮",
-        "eyebrow": "GRILL · SMOKER · BRAISE",
-        "imageUrl": "./assets/recipes/smoked-beef-barbacoa.webp"
-      }
+      "visual": { "theme": "barbacoa", "symbol": "🌮", "eyebrow": "GRILL · SMOKER · BRAISE", "imageUrl": "./assets/recipes/smoked-beef-barbacoa.webp" }
     },
     {
       "id": "honey-soy-salmon-rice-asparagus",
@@ -66,12 +51,7 @@
       "activePrepMin": 30,
       "elapsedRangeMin": [60, 80],
       "servings": { "min": 2, "max": 6, "reference": 4 },
-      "visual": {
-        "theme": "korean",
-        "symbol": "🐟",
-        "eyebrow": "SMOKER · GRILL · STOVETOP",
-        "imageUrl": "./assets/recipes/honey-soy-salmon-rice-asparagus.webp"
-      }
+      "visual": { "theme": "korean", "symbol": "🐟", "eyebrow": "SMOKER · GRILL · STOVETOP", "imageUrl": "./assets/recipes/honey-soy-salmon-rice-asparagus.webp" }
     },
     {
       "id": "smoked-chicken-shawarma-potatoes",
@@ -84,12 +64,7 @@
       "activePrepMin": 45,
       "elapsedRangeMin": [105, 135],
       "servings": { "min": 2, "max": 6, "reference": 4 },
-      "visual": {
-        "theme": "barbacoa",
-        "symbol": "🌯",
-        "eyebrow": "SMOKER · GRILL · AIR FRY",
-        "imageUrl": "./assets/recipes/smoked-chicken-shawarma-potatoes.webp"
-      }
+      "visual": { "theme": "barbacoa", "symbol": "🌯", "eyebrow": "SMOKER · GRILL · AIR FRY", "imageUrl": "./assets/recipes/smoked-chicken-shawarma-potatoes.webp" }
     },
     {
       "id": "reverse-sear-beef-potatoes-pepper-sauce",
@@ -102,12 +77,7 @@
       "activePrepMin": 40,
       "elapsedRangeMin": [110, 150],
       "servings": { "min": 2, "max": 6, "reference": 4 },
-      "visual": {
-        "theme": "embers",
-        "symbol": "🥩",
-        "eyebrow": "SMOKER · AIR FRY · GRILL",
-        "imageUrl": "./assets/recipes/reverse-sear-beef-potatoes-pepper-sauce.webp"
-      }
+      "visual": { "theme": "embers", "symbol": "🥩", "eyebrow": "SMOKER · AIR FRY · GRILL", "imageUrl": "./assets/recipes/reverse-sear-beef-potatoes-pepper-sauce.webp" }
     },
     {
       "id": "smoky-honey-soy-wings-potatoes-slaw",
@@ -120,12 +90,59 @@
       "activePrepMin": 40,
       "elapsedRangeMin": [90, 120],
       "servings": { "min": 2, "max": 6, "reference": 4 },
-      "visual": {
-        "theme": "korean",
-        "symbol": "🍗",
-        "eyebrow": "AIR FRY · SMOKE · GRILL",
-        "imageUrl": "./assets/recipes/smoky-honey-soy-wings-potatoes-slaw.webp"
-      }
+      "visual": { "theme": "korean", "symbol": "🍗", "eyebrow": "AIR FRY · SMOKE · GRILL", "imageUrl": "./assets/recipes/smoky-honey-soy-wings-potatoes-slaw.webp" }
+    },
+    {
+      "id": "glazed-duck-sweet-potato-citrus",
+      "status": "available",
+      "recipeUrl": "./recipes/glazed-duck-sweet-potato-citrus.json",
+      "title": "Magret de canard laqué miel-soja-orange, patate douce & sauce agrumes",
+      "description": "Peau croustillante, laquage miel-soja-orange, patate douce rôtie et sauce agrumes sans alcool.",
+      "tags": ["Canard", "Sucré-salé", "Agrumes", "Repas complet"],
+      "difficulty": "Intermédiaire",
+      "activePrepMin": 40,
+      "elapsedRangeMin": [90, 120],
+      "servings": { "min": 2, "max": 4, "reference": 4 },
+      "visual": { "theme": "embers", "symbol": "🦆", "eyebrow": "AIR FRY · STOVETOP · BAKE/ROAST", "imageUrl": "./assets/recipes/glazed-duck-sweet-potato-citrus.webp" }
+    },
+    {
+      "id": "smoky-bbq-ribs-mac-slaw",
+      "status": "available",
+      "recipeUrl": "./recipes/smoky-bbq-ribs-mac-slaw.json",
+      "title": "Ribs BBQ fumées, mac & cheese crémeux & coleslaw",
+      "description": "Ribs fumées puis attendries à couvert, glacées au BBQ avec mac & cheese crémeux et coleslaw frais.",
+      "tags": ["Porc", "Fumé", "BBQ", "Repas complet"],
+      "difficulty": "Intermédiaire",
+      "activePrepMin": 60,
+      "elapsedRangeMin": [300, 390],
+      "servings": { "min": 4, "max": 6, "reference": 4 },
+      "visual": { "theme": "embers", "symbol": "🍖", "eyebrow": "SMOKER · BAKE/ROAST · STOVETOP", "imageUrl": "./assets/recipes/smoky-bbq-ribs-mac-slaw.webp" }
+    },
+    {
+      "id": "charred-halloumi-veg-couscous",
+      "status": "available",
+      "recipeUrl": "./recipes/charred-halloumi-veg-couscous.json",
+      "title": "Halloumi grillé, légumes méditerranéens & couscous citronné",
+      "description": "Halloumi doré, légumes grillés, couscous citronné et sauce yaourt aux herbes.",
+      "tags": ["Végétarien", "Grill", "Rapide", "Repas complet"],
+      "difficulty": "Facile",
+      "activePrepMin": 35,
+      "elapsedRangeMin": [50, 70],
+      "servings": { "min": 2, "max": 6, "reference": 4 },
+      "visual": { "theme": "barbacoa", "symbol": "🧀", "eyebrow": "GRILL · PASSIVE · FRIDGE", "imageUrl": "./assets/recipes/charred-halloumi-veg-couscous.webp" }
+    },
+    {
+      "id": "glazed-chicken-skewers-rice",
+      "status": "available",
+      "recipeUrl": "./recipes/glazed-chicken-skewers-rice.json",
+      "title": "Brochettes de poulet teriyaki, légumes grillés & riz",
+      "description": "Poulet laqué soja-miel-gingembre, légumes grillés et riz jasmin préparé en parallèle.",
+      "tags": ["Poulet", "Brochettes", "Sucré-salé", "Repas complet"],
+      "difficulty": "Facile",
+      "activePrepMin": 40,
+      "elapsedRangeMin": [70, 95],
+      "servings": { "min": 2, "max": 6, "reference": 4 },
+      "visual": { "theme": "korean", "symbol": "🍢", "eyebrow": "GRILL · STOVETOP · TEMPÉRATURE", "imageUrl": "./assets/recipes/glazed-chicken-skewers-rice.webp" }
     }
   ]
 }
