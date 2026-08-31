@@ -97,6 +97,7 @@ After the first successful online load, the service worker caches the applicatio
 - recipe-version-scoped shopping progress;
 - advance-prep and equipment lists;
 - 24-hour serving-time selector;
+- planner-derived recommended start time;
 - active-cook resume path;
 - local cook journal.
 
@@ -150,8 +151,7 @@ woodfire-companion/
 │   ├── journal-ui.js
 │   ├── timestamp-editor.js
 │   ├── dev-tools.js
-│   ├── settings.js
-│   └── start-hint.js
+│   └── settings.js
 ├── assets/
 │   └── recipes/                 # local illustrated recipe covers
 ├── recipes/

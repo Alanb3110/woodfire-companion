@@ -12,7 +12,7 @@ import {
   upsertJournalEntry
 } from './js/journal.js';
 import { renderJournalEntries } from './js/journal-ui.js';
-import { buildMealSchedule, resolveSessionServingTarget } from './js/meal-planner.js';
+import { buildMealSchedule, recommendedStartFromPlan, resolveSessionServingTarget } from './js/meal-planner.js';
 import {
   addStepDelay,
   findDependencyIssues,
@@ -389,12 +389,14 @@ function renderScaledRecipeDetails() {
 
   renderPreCook(selectedRecipe, configServings, formatIngredientQuantity);
 
-  const elapsedRange = selectedRecipe.timing?.elapsedRangeMin || [0, 0];
-  const planningElapsed = elapsedRange[1] ?? elapsedRange[0] ?? 0;
-  const [hour, minute] = configMealTime.split(':').map(Number);
-  const service = new Date(2000, 0, 1, hour, minute);
-  service.setMinutes(service.getMinutes() - planningElapsed);
-  startTimeHint.textContent = `Début conseillé au plus tard vers ${formatTime(service)} · prévoir davantage de marge pour une cuisson longue.`;
+  const firstStart = recommendedStartFromPlan(selectedRecipe, {
+    servings: configServings,
+    mealTime: configMealTime,
+    referenceDate: new Date()
+  });
+  startTimeHint.textContent = firstStart
+    ? `Début conseillé vers ${formatTime(firstStart)} · calculé depuis le planning complet.`
+    : 'Aucune heure de début calculable pour ce repas.';
 }
 
 function changeServings(delta) {

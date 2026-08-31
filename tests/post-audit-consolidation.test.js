@@ -2,15 +2,17 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-const [indexHtml, serviceWorker, prepUi] = await Promise.all([
+const [indexHtml, app, serviceWorker, prepUi] = await Promise.all([
   readFile(new URL('../index.html', import.meta.url), 'utf8'),
+  readFile(new URL('../app.js', import.meta.url), 'utf8'),
   readFile(new URL('../service-worker.js', import.meta.url), 'utf8'),
   readFile(new URL('../js/prep-ui.js', import.meta.url), 'utf8')
 ]);
 
-test('planner-derived start hint is loaded and available offline', () => {
-  assert.match(indexHtml, /\.\/js\/start-hint\.js/);
-  assert.match(serviceWorker, /\.\/js\/start-hint\.js/);
+test('planner-derived start hint is rendered directly and remains available offline', () => {
+  assert.doesNotMatch(indexHtml, /\.\/js\/start-hint\.js/);
+  assert.match(app, /recommendedStartFromPlan\(selectedRecipe,/);
+  assert.match(serviceWorker, /\.\/js\/meal-planner\.js/);
 });
 
 test('shopping checkbox persistence is scoped by recipe content version', () => {
