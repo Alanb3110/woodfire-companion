@@ -54,6 +54,74 @@
         "eyebrow": "GRILL · SMOKER · BRAISE",
         "imageUrl": "./assets/recipes/smoked-beef-barbacoa.webp"
       }
+    },
+    {
+      "id": "honey-soy-salmon-rice-asparagus",
+      "status": "coming_soon",
+      "recipeUrl": "./recipes/honey-soy-salmon-rice-asparagus.json",
+      "title": "Saumon laqué soja-miel, asperges & riz citronné",
+      "description": "Repas rapide piloté par température avec riz préparé en parallèle et finition des asperges au Woodfire.",
+      "tags": ["Saumon", "Rapide", "Sucré-salé", "Repas complet"],
+      "difficulty": "Facile",
+      "activePrepMin": 30,
+      "elapsedRangeMin": [60, 80],
+      "servings": { "min": 2, "max": 6, "reference": 4 },
+      "visual": {
+        "theme": "korean",
+        "symbol": "🐟",
+        "eyebrow": "SMOKER · GRILL · STOVETOP"
+      }
+    },
+    {
+      "id": "smoked-chicken-shawarma-potatoes",
+      "status": "coming_soon",
+      "recipeUrl": "./recipes/smoked-chicken-shawarma-potatoes.json",
+      "title": "Poulet shawarma fumé, pommes de terre épicées & sauce yaourt",
+      "description": "Marinade en avance, fumage court puis grill, potatoes croustillantes et sauce yaourt préparée en parallèle.",
+      "tags": ["Poulet", "Shawarma", "Prépa en avance", "Repas complet"],
+      "difficulty": "Facile",
+      "activePrepMin": 45,
+      "elapsedRangeMin": [105, 135],
+      "servings": { "min": 2, "max": 6, "reference": 4 },
+      "visual": {
+        "theme": "barbacoa",
+        "symbol": "🌯",
+        "eyebrow": "SMOKER · GRILL · AIR FRY"
+      }
+    },
+    {
+      "id": "reverse-sear-beef-potatoes-pepper-sauce",
+      "status": "coming_soon",
+      "recipeUrl": "./recipes/reverse-sear-beef-potatoes-pepper-sauce.json",
+      "title": "Bœuf reverse-sear, grenailles croustillantes & sauce poivre",
+      "description": "Fumage doux, passage Air Fry puis saisie très chaude avec pilotage à la température et sauce au poivre sans alcool.",
+      "tags": ["Bœuf", "Reverse-sear", "Température", "Repas complet"],
+      "difficulty": "Intermédiaire",
+      "activePrepMin": 40,
+      "elapsedRangeMin": [110, 150],
+      "servings": { "min": 2, "max": 6, "reference": 4 },
+      "visual": {
+        "theme": "embers",
+        "symbol": "🥩",
+        "eyebrow": "SMOKER · AIR FRY · GRILL"
+      }
+    },
+    {
+      "id": "smoky-honey-soy-wings-potatoes-slaw",
+      "status": "coming_soon",
+      "recipeUrl": "./recipes/smoky-honey-soy-wings-potatoes-slaw.json",
+      "title": "Wings miel-soja fumées, potatoes croustillantes & coleslaw",
+      "description": "Deux branches concurrentes pour le Woodfire afin d’éprouver la résolution de conflit de ressource avant une finition caramélisée.",
+      "tags": ["Poulet", "Wings", "Conflit Woodfire", "Repas complet"],
+      "difficulty": "Facile",
+      "activePrepMin": 40,
+      "elapsedRangeMin": [90, 120],
+      "servings": { "min": 2, "max": 6, "reference": 4 },
+      "visual": {
+        "theme": "korean",
+        "symbol": "🍗",
+        "eyebrow": "AIR FRY · SMOKE · GRILL"
+      }
     }
   ]
 }
