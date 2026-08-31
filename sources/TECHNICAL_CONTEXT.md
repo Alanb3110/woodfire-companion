@@ -199,6 +199,10 @@ Static shell/modules are listed in `APP_ASSETS`, including session, meal-planner
 
 `recipes/index.json` remains the source of truth for recipe discovery and recipe-JSON offline preloading.
 
+Service-worker updates use the normal waiting lifecycle rather than `skipWaiting()`. A newly deployed worker prepares a separate cache but does not replace the worker controlling an already-open cook. It activates only after existing controlled clients close. `clients.claim()` remains in activation so the first installation can control the already-open page once activation is allowed. Old caches are removed only during activation of the new worker.
+
+This lifecycle is intentional for long cooks: an active session should continue with one application generation instead of being forced onto a newly deployed shell mid-cook. A fresh app launch after the old client closes receives the new worker/cache generation.
+
 Assets must remain compatible with the `/woodfire-companion/` GitHub Pages subpath and installed iPhone/Safari PWA behavior.
 
 ## Testing and CI
@@ -210,12 +214,13 @@ npm test
 
 GitHub Actions runs the suite on `main`, supported feature/fix/chore pushes and pull requests.
 
-Coverage includes hardened recipe contracts, generic available-recipe acceptance, actionable ingredient quantities, structured step-usage validation/materialization, Pork Belly 2/4/6/8-serving quantity regressions, recipe-specific timelines, shopping/pre-cook, offline caching, version consistency, DOM contracts, dependency/resource planning, buffers/service slippage, actual start/completion propagation, session v1→v2→v3 migration, step lifecycle transitions, frozen recipe snapshots, timestamp correction, observation/recheck behavior, journal v1→v2 migration, feedback persistence/resync protection, versioned journal JSON export/import and safe merge/rejection behavior, test-session exclusion, active-cook wiring, planner-derived pre-cook start guidance, optional temperature capability semantics and extracted temperature validation/measurement/CSV behavior.
+Coverage includes hardened recipe contracts, generic available-recipe acceptance, actionable ingredient quantities, structured step-usage validation/materialization, Pork Belly 2/4/6/8-serving quantity regressions, recipe-specific timelines, shopping/pre-cook, offline caching, conservative service-worker update lifecycle, version consistency, DOM contracts, dependency/resource planning, buffers/service slippage, actual start/completion propagation, session v1→v2→v3 migration, step lifecycle transitions, frozen recipe snapshots, timestamp correction, observation/recheck behavior, journal v1→v2 migration, feedback persistence/resync protection, versioned journal JSON export/import and safe merge/rejection behavior, test-session exclusion, active-cook wiring, planner-derived pre-cook start guidance, optional temperature capability semantics and extracted temperature validation/measurement/CSV behavior.
 
 ## Current technical debt / next work
 1. Continue splitting active-cook/session orchestration out of the growing `app.js` without introducing a framework; temperature orchestration is now extracted. Avoid reintroducing DOM-observer sidecars for state already owned by `app.js`.
-2. Migrate scaling-sensitive prose in other recipes to structured step usage only where it materially prevents serving-count ambiguity; do not convert text that has no quantity dependency.
-3. Add a flexible planning-window concept only when a real recipe demonstrates the need.
-4. Extend conflict handling beyond Woodfire only when real meals demonstrate a shared-resource collision.
-5. Introduce reusable external components/batching only when real recipes prove the need.
-6. Add predictive ETA later from temperature/history with uncertainty, never false precision.
+2. Validate the conservative service-worker lifecycle on installed iPhone/Safari with an active cook across offline/online and a deployed update.
+3. Migrate scaling-sensitive prose in other recipes to structured step usage only where it materially prevents serving-count ambiguity; do not convert text that has no quantity dependency.
+4. Add a flexible planning-window concept only when a real recipe demonstrates the need.
+5. Extend conflict handling beyond Woodfire only when real meals demonstrate a shared-resource collision.
+6. Introduce reusable external components/batching only when real recipes prove the need.
+7. Add predictive ETA later from temperature/history with uncertainty, never false precision.
