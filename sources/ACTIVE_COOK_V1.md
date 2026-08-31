@@ -5,6 +5,20 @@ The active-cooking UI is connected to Planner V1 and exposes explicit step lifec
 
 The objective is behavioral: actual starts/completions become planner facts, temporary rechecks remain expectations, and only future work that truly depends on those facts is moved.
 
+## Architecture boundary
+`js/active-cook-controller.js` owns active-cook state orchestration without owning DOM rendering. It is the single coordinator for:
+- schedule recomputation from the current session facts;
+- planner feedback from actual starts/completions and expected rechecks;
+- step lifecycle transitions;
+- structured observation application;
+- +5/+10/+15 next-action delays;
+- planning reset;
+- cook-journal synchronization.
+
+`app.js` remains the top-level UI/bootstrap owner and renders task cards, the current-action card and the next-action countdown from the controller's current schedule. UI events delegate state transitions back to the controller rather than reproducing planner/session mutation logic in the DOM layer.
+
+The controller deliberately has no DOM dependency. Its state callbacks make the orchestration path directly testable without a browser or framework.
+
 ## Step lifecycle
 Session V2 distinguishes:
 - `upcoming`;
@@ -86,7 +100,10 @@ Expanded task cards show:
 ## Temperature logging
 Temperature logging remains independent and low-friction. A logged temperature does not automatically complete a step; the cook still confirms readiness.
 
+Temperature persistence can request journal synchronization through the same active-cook controller, so the journal is not maintained through a second orchestration path.
+
 ## Current limitations / next work
+- Active-cook DOM rendering still lives in `app.js`; extract it only as a cohesive UI controller if the file continues to grow materially.
 - No background/push notification fires when an active phase or recheck becomes due.
 - No temperature sample automatically chooses an observation outcome.
 - Observation labels remain derived rather than curated per recipe.

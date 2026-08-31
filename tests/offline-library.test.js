@@ -19,6 +19,7 @@ test('service worker does not hard-code executable recipe or cover filenames', (
 
 test('offline shell carries an explicit cache revision and bypasses stale HTTP cache', () => {
   assert.match(serviceWorker, /const CACHE_REVISION = '[^']+'/);
+  assert.match(serviceWorker, /'\.\/js\/active-cook-controller\.js'/);
   assert.match(serviceWorker, /'\.\/js\/meal-planner\.js'/);
   assert.match(serviceWorker, /'\.\/js\/step-details\.js'/);
   assert.doesNotMatch(serviceWorker, /'\.\/js\/start-hint\.js'/);
