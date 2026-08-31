@@ -57,7 +57,7 @@
     },
     {
       "id": "honey-soy-salmon-rice-asparagus",
-      "status": "coming_soon",
+      "status": "available",
       "recipeUrl": "./recipes/honey-soy-salmon-rice-asparagus.json",
       "title": "Saumon laqué soja-miel, asperges & riz citronné",
       "description": "Repas rapide piloté par température avec riz préparé en parallèle et finition des asperges au Woodfire.",
@@ -69,12 +69,13 @@
       "visual": {
         "theme": "korean",
         "symbol": "🐟",
-        "eyebrow": "SMOKER · GRILL · STOVETOP"
+        "eyebrow": "SMOKER · GRILL · STOVETOP",
+        "imageUrl": "./assets/recipes/honey-soy-salmon-rice-asparagus.webp"
       }
     },
     {
       "id": "smoked-chicken-shawarma-potatoes",
-      "status": "coming_soon",
+      "status": "available",
       "recipeUrl": "./recipes/smoked-chicken-shawarma-potatoes.json",
       "title": "Poulet shawarma fumé, pommes de terre épicées & sauce yaourt",
       "description": "Marinade en avance, fumage court puis grill, potatoes croustillantes et sauce yaourt préparée en parallèle.",
@@ -86,12 +87,13 @@
       "visual": {
         "theme": "barbacoa",
         "symbol": "🌯",
-        "eyebrow": "SMOKER · GRILL · AIR FRY"
+        "eyebrow": "SMOKER · GRILL · AIR FRY",
+        "imageUrl": "./assets/recipes/smoked-chicken-shawarma-potatoes.webp"
       }
     },
     {
       "id": "reverse-sear-beef-potatoes-pepper-sauce",
-      "status": "coming_soon",
+      "status": "available",
       "recipeUrl": "./recipes/reverse-sear-beef-potatoes-pepper-sauce.json",
       "title": "Bœuf reverse-sear, grenailles croustillantes & sauce poivre",
       "description": "Fumage doux, passage Air Fry puis saisie très chaude avec pilotage à la température et sauce au poivre sans alcool.",
@@ -103,12 +105,13 @@
       "visual": {
         "theme": "embers",
         "symbol": "🥩",
-        "eyebrow": "SMOKER · AIR FRY · GRILL"
+        "eyebrow": "SMOKER · AIR FRY · GRILL",
+        "imageUrl": "./assets/recipes/reverse-sear-beef-potatoes-pepper-sauce.webp"
       }
     },
     {
       "id": "smoky-honey-soy-wings-potatoes-slaw",
-      "status": "coming_soon",
+      "status": "available",
       "recipeUrl": "./recipes/smoky-honey-soy-wings-potatoes-slaw.json",
       "title": "Wings miel-soja fumées, potatoes croustillantes & coleslaw",
       "description": "Deux branches concurrentes pour le Woodfire afin d’éprouver la résolution de conflit de ressource avant une finition caramélisée.",
@@ -120,7 +123,8 @@
       "visual": {
         "theme": "korean",
         "symbol": "🍗",
-        "eyebrow": "AIR FRY · SMOKE · GRILL"
+        "eyebrow": "AIR FRY · SMOKE · GRILL",
+        "imageUrl": "./assets/recipes/smoky-honey-soy-wings-potatoes-slaw.webp"
       }
     }
   ]
