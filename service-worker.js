@@ -1,5 +1,5 @@
 const APP_VERSION = '0.3.0-dev.10';
-const CACHE_REVISION = 'fix-shawarma-wings-covers-1';
+const CACHE_REVISION = 'fix-beef-reverse-sear-cover-1';
 const CACHE_NAME = `woodfire-companion-${APP_VERSION}-${CACHE_REVISION}`;
 const APP_ASSETS = [
   './',
