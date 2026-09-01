@@ -46,11 +46,7 @@ It contains:
 The active cook stores a detached recipe snapshot so later deployments cannot silently mutate a cook already in progress.
 
 ## Components
-Components group one meal into coherent parts such as:
-- main;
-- side;
-- sauce;
-- garnish/meal-level finishing work.
+Components group one meal into coherent parts such as main, side, sauce and whole-meal finishing work.
 
 Current components are embedded grouping semantics. They are not yet independently swappable external modules. Do not extract reusable component files until multiple real recipes demonstrate that the added complexity pays for itself.
 
@@ -66,31 +62,44 @@ Each ingredient may include:
 - optional flag;
 - preparation note.
 
-Implemented scaling patterns include:
-- `linear`;
-- `fixed`;
-- `step` with serving breakpoints;
-- `range`;
-- `to_taste`.
+Implemented scaling patterns include `linear`, `fixed`, `step`, `range` and `to_taste`.
 
 Not every quantity should scale linearly. Meat geometry, pan capacity, minimum sauce volume, eggs, lemons and batch constraints may require fixed/step/range semantics.
 
 For `available` recipes, user-facing ingredients must still expose an actionable baseline quantity/range; an ingredient list consisting only of `au goût` guidance is not acceptable executable content.
 
-## Structured active-step ingredient usage
-Top-level shopping quantities are not sufficient when active-cook prose contains serving-sensitive quantities.
+## Structured ingredient usage in instructions
+Top-level shopping quantities are not sufficient when user-facing prose contains serving-sensitive quantities.
 
-`step.ingredientUsage` associates a step-local use with a top-level ingredient and optional use-specific quantity/scaling rule. Step summaries/details reference those uses through `{{use:...}}` tokens.
+Local `ingredientUsage` records associate an instructional use with a top-level ingredient and optional use-specific quantity/scaling rule. Supported V1 contexts are:
+- executable steps (`summary` / `details[]`);
+- advance-prep items (`details`).
 
-Before planning/rendering, `js/step-details.js` materializes those tokens for the selected serving count.
+Text references local usage ids through `{{use:...}}` tokens. `js/step-details.js` validates and materializes those tokens for the selected serving count.
 
 Rules:
 - top-level ingredients remain authoritative for shopping totals;
-- per-step usage is instructional metadata, not a second shopping aggregator;
-- use structured step quantities only where serving count materially changes the instruction;
-- generated active-cook text must contain no unresolved quantity tokens.
+- local usage is instructional metadata, not a second shopping aggregator;
+- use structured quantities only where servings materially change the instruction;
+- step and advance-prep text must contain no unresolved quantity tokens after materialization;
+- changing unit requires an explicit converted quantity;
+- local `step` breakpoints must cover `servings.max`.
+
+This closes the mismatch where shopping could scale while a marinade/preparation reminder remained fixed at reference servings.
 
 See `sources/STEP_INGREDIENT_USAGE_V1.md`.
+
+## Advance preparation
+`advancePrep` is pre-cook guidance, not hidden planner work.
+
+An advance-prep item may include:
+- stable id/title;
+- timing guidance;
+- details;
+- optional flag;
+- `ingredientUsage` for serving-sensitive preparation text.
+
+`getAdvancePrep(recipe, servings)` materializes those quantities for the current configuration before rendering. If advance work needs dependencies/resources/replanning, model it as a real planner step instead.
 
 ## Step
 A step is an executable planning unit rather than a paragraph of recipe prose.
@@ -113,22 +122,14 @@ A step may contain:
 A nominal duration supports scheduling; the real completion criterion remains authoritative during cooking.
 
 ## Dependencies
-Current dependency records express relations such as:
-- `after_finish`;
-- `after_start`;
-- optional lag in minutes.
+Current dependency records express `after_finish` or `after_start` plus optional lag.
 
 Recipe validation rejects missing references/cycles and anchored recipes with disconnected executable work where that would make planning ambiguous.
 
 Runtime delays do not rewrite dependencies. The planner recomputes unfinished work from actual facts plus the same dependency graph.
 
 ## Resource semantics
-Current resource vocabulary may include:
-- `woodfire`;
-- `oven`;
-- `stovetop`;
-- `fridge`;
-- `passive`.
+Current resource vocabulary may include `woodfire`, `oven`, `stovetop`, `fridge` and `passive`.
 
 The Woodfire is currently the only automatically conflict-resolved exclusive resource. Independent Woodfire branches are allowed; Planner V1 may choose their non-overlapping order without fake dependencies.
 
@@ -147,41 +148,14 @@ Every Woodfire reservation explicitly carries hardware state rather than relying
 The active-cook UI derives the hardware summary from this structure.
 
 ## Completion criteria
-Supported semantic patterns include:
-
-### Manual/checkpoint
-A user confirms a prep/milestone action.
-
-### Appearance
-Example: surface deeply browned/caramelized.
-
-### Tenderness
-Example: probe enters with little resistance.
-
-### Temperature
-Core target where temperature is the decisive criterion.
-
-### Combined/state-driven
-A nominal duration/temperature may guide the cook while tenderness/appearance remains authoritative.
+Supported semantic patterns include manual/checkpoint, appearance, tenderness, temperature and combined/state-driven completion.
 
 Safety-critical fixed temperatures are verified against authoritative current sources before encoding them as recipe rules.
 
 ## Observation / recheck model
 Observation-driven cooking is implemented.
 
-A step may expose recheck behavior. The active cook derives practical options such as:
-- `Encore ferme`;
-- `Presque prêt`;
-- `Très tendre`;
-- temperature equivalents around the declared target.
-
-A not-ready outcome:
-1. records the observation timestamp;
-2. keeps the step incomplete;
-3. creates a future recheck timestamp;
-4. passes that expected completion back into the planner.
-
-A ready outcome records actual completion and clears the pending recheck.
+A not-ready outcome records the observation, keeps the step incomplete, creates a future recheck and passes expected completion back into the planner. A ready outcome records actual completion and clears the pending recheck.
 
 Planner buffers may absorb a limited recheck delay before dependent work/service moves.
 
@@ -203,7 +177,7 @@ Legacy preferred-start offsets are no longer required by the Pork Belly referenc
 See `sources/PLANNER_V1.md`.
 
 ## Serving capacity
-Ingredient and structured step quantities scale within the declared serving range, but Planner V1 does not synthesize additional batches or automatically alter durations from servings.
+Top-level ingredient quantities, advance-prep quantities and structured active-step quantities may scale within the declared serving range, but Planner V1 does not synthesize additional batches or automatically alter durations from servings.
 
 Therefore `servings.max` must remain within one credible execution structure. If more servings require another Woodfire batch, additional vessel cycle or materially different timing, restrict the advertised range until batching semantics exist.
 
@@ -214,7 +188,7 @@ Current output includes:
 - scaled categorized ingredients;
 - optional markers;
 - recipe-specific consumables;
-- advance-prep reminders;
+- serving-aware advance-prep reminders where structured usage is declared;
 - equipment/accessory requirements;
 - planner-derived recommended start time.
 
@@ -226,14 +200,14 @@ Three kinds of version/maturity information must not be conflated:
 - recipe `version` — curated content version stored in cook history/snapshots;
 - manifest `qualification` — real-cook maturity of current content/process.
 
-Runtime facts such as actual starts/completions, observations, rechecks and measurements belong to the session/journal, not to the curated recipe JSON.
+Runtime facts such as actual starts/completions, observations, rechecks and measurements belong to the session/journal, not to curated recipe JSON.
 
 ## Validation gates
 Before an entry becomes `available`, the generic contract verifies at least:
 - unique/coherent ids and component ownership;
 - valid serving bounds;
 - ingredient/scaling structures;
-- structured step quantity materialization;
+- structured step **and advance-prep** quantity materialization;
 - valid dependencies/no cycles;
 - valid completion/recheck semantics;
 - explicit Woodfire state/reservation consistency;
