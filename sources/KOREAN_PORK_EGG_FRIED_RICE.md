@@ -28,7 +28,10 @@ The fried-rice card defines a 2-person gochujang version based on:
 - neutral oil;
 - soy sauce, rice vinegar/lime and sesame oil;
 - gochujang sauce;
-- 150–250 g Korean pulled pork as an optional/add-on style protein in the user’s intended modular version.
+- 150–250 g Korean pulled pork;
+- bacon as an additional optional suggestion on the original card.
+
+User feedback on 2026-09-01 clarified that bacon was never used in practice and that the pulled pork was sufficient. Woodfire Companion therefore deliberately omits bacon entirely from the recipe, shopping list and instructions.
 
 ## Product modeling decision
 The two dishes are **not** encoded as one meal recipe.
@@ -57,7 +60,8 @@ This means the user’s recollection is essentially correct: the gochujang varia
 
 Optional protein:
 - 150–250 g Korean pulled pork for the 2-person reference serving;
-- added near the end only to reheat, ideally with a small amount of cooking juice.
+- added near the end only to reheat, ideally with a small amount of cooking juice;
+- no bacon option in the application.
 
 The fried rice remains fully executable without either optional ingredient.
 
