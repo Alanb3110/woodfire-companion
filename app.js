@@ -35,7 +35,6 @@ let selectedEntry = null;
 let configServings = 4;
 let configMealTime = '20:00';
 let state = repairLoadedSession(loadSessionState());
-saveSessionState(state);
 
 const $ = id => document.getElementById(id);
 const appError = $('appError');

@@ -19,6 +19,14 @@ test('cook session state carries stable journal and absolute serving metadata', 
   assert.match(appJs, /sessionStartedAt:\s*state\.sessionStartedAt/);
 });
 
+test('startup does not overwrite an unreadable or future-version session with defaults', () => {
+  assert.match(appJs, /let state = repairLoadedSession\(loadSessionState\(\)\);/);
+  assert.doesNotMatch(
+    appJs,
+    /let state = repairLoadedSession\(loadSessionState\(\)\);\s*saveSessionState\(state\);/
+  );
+});
+
 test('replanning preserves the absolute serving date through the active-cook controller', () => {
   assert.match(controllerJs, /schedule = buildMealSchedule\(recipe, \{/);
   assert.match(controllerJs, /targetServingAt:\s*state\.targetServingAt/);
