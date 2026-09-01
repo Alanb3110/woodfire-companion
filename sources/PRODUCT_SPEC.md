@@ -6,7 +6,7 @@ This file is the current product source of truth for Woodfire Companion.
 ## Product definition
 Woodfire Companion is an illustrated recipe library plus a meal-execution engine for Ninja Woodfire users.
 
-The user chooses what to cook; the application converts that choice into a scaled shopping list, a resource-aware schedule and a low-friction active-cooking interface.
+The user chooses what to cook; the application converts that choice into scaled ingredients/shopping, advance preparation, a resource-aware schedule and a low-friction active-cooking interface.
 
 The key product idea is:
 
@@ -14,264 +14,283 @@ The key product idea is:
 
 ## Canonical user flow
 1. Browse an illustrated recipe/meal library.
-2. Open a recipe card and review general information, ingredients, preparation time, cooking time, difficulty and expected result.
-3. Choose number of servings.
-4. Choose desired serving time.
-5. Optionally choose supported meal components/variants.
-6. Generate:
+2. See whether a recipe is technically executable and how far it has been qualified by real cooking.
+3. Open a recipe and review meal composition, timing, difficulty and expected result.
+4. Choose servings.
+5. Choose desired serving time.
+6. Review generated:
    - scaled ingredients;
-   - consolidated shopping list;
+   - categorized shopping checklist;
    - advance-prep reminders;
    - equipment/accessory requirements;
-   - full cooking plan.
+   - planner-derived recommended start.
 7. Start cooking.
-8. Follow time-stamped cards with short summaries and expandable detail.
-9. Record observations and temperatures with minimal interaction.
-10. Let actual progress adjust the unfinished plan when required.
-11. Finish the meal and retain a cook journal/session record.
+8. Follow time-stamped cards with concise summaries and expandable detail.
+9. Start/finish real phases, record observations/rechecks and log temperatures with minimal interaction.
+10. Let actual progress adjust unfinished dependent work when required.
+11. Serve the meal and retain the session in the local Cook Journal.
+12. Feed useful real-cook findings back into curated recipe revisions and qualification.
+
+## Current product maturity
+The reusable V1 foundation is implemented rather than aspirational.
+
+Current merged capabilities include:
+- illustrated manifest-driven multi-recipe library;
+- 11 executable meals;
+- servings and serving-time configuration;
+- ingredient scaling and categorized shopping/prep;
+- planner-derived recommended start time;
+- dependency-aware serving-time planning;
+- planning buffers and Woodfire exclusive-resource conflict resolution;
+- active-cook `upcoming / active / done` lifecycle with separate actual starts/completions;
+- observation-driven rechecks;
+- dependency-aware replanning from runtime facts;
+- optional fast temperature tracking;
+- versioned local active sessions with frozen recipe snapshots;
+- local Cook Journal with rating/notes and JSON backup/restore;
+- offline PWA behavior and conservative service-worker updates;
+- generic CI acceptance for every executable recipe.
+
+The main remaining product risk is **real-cook qualification and field usability**, not construction of the basic planner.
 
 ## Library experience
-Recipe cards should be visual and easy to scan.
+Recipe cards are visual and easy to scan.
 
-Useful metadata:
-- hero illustration/image;
-- title;
-- short description;
-- reference servings;
-- active preparation time;
-- approximate elapsed time;
+Useful metadata includes:
+- local hero image;
+- title/description;
+- reference/supported servings;
+- active-prep and elapsed-time estimates;
 - difficulty;
 - major Woodfire modes;
-- tags such as beef, poultry, fish, long cook, quick, smoked, entertaining.
+- food/method tags;
+- real-cook qualification.
 
-The first version only needs a small high-quality library. Quality and executable planning matter more than recipe count.
+Quality and executable planning remain more important than recipe count.
+
+## Availability vs culinary qualification
+`recipes/index.json` separates two concepts.
+
+### Availability
+- `available` — complete technical content that can execute through the generic app pipeline;
+- `coming_soon` — visible but not yet executable product content.
+
+### Qualification
+Every `available` recipe carries:
+- `untested` — schema/planner/offline-valid, representative real cook still required;
+- `test_cooked` — a real-cooked practical baseline exists;
+- `validated` — documented real-cook feedback has been reviewed/incorporated into current content/process.
+
+Automated tests can prove technical executability; they cannot prove taste, real timing, ingredient variability or cook ergonomics.
+
+Current baseline:
+- Pork Belly Burnt Ends — `validated`;
+- turkey + zucchini gratin — `test_cooked`;
+- smoked beef barbacoa — `test_cooked`;
+- the eight 2026-08-31 expansion meals — `untested` until representative real cooks are recorded.
+
+See `sources/RECIPE_QUALIFICATION_V1.md`.
 
 ## Meal composition
-A meal can eventually contain reusable components:
+A meal contains embedded logical components such as:
 - main;
 - side;
 - sauce;
 - garnish/finishing component.
 
-Example:
-- Pork Belly Burnt Ends;
-- crispy smashed grenaille potatoes;
-- fresh lemon-yogurt sauce.
-
-Components may be replaceable while the planner still treats the selected combination as one meal.
-
-This modularity is desirable but should not block the first multi-recipe release.
+Components are currently grouping semantics inside one meal JSON. They may become reusable/swappable only when multiple real meals demonstrate a useful reuse pattern. Do not over-engineer modularity prematurely.
 
 ## Scaling and configuration
-Inputs:
-- servings;
-- desired serving time;
-- optional variants/components where defined by recipe data.
+Current user inputs:
+- servings within the recipe's declared supported range;
+- desired serving time.
 
-Ingredient scaling should use explicit quantity rules. Not everything scales linearly: cooking vessels, pellet quantity, minimum sauce quantities, seasoning-to-taste items and batch capacity may require caps, steps or notes.
+Ingredient scaling uses explicit rules. Not everything scales linearly: meat geometry, cooking vessels, pellet quantities, minimum sauce volumes, eggs/lemons and batch capacity may require fixed, step or range semantics.
 
-## Shopping list
-The app should produce one consolidated list for the selected meal and serving count.
+Serving-sensitive quantities used inside active-cook prose are materialized from structured step ingredient usage rather than being hard-coded at reference servings.
 
-Requirements:
-- aggregate duplicate ingredients across components;
-- preserve useful units;
-- group by practical category where possible (meat, produce, dairy, pantry, etc.);
-- provide checkboxes;
-- distinguish optional ingredients;
-- include pellets or other consumables when recipe-specific.
+Planner V1 does not create extra batches or automatically alter durations from serving count. Therefore each advertised serving range must remain credible with one declared execution structure.
 
-Future enhancement: pantry/staple memory so common ingredients can default to `already have`. Not required for MVP.
+## Shopping and pre-cook
+For the selected recipe/servings, the pre-cook view provides:
+- scaled categorized ingredients;
+- checkboxes;
+- optional-item markers;
+- recipe-specific consumables such as pellets where relevant;
+- advance-prep reminders;
+- equipment/accessory requirements;
+- planner-derived recommended start.
 
-## Pre-cook overview
-Before starting, user should see:
-- scaled ingredients;
-- shopping-list status;
-- advance preparation (marinade, thawing, chilling, overnight seasoning, etc.);
-- required Woodfire accessories and other equipment;
-- calculated recommended start time;
-- high-level plan and expected uncertainty/buffers.
+Shopping state is version-scoped so a changed recipe does not silently inherit stale checks from an older content version.
+
+Pantry/staple memory remains a later enhancement rather than an MVP requirement.
 
 ## Planning engine
-Fixed task offsets are only a POC mechanism.
+The operational schedule is generated from structured constraints, not a fixed list of negative offsets.
 
-Target model: recipe/meal steps form a dependency graph with resource requirements and flexible durations.
+Planner inputs include:
+- desired serving timestamp;
+- step duration/range;
+- dependencies/lags;
+- planning buffers;
+- resource reservations;
+- explicit user delays;
+- actual start timestamps;
+- actual completion timestamps;
+- expected completion from pending observation rechecks.
 
-The planner works primarily backwards from desired serving time while respecting prerequisite chains and shared-resource conflicts.
+The planner works primarily backwards from service while respecting prerequisites and Woodfire conflicts.
 
-A step may define:
-- stable id;
-- component id;
-- short title;
-- collapsed summary;
-- detailed instructions;
-- duration or duration range;
-- dependencies;
-- earliest/latest constraints where useful;
-- resources;
-- whether user attention is required;
-- optional buffer;
-- completion criterion;
-- delay/recheck behavior.
+### Resources
+The Woodfire is currently the only automatically conflict-resolved exclusive resource.
 
-### Resource examples
-- `woodfire` — exclusive cooking resource in the initial product;
-- `stovetop` / pot;
+Other declared resources such as:
+- oven;
+- stovetop;
 - fridge;
-- prep workspace/user attention;
-- passive resting.
+- passive rest/work
+may run concurrently but are not generally conflict-solved yet.
 
-Woodfire configuration may include:
-- mode;
-- temperature setpoint;
-- smoke on/off;
-- pellets yes/no/type later if useful;
-- grill plate/basket/tray/external dish;
-- covered/uncovered;
-- placement/spacing guidance.
+Only extend this model when a real meal demonstrates a shared-resource collision that materially harms the plan.
 
 ### Parallelism
-The planner should exploit useful parallel work.
-
-Examples:
-- sauce preparation can occur while pork cooks;
-- potatoes can parboil while the Woodfire remains occupied;
-- Air Fry potatoes must wait until the pork releases the single Woodfire.
+Useful parallel work is intentional:
+- sauce during meat cooking;
+- stovetop work during Woodfire phases;
+- passive rest while another task finishes;
+- independent branches that converge on service.
 
 ### Delay propagation
-Move dependent unfinished tasks, not unrelated work.
+Actual facts remain fixed. Replanning moves only work that is still movable and constrained by what actually happened.
 
 Examples:
-- a late sauce that still completes before service should not shift the pork;
-- an unexpectedly long covered meat phase should move finishing/rest and competing Woodfire tasks;
-- completed steps keep actual historical timestamps.
+- a sauce that is late but still finishes before service need not move the meat;
+- an unexpectedly long tenderness phase may move finishing/rest and competing Woodfire work;
+- completed steps retain their actual timestamps;
+- buffers absorb limited uncertainty before service time slips.
 
 ## Active-cooking UI
-Each card has two information levels.
-
-Collapsed card should communicate at a glance:
-- planned time/window;
+Collapsed step cards communicate at a glance:
+- planned time/recheck time;
 - action;
-- expected duration;
-- critical Woodfire settings if applicable;
-- status.
+- concise summary;
+- status;
+- critical Woodfire state where relevant.
 
-Expanded card may include:
-- quantities used in this step;
+Expanded detail may include:
+- serving-materialized quantities;
 - exact method;
-- accessory/support;
-- spacing/covering/liquid instructions;
-- target temperature;
+- support/accessory and placement;
+- covering/liquid instructions;
+- temperature target;
 - appearance/tenderness cues;
-- what to do if the criterion is not met.
+- observation/recheck controls;
+- actual start/completion timestamps.
 
 During a cook the UI priority is:
-1. next action and countdown;
+1. next action + countdown;
 2. current action;
 3. current Woodfire configuration;
-4. complete/observe control;
-5. temperature logging;
+4. completion/observation control;
+5. rapid temperature entry when enabled;
 6. expanded details;
 7. subsequent steps.
 
 ## Observation-driven cooking
-Some phases must not be represented as fixed-duration timers only.
+Observation/recheck behavior is implemented.
 
-A checkpoint can ask for a practical state such as:
+Some phases must not be represented as fixed-duration timers only. Practical choices may include:
 - `Encore ferme`;
 - `Presque prêt`;
-- `Très tendre`.
+- `Très tendre`;
+- equivalent temperature/checkpoint states.
 
-The answer may:
-- complete the step;
-- schedule another check after a defined interval;
-- change the expected remaining duration;
-- recompute dependent tasks.
+A not-ready result can schedule another check without completing the step. That expected completion time is fed into the planner, which consumes available buffer before moving dependent work/service.
 
-V1 can implement the dependency framework first; observation-driven rechecks are V1.5 if needed to keep implementation focused.
+A ready result records actual completion.
 
 ## Temperature tracking
-Manual logging remains a core feature.
+Temperature logging is optional per recipe.
 
-Target interaction:
-1. enter temperature;
-2. tap Add or press Enter;
-3. timestamp automatically.
+Target interaction remains:
+1. enter value;
+2. Add/Enter;
+3. automatic timestamp.
 
-Support:
+Supported UI includes:
 - target temperature;
-- simple graph;
-- undo last sample;
-- samples linked to session;
-- CSV/export if useful.
+- graph;
+- recent samples;
+- undo/new-series;
+- CSV export.
 
-Future ETA estimation can use temperature slope and historical sessions, but predictions must display realistic uncertainty.
+A measurement does not automatically complete a step; the cook confirms the relevant completion/observation state.
 
-## Cook journal/history
-A completed session should eventually store:
-- session id;
-- recipe and recipe version;
-- selected components/variant;
-- servings;
-- target serving time;
-- generated schedule;
-- actual completion/check timestamps;
-- temperature samples;
-- final serving time;
-- notes;
-- optional rating/adjustment notes.
+No ETA is currently inferred from temperature slope. Future prediction may use temperature/history only with realistic uncertainty.
 
-Future sessions may surface previous observations such as `reduce honey 20%` or an observed cook duration. This stays local-first initially.
+## Cook Journal
+Completed real sessions are stored locally with recipe/version, servings, target/actual service, schedule, actual starts/completions, observations, delays and temperature samples.
+
+The journal also supports:
+- rating;
+- `Notes pour la prochaine fois`;
+- local versioned JSON backup/restore.
+
+DEV/test sessions do not pollute real history.
+
+The journal is the preferred place to capture raw real-cook evidence. Durable findings should then become recipe/source revisions rather than remaining trapped in one local note.
 
 ## Recipe acquisition strategy
 Hybrid model:
 - curated base recipes committed to the repo;
-- new recipes added progressively through normal repo changes;
-- compatible structured JSON can also be authored/generated externally and validated before import/commit.
+- recipes added progressively as structured JSON;
+- compatible content may be authored externally/with ChatGPT then validated and committed.
 
-Runtime AI is not required and should not be a dependency of the cooking workflow.
+Runtime AI is not required and must not be a dependency of recipe execution.
+
+Prefer qualifying the current diverse library before adding recipes simply to increase count. A new recipe is most useful when it fills a real meal need or exposes a planning limitation not covered by existing content.
 
 ## Reference platform and constraints
-- Primary device: iPhone.
-- Distribution: installable PWA through Safari/GitHub Pages.
+- Primary device: installed iPhone/Safari PWA.
+- Distribution: GitHub Pages.
 - Core application: static/client-side.
-- Offline operation required for saved recipes and active cooks.
+- Offline operation required once assets are cached.
 - Local-first persistence.
+- No accounts/backend required.
 
-## Product maturity roadmap
-### MVP / reusable V1
-- illustrated multi-recipe library;
-- servings and serving-time configuration;
-- ingredient scaling;
-- shopping list;
-- structured recipe data;
-- dependency/resource-aware plan;
-- expandable timed cards;
-- active-cook next-action UX;
-- manual temperature logging;
-- persistent active session;
-- offline PWA.
+Service-worker updates must not force a new app generation over an already-open long cook.
 
-### V1.5
-- adaptive observation checkpoints/rechecks;
-- modular component swapping where valuable;
-- local cook history/journal;
-- stronger import/export.
+## Product roadmap from current state
+### Current stabilization / qualification phase
+- keep documentation synchronized with merged code;
+- run representative real cooks across distinct planner patterns;
+- refine recipes from journal evidence;
+- expose qualification clearly;
+- periodically validate installed-iPhone PWA/offline/update behavior;
+- keep repository integration hygiene strong.
 
-### V2+
-- temperature/history-based ETA with uncertainty;
-- previous-cook recommendations;
+### Next capabilities only when evidence requires them
+- flexible planning windows;
+- broader shared-resource conflict solving;
+- reusable external components;
+- batching/capacity synthesis from servings;
+- stronger history-derived recommendations.
+
+### Later
+- temperature/history ETA with explicit uncertainty;
 - pantry intelligence;
 - optional probe/hardware integration;
-- broader appliance resource model only after Woodfire workflow is mature.
+- broader appliance generalization after Woodfire workflow is mature.
 
 ## Success criteria
 During a real meal:
-- user should rarely reopen an external recipe;
-- required shopping/prep should be obvious before cooking;
-- next action should be obvious during cooking;
-- Woodfire configuration should never be ambiguous;
-- side dishes and sauces should arrive at the right time without mental scheduling;
-- delays should be absorbed rationally;
-- temperature logging should be faster than using Notes;
-- the final meal should be close to the selected serving time without compromising doneness.
+- the user rarely needs to reopen an external recipe;
+- shopping/prep is obvious before cooking;
+- the next action is obvious during cooking;
+- Woodfire configuration is never ambiguous;
+- sides/sauces arrive at the right time without mental scheduling;
+- delays/rechecks are absorbed rationally;
+- actual history remains trustworthy;
+- temperature logging is faster than using Notes;
+- the final meal stays close to the selected serving time without compromising doneness;
+- real-cook feedback can be converted into a better next recipe version.
