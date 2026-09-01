@@ -1,5 +1,5 @@
 import { createActiveCookController } from './js/active-cook-controller.js';
-import { loadLibrary, findLibraryRecipe } from './js/library.js';
+import { loadLibrary, findLibraryRecipe, recipeQualification } from './js/library.js';
 import { loadRecipe } from './js/recipe-loader.js';
 import { formatWoodfireSummary, scaleIngredients, validateRecipe } from './js/recipe.js';
 import { renderPreCook } from './js/prep-ui.js';
@@ -245,7 +245,7 @@ function renderLibrary() {
     body.className = 'recipe-card-body';
     const status = document.createElement('span');
     status.className = 'recipe-status';
-    status.textContent = entry.status === 'available' ? 'PRÊT À CUISINER' : 'BIENTÔT';
+    status.textContent = recipeQualification(entry).badge;
     const title = document.createElement('strong');
     title.className = 'recipe-card-title';
     title.textContent = entry.title;
@@ -326,7 +326,8 @@ function renderRecipeDetail() {
   const metadata = [
     `Préparation active · ${selectedRecipe.timing?.activePrepMin || '—'} min`,
     `Temps total · ${formatDurationRange(selectedRecipe.timing?.elapsedRangeMin)}`,
-    `Difficulté · ${selectedRecipe.difficulty}`
+    `Difficulté · ${selectedRecipe.difficulty}`,
+    `Qualification · ${recipeQualification(selectedEntry).detail}`
   ];
   for (const text of metadata) {
     const item = document.createElement('span');
