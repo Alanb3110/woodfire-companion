@@ -83,7 +83,7 @@ The project is beyond the original POC.
 
 Merged foundation includes:
 - illustrated manifest-driven multi-recipe library;
-- 11 executable meals;
+- every `available` meal declared in `recipes/index.json` is executable through the generic app pipeline;
 - servings and serving-time configuration;
 - scaled ingredients + shopping/prep;
 - planner-derived recommended start;
@@ -102,7 +102,7 @@ Current qualification baseline:
 - Pork Belly Burnt Ends — `validated` after a documented real-cook refinement loop;
 - turkey + zucchini gratin — `test_cooked`;
 - smoked beef barbacoa — `test_cooked`;
-- the 2026-08-31 expansion recipes — `untested` until representative real cooks are recorded.
+- every other currently `available` meal — `untested` until representative real cooks are recorded.
 
 ## Architecture
 Maintain four conceptual layers:
