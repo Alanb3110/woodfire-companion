@@ -1,209 +1,195 @@
 # Woodfire Companion — Technical Context Source
 
 ## Current implementation
-Woodfire Companion is a zero-backend static PWA intended for GitHub Pages and iPhone/Safari installation.
+Woodfire Companion is a zero-backend static PWA for GitHub Pages and installed iPhone/Safari use.
 
-The application uses vanilla HTML/CSS/JavaScript with native ES modules. No runtime framework, backend or external API is required.
+The application uses vanilla HTML/CSS/JavaScript with native ES modules. No runtime framework, backend, account system or external API is required.
 
-Current conceptual layers remain:
+Conceptual layers:
 1. recipe/content data;
 2. pure/testable planning engine;
-3. session state + persistence/migrations;
-4. UI.
+3. session state + persistence/orchestration;
+4. UI rendering/interactions.
 
-Independent local settings, shopping and journal stores remain separate when their lifecycles differ from the active session.
+Independent settings, shopping and journal stores remain separate when their lifecycles differ from the active cook.
 
 ## Application flow
-The UI has three top-level views:
-1. `library` — recipes, active-cook resume card, DEV test-cook tool and local cook journal;
-2. `recipe` — servings/service time plus ingredients/courses/preparation/equipment and planner-derived start guidance;
-3. `cook` — active planning + temperature tracking.
+Three top-level views remain:
+1. `library` — illustrated recipes, active-cook resume, DEV test-cook tool and Cook Journal;
+2. `recipe` — qualification, servings/service time, scaled ingredients, shopping/prep/equipment and planner-derived recommended start;
+3. `cook` — active plan plus optional temperature tracking.
 
-State remains local-first/offline.
+State is local-first and designed to remain usable offline once required assets are cached.
+
+## Library and recipe qualification
+`recipes/index.json` is the discovery manifest and currently contains 11 `available` executable meals.
+
+Availability and culinary maturity are separate:
+- `status: available` means the generic app pipeline can execute the recipe;
+- `qualification` records real-cook maturity as `untested`, `test_cooked` or `validated`.
+
+Current baseline:
+- Pork Belly Burnt Ends — `validated` after a documented real-cook refinement loop;
+- turkey + zucchini gratin — `test_cooked` from a real cooked/discussed baseline;
+- smoked beef barbacoa — `test_cooked` from a real meal baseline;
+- the eight recipes added during the 2026-08-31 expansion waves — `untested` until representative real cooks are recorded.
+
+The library shows `À tester`, `Testée` or `Validée`; the recipe detail repeats the qualification. Qualification does not alter planner/session behavior.
+
+See `sources/RECIPE_QUALIFICATION_V1.md`.
 
 ## Recipe/content layer
-`recipes/index.json` is the library manifest. Only complete validated recipes may be marked `available`.
+Executable content lives under `recipes/*.json`; recipe-specific timing/quantity rules must not be embedded in `app.js`.
 
-Executable meals currently include:
-- `recipes/pork-belly-burnt-ends.json`, content version 6;
-- `recipes/sweet-savory-turkey-zucchini-gratin.json`, content version 2;
-- `recipes/smoked-beef-barbacoa.json`, content version 1.
+`js/recipe.js` owns core recipe validation, ingredient scaling and Woodfire summary formatting.
 
-The Pork Belly meal remains the first long-cook reference. Version 5 incorporated the first real-cook refinement: larger 45–50 mm cubes and a shorter observation-led uncovered finish to reduce drying of small fragments. Version 6 preserves that process/timeline and moves scaling-sensitive active-cook quantities into structured per-step ingredient usage so 2/4/6/8-person instructions remain consistent with the selected serving count. The turkey + zucchini-gratin meal adds a temperature-driven poultry cook in parallel with a conventional-oven side dish. The barbacoa meal adds a much longer tenderness-driven beef braise, observation rechecks, smoked salsa and parallel meat-rest/stovetop reduction before service.
+`js/step-details.js` owns structured `step.ingredientUsage` validation and serving-aware materialization of `{{use:...}}` tokens. Top-level ingredients remain authoritative for shopping/pre-cook totals; per-step usage is instructional metadata.
 
-`js/recipe.js` owns core recipe validation, ingredient scaling and Woodfire summary formatting. Validation protects serving bounds, component ownership, duration ranges, completion/recheck semantics, dependency connectivity, service milestones and Woodfire configuration consistency.
+`js/recipe-loader.js` loads and validates executable recipe content before UI use.
 
-`js/step-details.js` owns structured `step.ingredientUsage` validation and serving-aware materialization of `{{use:...}}` quantity tokens in step summaries/details. Top-level ingredient quantities remain authoritative for the pre-cook/shopping view; per-step usage is instructional metadata and does not independently aggregate shopping totals.
+Every `available` recipe is covered by the generic CI contract in `sources/MULTI_RECIPE_CONTRACT.md`. Generic acceptance must not enumerate recipe ids.
 
-`js/recipe-loader.js` loads executable JSON content and applies both core recipe validation and structured step-usage validation before UI use.
+## Current executable recipe set
+The manifest currently exposes:
+- Pork Belly Burnt Ends;
+- roulé de dinde sucré-salé + gratin de courgettes;
+- tacos barbacoa de bœuf fumée;
+- saumon laqué soja-miel + asperges + riz citronné;
+- poulet shawarma fumé + pommes de terre + sauce yaourt;
+- bœuf reverse-sear + grenailles + sauce poivre;
+- wings miel-soja fumées + potatoes + coleslaw;
+- magret laqué miel-soja-orange + patate douce + sauce agrumes;
+- ribs BBQ fumées + mac & cheese + coleslaw;
+- halloumi grillé + légumes méditerranéens + couscous;
+- brochettes de poulet teriyaki + légumes grillés + riz.
 
-Every `available` recipe is covered by the generic CI contract in `sources/MULTI_RECIPE_CONTRACT.md`. The contract rejects user-facing ingredients whose quantity is only `null`/`au goût`, validates structured step usage and verifies that generated schedules contain no unresolved quantity tokens at minimum/reference/maximum servings.
-
-Relevant source contracts:
-- `sources/RECIPE_SCHEMA_V1.md`;
-- `sources/STEP_INGREDIENT_USAGE_V1.md`;
-- `sources/SHOPPING_PREP.md`;
-- `sources/PLANNER_V1.md`;
-- `sources/ACTIVE_COOK_V1.md`;
-- `sources/OBSERVATIONS_V1.md`;
-- `sources/SESSION_V2.md`;
-- `sources/SESSION_V3.md`;
-- `sources/COOK_JOURNAL_V1.md`;
-- `sources/COOK_JOURNAL_V2.md`;
-- `sources/JOURNAL_BACKUP_V1.md`;
-- `sources/MULTI_RECIPE_CONTRACT.md`;
-- `sources/ILLUSTRATED_LIBRARY_V1.md`;
-- `sources/PORK_BELLY_MEAL.md`;
-- `sources/TURKEY_ZUCCHINI_MEAL.md`.
-
-## Multi-recipe acceptance
-Tests must not enumerate executable recipe ids in the generic acceptance contract.
-
-For each manifest entry with `status: "available"`, CI verifies recipe loading/validation semantics, structured step usage, manifest identity, serving metadata, actionable ingredient quantities, scaling/shopping at min/reference/max, complete schedule generation, absence of unresolved step quantity tokens, dependency validity, baseline Woodfire conflict freedom and an unambiguous service milestone.
-
-Individual recipes may also have regression tests when an established reference timeline or serving-materialization reference is useful.
-
-Planner V1 does not yet create additional batches from serving count. Until batching/capacity semantics exist, each recipe's `servings.max` must stay within a quantity that can use the same declared execution structure.
+The expansion recipes deliberately exercise different planner patterns: fast temperature-driven cooking, advance preparation, intermediate thermal checkpoints, independent Woodfire branches, long tenderness rechecks and no-temperature meals.
 
 ## Serving configuration and pre-cook
-Changing servings updates the same scaled data used by the user-facing `Ingrédients & courses` checklist.
+Changing servings updates the scaled ingredient data shown in `Ingrédients & courses`.
 
-For active-cook instructions, `buildMealSchedule()` now materializes any structured `step.ingredientUsage` tokens at the same selected serving count before scheduling. This fixes the prior mismatch where the shopping list could scale while hard-coded quantities inside step prose remained at the reference serving count.
+`js/shopping.js` is pure shopping/prep data logic. `js/prep-ui.js` renders shopping, advance-prep and equipment UI.
 
-`js/shopping.js` is pure data logic. `js/prep-ui.js` owns pre-cook rendering and shopping checkbox persistence.
+Shopping state uses `woodfire-companion-shopping-v1` and is keyed by recipe id + recipe content version so a new recipe version cannot silently inherit stale checks.
 
-Shopping state uses `woodfire-companion-shopping-v1` and is independent from cook history, active progress and visual settings. Checkbox groups are keyed by `recipeId@recipeVersion`; legacy id-only checks migrate once when that recipe is next rendered. A content update therefore cannot silently inherit stale checked items from an older recipe version.
+`recommendedStartFromPlan()` in `js/meal-planner.js` derives the displayed start guidance from the same generated plan used by active cooking. `timing.elapsedRangeMin` remains descriptive metadata, not the operational scheduling source.
 
-The recipe view derives the user-facing recommended start directly through `recommendedStartFromPlan()` in `js/meal-planner.js`. `app.js` renders that result in the normal recipe-detail update path when servings or service time change. There is no separate DOM-observer/start-hint sidecar. `timing.elapsedRangeMin` remains descriptive metadata, not an operational timing source.
-
-Components currently provide grouping inside one meal JSON; they are not yet independently swappable modules and shopping does not yet aggregate external component files.
-
-## Cook-session state V3
-The active-cook localStorage namespace remains `woodfire-companion-v1` for compatibility, while the stored object carries explicit `schemaVersion: 3`.
-
-`js/session.js` owns default state, schema migration, lifecycle transitions, timestamp correction helpers and recipe snapshot helpers.
-
-Key fields include `started`, `completed`, `taskShifts`, `observations`, `rechecks`, `temperatureTarget`, `measurements`, `sessionId`, `sessionStartedAt`, `sessionServedAt`, `targetServingAt`, recipe identity, `recipeSnapshot` and `isTest`.
-
-Runtime step states are:
-- upcoming — no actual start/completion;
-- active — `started[stepId]` exists without `completed[stepId]`;
-- done — `completed[stepId]` exists.
-
-Legacy records migrate v1 → v2 → v3. Existing completion timestamps are preserved and missing historical starts are never fabricated.
-
-`sessionId` remains stable for one meal. `targetServingAt` stores an absolute date/time so a resumed cook does not silently move to another calendar day.
-
-A new cook stores a detached validated `recipeSnapshot`. Resume uses the snapshot first, so a repository recipe update cannot silently change a cook already in progress. Legacy sessions without a snapshot adopt the currently valid recipe once and then persist it.
-
-Actual start/end timestamps can be edited after the fact. For observation-enabled steps, the latest control/observation timestamp can also be edited; a pending recheck is shifted by the same delta and the normal planner path recomputes downstream work.
-
-DEV test sessions use the same session/planner path with `isTest: true`. A real session is backed up before entering test mode and can be restored on exit. Test sessions are excluded from Cook Journal persistence.
-
-See `sources/SESSION_V2.md` and `sources/SESSION_V3.md`.
-
-## Active observations / rechecks
-`js/observations.js` is pure observation-state logic. It derives active-cook choices from Recipe Schema V1 completion/recheck semantics.
-
-Current derived controls:
-- tenderness: `Encore ferme / Presque prêt / Très tendre`;
-- target-temperature/combined completion: `Sous X °C / Presque X °C / X °C atteint`;
-- generic fallback: `Pas prêt / Presque prêt / Prêt`.
-
-A not-ready observation records the observed state and a future `recheckDueAt`. If the step had not been started explicitly, the observation becomes its actual start. A ready observation records the actual completion timestamp.
-
-The pending recheck timestamp is also passed to the planner as an expected completion time. Planner buffers may absorb it before downstream work moves.
-
-Observation timestamps are editable historical facts. Editing the latest observation shifts its linked pending recheck by the same delta; if the edited observation was the completion event, the linked completion timestamp follows it.
-
-## Cook Journal V2
-Completed meal sessions remain stored separately under `woodfire-companion-journal-v1`; the stored journal object carries `schemaVersion: 2`.
-
-`js/journal.js` owns journal serialization/store, migration, feedback persistence, service-milestone resolution and versioned JSON backup/import. Journal V1/root-array data migrates without losing cook history.
-
-A journal entry includes recipe identity/version/title, servings, target/actual service timestamps, temperature samples, structured observations, actual step starts/completions, explicit delays, baseline/final schedule timestamps, plus optional meal-level feedback:
-- `rating` — 1–5 or null;
-- `notes` — up to 2000 characters;
-- `feedbackUpdatedAt`.
-
-Automatic resynchronisation of a served cook preserves previously saved feedback when the new cook snapshot does not explicitly carry feedback fields.
-
-`js/journal-ui.js` renders compact history cards in the library. Expanded cards expose five-star rating and `Notes pour la prochaine fois`; a saved rating is visible in the collapsed summary. Test sessions are never persisted to the real journal.
-
-The same journal view exposes local `Exporter JSON` / `Importer JSON` actions. Backup files use an explicit `woodfire-companion-journal-backup` wrapper and independent backup version. Import validates the whole payload before writing, rejects future formats, ignores test entries and merges by stable session id while keeping the freshest duplicate. Active session, shopping and settings stores are deliberately not included.
-
-See `sources/COOK_JOURNAL_V2.md` and `sources/JOURNAL_BACKUP_V1.md`.
-
-## UI preferences
-The library uses manifest-driven local WebP food covers through `visual.imageUrl`. Each executable recipe cover is reused in the library card and recipe-detail hero, while the existing theme/symbol remains a fallback. Cover assets are decorative and contain no baked UI text. See `sources/ILLUSTRATED_LIBRARY_V1.md`.
-
-Visual preferences remain separate under `woodfire-companion-settings-v1`.
-
-`js/settings.js` owns accent presets, native color picker, HEX/RGB input and reset to Woodfire orange.
+Serving count also materializes structured active-step quantities before planning. Planner V1 does not yet synthesize extra batches or change duration automatically from serving count, so `servings.max` must remain within one credible execution structure.
 
 ## Planner V1
 `js/planner.js` is the low-level pure scheduling solver with no DOM access.
 
-`js/meal-planner.js` is the stable recipe-facing facade. `buildMealSchedule(recipe, context)` accepts servings, service time or absolute target timestamp, runtime delays, actual start/completion timestamps and expected completion timestamps, while reserving configuration space for future selected components and variants. `recommendedStartFromPlan(recipe, context)` returns the earliest scheduled start from that same generated meal plan for pre-cook guidance.
+`js/meal-planner.js` is the stable recipe-facing facade. `buildMealSchedule(recipe, context)` accepts:
+- servings;
+- `mealTime` or absolute `targetServingAt`;
+- explicit task delays;
+- actual start timestamps;
+- actual completion timestamps;
+- expected completion timestamps from pending rechecks;
+- reserved component/variant context for future use.
 
-Before calling the low-level solver, the meal-planner facade creates a serving-materialized recipe view so structured step quantity tokens are replaced with selected-serving text. The raw curated recipe object is not mutated.
+The solver works from desired service + durations + dependencies + planning buffers + resource reservations + runtime facts.
 
-The solver's primary model remains desired serving time + durations + dependencies + optional planning buffers + resources + runtime facts/expectations + explicit delays.
+Baseline planning works backwards from service. The Woodfire is the only automatically conflict-resolved exclusive resource today. Started/completed timestamps are historical facts and are never shifted merely to make a plan tidy.
 
-Baseline planning works backwards from service. The Woodfire is one exclusive resource. Planned Woodfire conflicts are resolved upstream; runtime conflicts move only work that remains movable. Started/completed timestamps are historical facts and are not shifted to make the plan tidy.
+Other declared resources such as `oven`, `stovetop`, `fridge` and `passive` may run concurrently but are not generally conflict-solved yet.
 
-Other resources such as `oven`, `stovetop`, `fridge` and `passive` can be declared and run concurrently, but are not yet automatically conflict-resolved.
+The planner supports dependency-only recipes without preferred-start offsets, midnight crossing, buffer absorption, actual-start/completion propagation, expected recheck completion and service slippage when reality can no longer meet the original target.
 
-Planner V1 supports dependency-only recipes with no fixed offsets, midnight crossing, buffer absorption, actual-start/completion propagation, expected recheck completion and service slippage when reality can no longer meet the target.
+The Pork Belly reference is fully migrated away from legacy fixed start offsets.
 
-Serving count now affects structured instructional quantities when present, but still does not modify durations or synthesize batches.
+## Active-cook orchestration
+`js/active-cook-controller.js` is the DOM-free orchestration boundary for active cooking.
 
-## Active-cook lifecycle
-Timed steps use two user actions: first tap starts the phase, second tap completes it. The checkbox uses its indeterminate visual state while active. Zero-duration milestones may complete in one tap.
+It owns:
+- schedule recomputation from runtime facts;
+- step start/finish/reset lifecycle mutations;
+- observation application and pending rechecks;
+- +5/+10/+15 next-action delay semantics;
+- planning reset;
+- served-cook journal synchronization.
 
-The planning header exposes a distinct `EN COURS` card. If a Woodfire phase is active it is prioritised and shows its exact structured appliance state plus actual start and indicative end. Parallel work may remain active simultaneously.
+`app.js` remains the top-level view/render wiring layer rather than the owner of those state transitions.
 
-The normal `PROCHAINE ÉTAPE` selector excludes already-started timed work; a pending observation recheck remains actionable and can still become the next action.
+Runtime step states are:
+- `upcoming` — no actual start/completion;
+- `active` — actual start exists, completion absent;
+- `done` — actual completion exists.
 
-The +5/+10/+15 controls apply only to the next actionable upcoming task, or to a pending recheck when that is the next action.
+Timed steps normally use one tap to start and one tap to finish. Zero-duration milestones can complete in one interaction.
+
+The active-cook header exposes a distinct current-action card; active Woodfire work is prioritized and shows its exact appliance state plus actual start and indicative end. Parallel active work may coexist.
+
+Pending observation rechecks remain actionable next steps and feed their expected completion time back into the planner.
+
+## Session state V3
+The compatibility localStorage key remains `woodfire-companion-v1`; the stored record carries explicit schema migration.
+
+`js/session.js` owns default state, migration, lifecycle transitions, timestamp correction and recipe snapshots.
+
+Important fields include:
+- `started`, `completed`;
+- `taskShifts`;
+- `observations`, `rechecks`;
+- `temperatureTarget`, `measurements`;
+- `sessionId`, `sessionStartedAt`, `sessionServedAt`, `targetServingAt`;
+- recipe identity and detached `recipeSnapshot`;
+- `isTest`.
+
+Existing completion timestamps survive migration; missing historical starts are not fabricated.
+
+A new cook snapshots validated recipe content. Resume prefers that snapshot so a later deployment cannot silently alter a cook already in progress.
+
+Actual step start/end timestamps and latest observation/control timestamps can be corrected after the fact. Those corrected historical facts feed the normal planner path.
+
+DEV test sessions use the same planner/session path, temporarily back up any real active session and are excluded from Cook Journal persistence.
+
+## Observations and rechecks
+`js/observations.js` owns pure observation-state logic.
+
+Current controls are derived from completion semantics, including:
+- tenderness: `Encore ferme / Presque prêt / Très tendre`;
+- target-temperature: `Sous X °C / Presque X °C / X °C atteint`;
+- generic fallback: `Pas prêt / Presque prêt / Prêt`.
+
+A not-ready observation records the state and schedules a future recheck. A ready observation records actual completion. Pending recheck time is passed into planning as an expected completion constraint so buffers can absorb limited delay before downstream work/service moves.
 
 ## Temperature tracking
-Temperature tracking is split out of `app.js` and is now an optional recipe capability.
+Temperature tracking is optional per recipe.
 
-`js/temperature.js` owns pure/testable temperature data operations and feature semantics:
-- recipe tracking enabled/disabled resolution;
-- default target resolution;
-- manual-value validation (0–150 °C);
-- target clamping (30–120 °C);
-- immutable measurement append/remove helpers;
-- CSV serialization.
+`js/temperature.js` owns pure value validation, target semantics, immutable measurement operations and CSV serialization.
 
-`js/temperature-ui.js` owns the DOM controller for fast entry, target editing, latest-measurement display, recent-measurement list, SVG chart, undo/new-series actions and CSV download. It receives the current session through callbacks, so the temperature layer does not own session persistence or journal semantics.
+`js/temperature-ui.js` owns fast entry, target editing, latest/recent samples, SVG chart, undo/new-series and CSV download.
 
-A recipe without `temperature` metadata has no temperature tab. `enabled: false` is an explicit opt-out. Existing recipes that only declare numeric `defaultTargetC` remain enabled for backward compatibility; `enabled: true` requires a 30–120 °C target. A new no-temperature session stores `temperatureTarget: null` rather than fabricating the historic 93 °C default.
+A recipe without temperature metadata has no temperature tab. Manual logging remains value → Add/Enter → automatic timestamp.
 
-Manual logging remains value → Add/Enter → automatic timestamp for enabled recipes. Existing stored sessions remain compatible.
-
-Current recipes use temperature differently: Pork Belly and barbacoa treat temperature as supporting information for tenderness-driven cooks, while the turkey meal uses a 74 °C core target as the decisive endpoint.
-
-Observation controls do not automatically infer readiness from a measurement; the cook explicitly confirms completion state.
+Measurements do not automatically complete a recipe step; the cook still confirms the completion/observation state.
 
 No ETA is currently inferred from temperature slope.
 
+## Cook Journal V2
+Cook history remains separate under `woodfire-companion-journal-v1`.
+
+`js/journal.js` owns serialization, migration, service-milestone resolution, rating/notes feedback and versioned JSON backup/import.
+
+A journal entry includes recipe identity/version, servings, target/actual service, temperature samples, structured observations, actual starts/completions, explicit delays and baseline/final schedule timestamps.
+
+`js/journal-ui.js` renders compact history cards plus rating and `Notes pour la prochaine fois`.
+
+JSON backup/import validates the payload before writing, rejects unsupported future formats, ignores test entries and merges by stable session id while keeping the freshest duplicate. Active-session, shopping and settings stores remain intentionally outside that backup.
+
+Raw real-cook feedback should normally be captured in the journal first. Durable findings are then promoted into recipe/source revisions and may justify a qualification change.
+
 ## PWA/offline
-The service worker uses a network-first cache with offline fallback.
+The service worker uses network-first fetch with offline fallback.
 
-Current dev version: `0.3.0-dev.10`.
+Current dev version remains `0.3.0-dev.10`.
 
-Static shell/modules are listed in `APP_ASSETS`, including session, meal-planner, structured step-detail materialization, observation, timestamp-editor, DEV-tool, journal and temperature modules. Executable recipe JSON and each available recipe's local `visual.imageUrl` cover are discovered from `recipes/index.json` and preloaded automatically.
+Static shell/modules are listed in `APP_ASSETS`. Executable recipe JSON and each available recipe cover are discovered from `recipes/index.json` and preloaded automatically; individual recipe filenames must not be hard-coded into the service worker.
 
-`recipes/index.json` remains the source of truth for recipe discovery and recipe-JSON offline preloading.
+Service-worker updates use the normal waiting lifecycle rather than `skipWaiting()`. A new generation prepares its separate cache but does not replace the worker controlling an already-open long cook. It activates after existing controlled clients close, then the next launch receives the new generation.
 
-Service-worker updates use the normal waiting lifecycle rather than `skipWaiting()`. A newly deployed worker prepares a separate cache but does not replace the worker controlling an already-open cook. It activates only after existing controlled clients close. `clients.claim()` remains in activation so the first installation can control the already-open page once activation is allowed. Old caches are removed only during activation of the new worker.
-
-This lifecycle is intentional for long cooks: an active session should continue with one application generation instead of being forced onto a newly deployed shell mid-cook. A fresh app launch after the old client closes receives the new worker/cache generation.
-
-Assets must remain compatible with the `/woodfire-companion/` GitHub Pages subpath and installed iPhone/Safari PWA behavior.
+This lifecycle is covered by automated tests but installed-iPhone qualification across offline/online transitions and a deployed update remains an important manual check.
 
 ## Testing and CI
 Run:
@@ -214,13 +200,43 @@ npm test
 
 GitHub Actions runs the suite on `main`, supported feature/fix/chore pushes and pull requests.
 
-Coverage includes hardened recipe contracts, generic available-recipe acceptance, actionable ingredient quantities, structured step-usage validation/materialization, Pork Belly 2/4/6/8-serving quantity regressions, recipe-specific timelines, shopping/pre-cook, offline caching, conservative service-worker update lifecycle, version consistency, DOM contracts, dependency/resource planning, buffers/service slippage, actual start/completion propagation, session v1→v2→v3 migration, step lifecycle transitions, frozen recipe snapshots, timestamp correction, observation/recheck behavior, journal v1→v2 migration, feedback persistence/resync protection, versioned journal JSON export/import and safe merge/rejection behavior, test-session exclusion, active-cook wiring, planner-derived pre-cook start guidance, optional temperature capability semantics and extracted temperature validation/measurement/CSV behavior.
+Coverage includes:
+- generic acceptance of every `available` recipe;
+- library qualification metadata;
+- recipe/schema/structured-step validation;
+- serving scaling and shopping/prep;
+- planner dependencies/resources/buffers/rechecks/midnight handling;
+- recipe-specific reference timelines/patterns;
+- session v1→v2→v3 migration and recipe snapshots;
+- active-cook controller behavior;
+- timestamp correction;
+- journal migration/feedback/backup merge safety;
+- optional temperature capability;
+- illustrated-library and offline service-worker contracts;
+- static DOM/module/version consistency.
 
 ## Current technical debt / next work
-1. Continue splitting active-cook/session orchestration out of the growing `app.js` without introducing a framework; temperature orchestration is now extracted. Avoid reintroducing DOM-observer sidecars for state already owned by `app.js`.
-2. Validate the conservative service-worker lifecycle on installed iPhone/Safari with an active cook across offline/online and a deployed update.
-3. Migrate scaling-sensitive prose in other recipes to structured step usage only where it materially prevents serving-count ambiguity; do not convert text that has no quantity dependency.
-4. Add a flexible planning-window concept only when a real recipe demonstrates the need.
-5. Extend conflict handling beyond Woodfire only when real meals demonstrate a shared-resource collision.
-6. Introduce reusable external components/batching only when real recipes prove the need.
-7. Add predictive ETA later from temperature/history with uncertainty, never false precision.
+Priority order as of 2026-09-01:
+1. Keep README/source contracts synchronized with the actual merged product.
+2. Qualify the current executable library through representative installed-iPhone real cooks instead of expanding recipe count by default.
+3. Use those cooks to decide whether flexible planning windows, non-Woodfire shared-resource conflicts, batching or component reuse are genuinely needed.
+4. Continue small `app.js` extractions only where ownership becomes materially unclear; do not introduce a framework for its own sake.
+5. Complete repository hygiene: safely delete stale/noop branches only after confirming no unique work, and protect `main` with CI if repository settings allow it.
+6. Periodically validate the conservative PWA update lifecycle on installed iPhone/Safari.
+7. Add predictive ETA later from clean temperature/history data with explicit uncertainty, never false precision.
+
+## Relevant source contracts
+- `sources/PRODUCT_SPEC.md`;
+- `sources/RECIPE_MODEL.md`;
+- `sources/RECIPE_SCHEMA_V1.md`;
+- `sources/RECIPE_QUALIFICATION_V1.md`;
+- `sources/STEP_INGREDIENT_USAGE_V1.md`;
+- `sources/SHOPPING_PREP.md`;
+- `sources/MULTI_RECIPE_CONTRACT.md`;
+- `sources/PLANNER_V1.md`;
+- `sources/ACTIVE_COOK_V1.md`;
+- `sources/OBSERVATIONS_V1.md`;
+- `sources/SESSION_V3.md`;
+- `sources/COOK_JOURNAL_V2.md`;
+- `sources/JOURNAL_BACKUP_V1.md`;
+- `sources/ILLUSTRATED_LIBRARY_V1.md`.

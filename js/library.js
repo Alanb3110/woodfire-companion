@@ -1,12 +1,37 @@
 import { installRecipeHeroImageBridge } from './recipe-hero.js';
 
 const VALID_STATUSES = new Set(['available', 'coming_soon']);
+const VALID_QUALIFICATIONS = new Set(['untested', 'test_cooked', 'validated']);
+
+const QUALIFICATION_COPY = {
+  untested: {
+    badge: 'À TESTER',
+    detail: 'à tester en cuisson réelle'
+  },
+  test_cooked: {
+    badge: 'TESTÉE',
+    detail: 'testée en cuisson réelle'
+  },
+  validated: {
+    badge: 'VALIDÉE',
+    detail: 'validée après retours de cuisson'
+  }
+};
 
 function isLocalAssetUrl(value) {
   return typeof value === 'string' && value.startsWith('./') && !value.startsWith('./../');
 }
 
 installRecipeHeroImageBridge();
+
+export function recipeQualification(entry) {
+  if (entry?.status !== 'available') {
+    return { id: null, badge: 'BIENTÔT', detail: 'non disponible' };
+  }
+
+  const id = VALID_QUALIFICATIONS.has(entry.qualification) ? entry.qualification : 'untested';
+  return { id, ...QUALIFICATION_COPY[id] };
+}
 
 export function validateLibrary(library) {
   const errors = [];
@@ -22,6 +47,12 @@ export function validateLibrary(library) {
     if (!entry.title) errors.push(`Library entry ${entry.id || '?'} requires a title.`);
     if (!VALID_STATUSES.has(entry.status)) errors.push(`Invalid status for ${entry.id || '?'}.`);
     if (entry.status === 'available' && !entry.recipeUrl) errors.push(`Available recipe ${entry.id || '?'} requires recipeUrl.`);
+    if (entry.status === 'available' && !VALID_QUALIFICATIONS.has(entry.qualification)) {
+      errors.push(`Available recipe ${entry.id || '?'} requires a valid qualification.`);
+    }
+    if (entry.qualification && !VALID_QUALIFICATIONS.has(entry.qualification)) {
+      errors.push(`Invalid qualification for ${entry.id || '?'}.`);
+    }
 
     const imageUrl = entry.visual?.imageUrl;
     if (entry.status === 'available' && !imageUrl) errors.push(`Available recipe ${entry.id || '?'} requires visual.imageUrl.`);

@@ -1,199 +1,246 @@
 # Woodfire Companion — Recipe / Meal Data Model Source
 
 ## Status
-This is the proposed semantic model for the next refactor. It defines what the data must express; exact JSON field names may still change during implementation.
+This file describes the **implemented semantic model** used by the current application. Exact field validation details live in `sources/RECIPE_SCHEMA_V1.md`; planner behavior lives in `sources/PLANNER_V1.md`.
 
-## Core concepts
-### Recipe / meal
-The user-facing item shown in the library. It may be a complete meal or a main recipe with default components.
+The model is deliberately split between:
+- library/discovery metadata in `recipes/index.json`;
+- executable meal content in `recipes/*.json`;
+- runtime cook/session facts stored separately from curated recipe data.
 
-Should contain:
-- stable `id` and schema/content version;
-- title and short description;
-- hero illustration/image reference;
-- tags;
-- difficulty;
-- reference servings and supported serving range;
-- active-prep estimate;
-- elapsed-time estimate/range;
-- default components;
-- ingredients;
-- required equipment/accessories;
-- planning steps;
-- optional variants/notes.
+## Library entry
+A library entry is the user-facing discovery record.
 
-### Component
-A reusable logical part of a meal, e.g.:
-- main: Pork Belly Burnt Ends;
-- side: smashed grenaille potatoes;
-- sauce: lemon-yogurt sauce.
+Important fields include:
+- stable `id` matching the recipe JSON;
+- `status`: `available` or `coming_soon`;
+- `qualification` for available recipes: `untested`, `test_cooked` or `validated`;
+- local `recipeUrl`;
+- title/description/tags/difficulty;
+- serving and timing summary metadata;
+- `visual.imageUrl` plus fallback theme/symbol/eyebrow.
 
-Components may be embedded initially and extracted/reused only when useful. Do not require full modularity for every recipe.
+`status` and `qualification` are independent:
+- `available` means the generic app pipeline can execute the recipe;
+- qualification describes real-cook evidence and never changes planner/session behavior.
 
-### Ingredient
-An ingredient entry should distinguish identity from the quantity used in one recipe.
+See `sources/RECIPE_QUALIFICATION_V1.md`.
 
-Useful semantics:
-- stable ingredient id/name;
-- quantity + unit;
-- reference servings;
-- scaling rule;
+## Executable recipe / meal
+The JSON recipe is a complete executable meal definition.
+
+It contains:
+- `schemaVersion` and stable `id`;
+- content `version` retained by cook sessions;
+- title/description/tags/difficulty;
+- supported serving range;
+- descriptive timing metadata;
+- optional temperature-tracking capability;
+- meal components;
+- top-level ingredients;
+- equipment/consumables;
+- optional advance-prep items;
+- executable planning steps;
+- an unambiguous service milestone.
+
+The active cook stores a detached recipe snapshot so later deployments cannot silently mutate a cook already in progress.
+
+## Components
+Components group one meal into coherent parts such as:
+- main;
+- side;
+- sauce;
+- garnish/meal-level finishing work.
+
+Current components are embedded grouping semantics. They are not yet independently swappable external modules. Do not extract reusable component files until multiple real recipes demonstrate that the added complexity pays for itself.
+
+## Ingredients
+Top-level ingredients are authoritative for pre-cook and shopping totals.
+
+Each ingredient may include:
+- stable `id` and display name;
+- numeric quantity, range or `null` where numeric precision would be misleading;
+- unit;
+- explicit scaling rule;
 - shopping category;
 - optional flag;
-- pantry/staple hint later;
-- preparation note where needed.
+- preparation note.
 
-Scaling rule examples:
-- `linear`: 400 g for 4 people → 600 g for 6;
-- `fixed`: one small amount independent of servings;
-- `step`: one lemon up to 4 servings, two above 4;
-- `range/to_taste`: display guidance rather than false arithmetic.
+Implemented scaling patterns include:
+- `linear`;
+- `fixed`;
+- `step` with serving breakpoints;
+- `range`;
+- `to_taste`.
 
-### Step
-A step is an executable planning unit, not merely a paragraph of recipe prose.
+Not every quantity should scale linearly. Meat geometry, pan capacity, minimum sauce volume, eggs, lemons and batch constraints may require fixed/step/range semantics.
+
+For `available` recipes, user-facing ingredients must still expose an actionable baseline quantity/range; an ingredient list consisting only of `au goût` guidance is not acceptable executable content.
+
+## Structured active-step ingredient usage
+Top-level shopping quantities are not sufficient when active-cook prose contains serving-sensitive quantities.
+
+`step.ingredientUsage` associates a step-local use with a top-level ingredient and optional use-specific quantity/scaling rule. Step summaries/details reference those uses through `{{use:...}}` tokens.
+
+Before planning/rendering, `js/step-details.js` materializes those tokens for the selected serving count.
+
+Rules:
+- top-level ingredients remain authoritative for shopping totals;
+- per-step usage is instructional metadata, not a second shopping aggregator;
+- use structured step quantities only where serving count materially changes the instruction;
+- generated active-cook text must contain no unresolved quantity tokens.
+
+See `sources/STEP_INGREDIENT_USAGE_V1.md`.
+
+## Step
+A step is an executable planning unit rather than a paragraph of recipe prose.
 
 A step may contain:
 - stable `id`;
 - owning component;
-- title;
-- concise summary;
-- expanded instructions;
-- expected duration or duration range;
-- prerequisite dependencies;
-- resources;
-- Woodfire configuration;
-- ingredient usage relevant to this step;
+- title + concise collapsed summary;
+- expanded instruction list;
+- deterministic duration or duration range + planning duration;
+- dependencies with relation and lag;
+- resource reservations;
+- structured Woodfire state;
 - completion criterion;
-- buffer/flexibility;
-- delay/recheck behavior;
-- whether active user attention is required.
+- planning buffer semantics where appropriate;
+- recheck behavior;
+- step-local ingredient usage;
+- service anchor metadata where relevant.
 
-## Scheduling semantics
-The planner should derive actual timestamps from constraints rather than storing a full hard-coded timeline.
+A nominal duration supports scheduling; the real completion criterion remains authoritative during cooking.
 
-Useful concepts:
-- `dependsOn`: must follow another step;
-- `durationMin` or `durationRangeMin`;
-- `anchor`: special relation to serving time where needed (serve, rest before serve, etc.);
-- `resource`: exclusive or capacity-limited equipment;
-- `flexibility`: task can move within a window without affecting meal quality;
-- `bufferMin`: deliberate margin;
-- `completion`: time/temperature/tenderness/appearance/manual confirmation;
-- `recheck`: if criterion not met, schedule another observation.
+## Dependencies
+Current dependency records express relations such as:
+- `after_finish`;
+- `after_start`;
+- optional lag in minutes.
 
-The target serving time is a plan anchor, not a requirement that every preceding task use a fixed negative offset.
+Recipe validation rejects missing references/cycles and anchored recipes with disconnected executable work where that would make planning ambiguous.
+
+Runtime delays do not rewrite dependencies. The planner recomputes unfinished work from actual facts plus the same dependency graph.
 
 ## Resource semantics
-Initial resource vocabulary can remain small:
-- `woodfire` — exclusive;
-- `stovetop` — initially assume available unless recipe explicitly models contention;
-- `fridge` — non-exclusive in normal cases;
-- `user_attention` — useful for preventing unrealistic simultaneous hands-on tasks;
-- `passive` — no exclusive hardware.
+Current resource vocabulary may include:
+- `woodfire`;
+- `oven`;
+- `stovetop`;
+- `fridge`;
+- `passive`.
 
-Woodfire state for a step should be structured rather than encoded as prose:
+The Woodfire is currently the only automatically conflict-resolved exclusive resource. Independent Woodfire branches are allowed; Planner V1 may choose their non-overlapping order without fake dependencies.
+
+Other resources can be declared and may run concurrently, but are not generally conflict-solved yet. Add broader resource-capacity semantics only when real meals demonstrate the need.
+
+## Structured Woodfire state
+Every Woodfire reservation explicitly carries hardware state rather than relying on prose:
 - mode;
-- temperatureC;
-- smoke;
-- pellets;
-- accessory/support;
-- covered;
-- placement note.
+- setpoint and optional acceptable temperature range;
+- smoke on/off;
+- pellets yes/no;
+- support/accessory;
+- covered/uncovered;
+- placement/spacing guidance where relevant.
+
+The active-cook UI derives the hardware summary from this structure.
 
 ## Completion criteria
-Examples:
+Supported semantic patterns include:
 
-### Time-based
-`Cook for 20 min` where duration is sufficiently deterministic.
+### Manual/checkpoint
+A user confirms a prep/milestone action.
 
-### Temperature-based
-`Core reaches 63 °C` or other recipe/safety target where meaningful.
+### Appearance
+Example: surface deeply browned/caramelized.
 
-### Sensory/manual
-`Probe enters with little resistance`, `surface deeply caramelised`, etc.
+### Tenderness
+Example: probe enters with little resistance.
 
-### Combined
-A step may have an expected duration plus a real completion criterion. The duration supports planning; the criterion decides when cooking is actually complete.
+### Temperature
+Core target where temperature is the decisive criterion.
 
-## Observation/recheck model
-Later planner versions should allow outcomes such as:
-- not ready → recheck in 15 min;
-- nearly ready → recheck in 5–10 min;
-- ready → complete and release resource.
+### Combined/state-driven
+A nominal duration/temperature may guide the cook while tenderness/appearance remains authoritative.
 
-This should modify only downstream/dependent planning as appropriate.
+Safety-critical fixed temperatures are verified against authoritative current sources before encoding them as recipe rules.
 
-## Illustrative JSON shape
-Not yet frozen:
+## Observation / recheck model
+Observation-driven cooking is implemented.
 
-```json
-{
-  "id": "pork-belly-burnt-ends-meal",
-  "version": 1,
-  "title": "Pork Belly Burnt Ends",
-  "image": "assets/recipes/pork-belly-burnt-ends.webp",
-  "servings": { "reference": 4, "min": 2, "max": 8 },
-  "components": ["pork", "grenaille", "fresh-sauce"],
-  "ingredients": [
-    {
-      "id": "pork-belly",
-      "name": "Poitrine de porc",
-      "quantity": 1400,
-      "unit": "g",
-      "scale": "linear",
-      "category": "meat"
-    }
-  ],
-  "steps": [
-    {
-      "id": "smoke-pork",
-      "component": "pork",
-      "title": "Fumer le porc",
-      "summary": "Smoker 125 °C · 2 h à 2 h 30",
-      "durationRangeMin": [120, 150],
-      "resources": ["woodfire"],
-      "woodfire": {
-        "mode": "SMOKER",
-        "temperatureC": 125,
-        "smoke": true,
-        "pellets": true,
-        "support": "grill_plate",
-        "covered": false
-      },
-      "completion": {
-        "type": "appearance",
-        "description": "Croûte brun-rouge, surface sèche"
-      }
-    }
-  ]
-}
-```
+A step may expose recheck behavior. The active cook derives practical options such as:
+- `Encore ferme`;
+- `Presque prêt`;
+- `Très tendre`;
+- temperature equivalents around the declared target.
 
-## Shopping-list generation
-Generate the list after component selection and serving scaling.
+A not-ready outcome:
+1. records the observation timestamp;
+2. keeps the step incomplete;
+3. creates a future recheck timestamp;
+4. passes that expected completion back into the planner.
 
-Pipeline:
-1. collect ingredients from selected components;
-2. apply each scaling rule;
-3. merge compatible duplicate ingredients;
-4. normalize/display practical units;
-5. group by shopping category;
-6. retain optional flags and recipe-specific notes.
+A ready outcome records actual completion and clears the pending recheck.
 
-Do not merge ingredients when doing so would lose important form/preparation information (e.g. fresh garlic vs garlic powder).
+Planner buffers may absorb a limited recheck delay before dependent work/service moves.
 
-## Versioning
-Cook sessions must retain the recipe/content version used for that cook so future recipe edits do not rewrite history.
+## Planning semantics
+The operational schedule is generated from constraints rather than a hard-coded timeline.
 
-Breaking schema changes require an explicit schema version and migration/validation strategy.
+Planner inputs include:
+- desired serving timestamp;
+- step durations/ranges;
+- dependencies/lags;
+- planning buffers;
+- Woodfire resource reservations;
+- explicit user delays;
+- actual starts/completions;
+- expected completion from pending rechecks.
 
-## Validation goals
-Before a recipe enters the curated library, validate at least:
-- unique ids;
-- valid dependencies (no missing references/cycles);
-- ingredient quantities/units;
-- valid Woodfire settings;
-- no impossible resource overlap after planning;
-- serving-scaling behavior;
-- presence of meaningful completion criteria for uncertain long-cook steps;
-- consistency between ingredient overview and step instructions.
+Legacy preferred-start offsets are no longer required by the Pork Belly reference. New recipes should express real relationships through dependencies/resources/buffers/service anchors rather than UI offsets.
+
+See `sources/PLANNER_V1.md`.
+
+## Serving capacity
+Ingredient and structured step quantities scale within the declared serving range, but Planner V1 does not synthesize additional batches or automatically alter durations from servings.
+
+Therefore `servings.max` must remain within one credible execution structure. If more servings require another Woodfire batch, additional vessel cycle or materially different timing, restrict the advertised range until batching semantics exist.
+
+## Shopping/prep
+Shopping/pre-cook generation uses selected servings and top-level ingredient data.
+
+Current output includes:
+- scaled categorized ingredients;
+- optional markers;
+- recipe-specific consumables;
+- advance-prep reminders;
+- equipment/accessory requirements;
+- planner-derived recommended start time.
+
+Shopping check state is version-scoped by recipe content version so a changed recipe does not silently inherit stale checked items.
+
+## Versioning and runtime separation
+Three kinds of version/maturity information must not be conflated:
+- `schemaVersion` — data contract version;
+- recipe `version` — curated content version stored in cook history/snapshots;
+- manifest `qualification` — real-cook maturity of current content/process.
+
+Runtime facts such as actual starts/completions, observations, rechecks and measurements belong to the session/journal, not to the curated recipe JSON.
+
+## Validation gates
+Before an entry becomes `available`, the generic contract verifies at least:
+- unique/coherent ids and component ownership;
+- valid serving bounds;
+- ingredient/scaling structures;
+- structured step quantity materialization;
+- valid dependencies/no cycles;
+- valid completion/recheck semantics;
+- explicit Woodfire state/reservation consistency;
+- resolvable service milestone;
+- schedule generation at min/reference/max servings;
+- no unresolved baseline Woodfire conflict;
+- local illustrated cover;
+- valid qualification metadata.
+
+Passing these gates establishes technical executability only. Real-cook maturity follows `RECIPE_QUALIFICATION_V1.md`.

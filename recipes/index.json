@@ -4,6 +4,7 @@
     {
       "id": "pork-belly-burnt-ends-meal",
       "status": "available",
+      "qualification": "validated",
       "recipeUrl": "./recipes/pork-belly-burnt-ends.json",
       "title": "Pork Belly Burnt Ends",
       "description": "Porc fumé, confit et caramélisé avec grenailles croustillantes et sauce fraîche citronnée.",
@@ -17,6 +18,7 @@
     {
       "id": "sweet-savory-turkey-zucchini-gratin",
       "status": "available",
+      "qualification": "test_cooked",
       "recipeUrl": "./recipes/sweet-savory-turkey-zucchini-gratin.json",
       "title": "Roulé de dinde sucré-salé & gratin de courgettes",
       "description": "Dinde fumée puis rôtie au profil soja-miel-paprika, avec gratin de courgettes crémeux cuit en parallèle.",
@@ -30,6 +32,7 @@
     {
       "id": "smoked-beef-barbacoa",
       "status": "available",
+      "qualification": "test_cooked",
       "recipeUrl": "./recipes/smoked-beef-barbacoa.json",
       "title": "Tacos barbacoa de bœuf fumée",
       "description": "Jarret fumé puis braisé jusqu’à être très tendre, servi en coques rigides avec salsa fumée et garnitures fraîches.",
@@ -43,6 +46,7 @@
     {
       "id": "honey-soy-salmon-rice-asparagus",
       "status": "available",
+      "qualification": "untested",
       "recipeUrl": "./recipes/honey-soy-salmon-rice-asparagus.json",
       "title": "Saumon laqué soja-miel, asperges & riz citronné",
       "description": "Repas rapide piloté par température avec riz préparé en parallèle et finition des asperges au Woodfire.",
@@ -56,6 +60,7 @@
     {
       "id": "smoked-chicken-shawarma-potatoes",
       "status": "available",
+      "qualification": "untested",
       "recipeUrl": "./recipes/smoked-chicken-shawarma-potatoes.json",
       "title": "Poulet shawarma fumé, pommes de terre épicées & sauce yaourt",
       "description": "Marinade en avance, fumage court puis grill, potatoes croustillantes et sauce yaourt préparée en parallèle.",
@@ -69,6 +74,7 @@
     {
       "id": "reverse-sear-beef-potatoes-pepper-sauce",
       "status": "available",
+      "qualification": "untested",
       "recipeUrl": "./recipes/reverse-sear-beef-potatoes-pepper-sauce.json",
       "title": "Bœuf reverse-sear, grenailles croustillantes & sauce poivre",
       "description": "Fumage doux, passage Air Fry puis saisie très chaude avec pilotage à la température et sauce au poivre sans alcool.",
@@ -82,6 +88,7 @@
     {
       "id": "smoky-honey-soy-wings-potatoes-slaw",
       "status": "available",
+      "qualification": "untested",
       "recipeUrl": "./recipes/smoky-honey-soy-wings-potatoes-slaw.json",
       "title": "Wings miel-soja fumées, potatoes croustillantes & coleslaw",
       "description": "Deux branches concurrentes pour le Woodfire afin d’éprouver la résolution de conflit de ressource avant une finition caramélisée.",
@@ -95,6 +102,7 @@
     {
       "id": "glazed-duck-sweet-potato-citrus",
       "status": "available",
+      "qualification": "untested",
       "recipeUrl": "./recipes/glazed-duck-sweet-potato-citrus.json",
       "title": "Magret de canard laqué miel-soja-orange, patate douce & sauce agrumes",
       "description": "Peau croustillante, laquage miel-soja-orange, patate douce rôtie et sauce agrumes sans alcool.",
@@ -108,6 +116,7 @@
     {
       "id": "smoky-bbq-ribs-mac-slaw",
       "status": "available",
+      "qualification": "untested",
       "recipeUrl": "./recipes/smoky-bbq-ribs-mac-slaw.json",
       "title": "Ribs BBQ fumées, mac & cheese crémeux & coleslaw",
       "description": "Ribs fumées puis attendries à couvert, glacées au BBQ avec mac & cheese crémeux et coleslaw frais.",
@@ -121,6 +130,7 @@
     {
       "id": "charred-halloumi-veg-couscous",
       "status": "available",
+      "qualification": "untested",
       "recipeUrl": "./recipes/charred-halloumi-veg-couscous.json",
       "title": "Halloumi grillé, légumes méditerranéens & couscous citronné",
       "description": "Halloumi doré, légumes grillés, couscous citronné et sauce yaourt aux herbes.",
@@ -134,6 +144,7 @@
     {
       "id": "glazed-chicken-skewers-rice",
       "status": "available",
+      "qualification": "untested",
       "recipeUrl": "./recipes/glazed-chicken-skewers-rice.json",
       "title": "Brochettes de poulet teriyaki, légumes grillés & riz",
       "description": "Poulet laqué soja-miel-gingembre, légumes grillés et riz jasmin préparé en parallèle.",
