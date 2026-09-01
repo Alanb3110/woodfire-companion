@@ -23,12 +23,13 @@ The automated suite must verify that:
 - manifest id/title/serving range agree with the recipe;
 - the manifest carries valid qualification metadata;
 - `validateRecipe()` accepts the recipe;
-- structured step ingredient usage validates;
+- structured ingredient usage validates across both active steps and advance preparation;
 - every user-facing ingredient exposes an actionable baseline quantity/range rather than only `au goût`;
 - ingredient scaling works at minimum, reference and maximum servings;
 - shopping/pre-cook generation succeeds for those serving counts;
+- serving-aware advance-prep materialization contains no unresolved `{{use:...}}` token;
 - `buildMealSchedule()` generates a complete schedule at minimum, reference and maximum servings;
-- generated active-step text has no unresolved quantity tokens;
+- generated active-step text contains no unresolved quantity token;
 - declared dependencies are satisfied;
 - the baseline has no unresolved Woodfire conflict;
 - one unambiguous service milestone resolves for journal/session semantics;
@@ -50,6 +51,17 @@ Automated tests may establish that a recipe is technically executable but cannot
 Therefore CI must never automatically promote `untested → test_cooked → validated`.
 
 Qualification changes require real-cook evidence as defined by `RECIPE_QUALIFICATION_V1.md`.
+
+## Serving-aware instruction contract
+Top-level ingredients remain authoritative for shopping totals.
+
+When user-facing quantities depend on servings, structured `ingredientUsage` may be used in:
+- active-cook step summary/details;
+- `advancePrep[].details`.
+
+Both contexts must use the same selected serving count. This prevents the shopping list from scaling while a marinade/prep reminder or active step remains silently fixed at reference servings.
+
+This text materialization does not change Planner V1 duration, batching, dependency or resource semantics.
 
 ## Meal-planning context API
 Recipe-facing integrations use:
@@ -97,7 +109,7 @@ Do not add individual executable recipe or cover filenames to the static service
 Qualification does not change offline caching: an `untested` recipe with `status: available` is still executable and must remain available offline.
 
 ## V1 serving-capacity rule
-Ingredient quantities and structured step quantities may scale within `servings.min..max`, and the meal-planning context carries selected servings, but Planner V1 does not synthesize additional cooking batches or alter duration automatically from serving count.
+Ingredient quantities and serving-aware instruction quantities may scale within `servings.min..max`, and the meal-planning context carries selected servings, but Planner V1 does not synthesize additional cooking batches or alter duration automatically from serving count.
 
 Therefore `servings.max` must only advertise a quantity that can follow the same declared step/resource structure on the supported Woodfire setup. If more servings require another batch, vessel cycle or materially different timing, restrict the range until batching/capacity semantics are implemented.
 

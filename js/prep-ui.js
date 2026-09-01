@@ -151,10 +151,10 @@ function renderEquipment(recipe) {
   }
 }
 
-function renderAdvancePrep(recipe) {
+function renderAdvancePrep(recipe, servings) {
   const container = $('advancePrepList');
   if (!container) return;
-  const items = getAdvancePrep(recipe);
+  const items = getAdvancePrep(recipe, servings);
   container.innerHTML = '';
 
   if (!items.length) {
@@ -182,5 +182,5 @@ export function renderPreCook(recipe, servings, formatQuantity) {
   mergeIngredientAndShoppingSections(servings);
   renderShopping(recipe, servings, formatQuantity);
   renderEquipment(recipe);
-  renderAdvancePrep(recipe);
+  renderAdvancePrep(recipe, servings);
 }

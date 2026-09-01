@@ -1,54 +1,60 @@
-# Woodfire Companion — Step Ingredient Usage V1
+# Woodfire Companion — Ingredient Usage V1
 
 ## Goal
-Keep active-cook instructions consistent with the selected serving count without duplicating hard-coded reference quantities inside prose.
+Keep both active-cook instructions **and advance preparation** consistent with the selected serving count without duplicating hard-coded reference quantities inside prose.
 
-Top-level `ingredients` remain the source for the ingredient/shopping view. `step.ingredientUsage` describes how much of those ingredients a particular executable step uses.
+Top-level `ingredients` remain authoritative for the ingredient/shopping view. Local `ingredientUsage` records describe how much of those ingredients a particular step or advance-prep instruction uses.
 
-## Data shape
-A step may declare:
+## Supported locations
+`ingredientUsage` may currently be declared on:
+- an executable `step`;
+- an `advancePrep` item.
 
-```json
-"ingredientUsage": [
-  {
-    "id": "rub-salt",
-    "ingredientId": "salt",
-    "quantity": { "min": 18, "max": 22 },
-    "unit": "g"
-  }
-]
-```
+The same token syntax and scaling semantics apply in both locations.
 
-The step text then references the local usage id:
+Example:
 
 ```json
-"details": [
-  "Ajouter {{use:rub-salt}} de sel."
-]
+{
+  "id": "marinate-ahead",
+  "ingredientUsage": [
+    {
+      "id": "marinade-meat",
+      "ingredientId": "meat",
+      "quantity": 2,
+      "unit": "kg",
+      "scale": { "type": "linear" }
+    }
+  ],
+  "details": "Mariner {{use:marinade-meat}} de viande."
+}
 ```
 
-At 4 reference servings this becomes `Ajouter 18–22 g de sel.`. At 8 servings, with linear/range scaling, it becomes `Ajouter 36–44 g de sel.`.
+The token is materialized at the selected serving count before display.
 
 ## Inheritance
 Each usage references one top-level ingredient through `ingredientId`.
 
-Unless overridden, the usage inherits:
+Unless overridden, it inherits:
 - `quantity`;
 - `unit`;
 - `scale`.
 
-A usage override is interpreted at the recipe's `servings.reference` count before scaling.
+A local override is interpreted at the recipe's `servings.reference` count before scaling.
 
-Examples:
-- potatoes can inherit their full top-level quantity for a boiling step;
-- salt can override the total shopping quantity with the subset used in the rub;
-- lemon count can inherit the ingredient's `step` scale;
-- lemon juice can reference the same lemon ingredient but override quantity/unit and use `linear` scaling because millilitres of juice are not governed by the whole-fruit step breakpoint.
+Typical uses:
+- inherit a full top-level quantity for a step;
+- use only the subset of salt/oil/sauce needed in one phase;
+- inherit a whole-fruit `step` scale;
+- override quantity/unit where prose needs juice mass/volume instead of fruit count;
+- keep an advance marinade consistent when the user changes servings before the cook begins.
 
-## Validation rules
-`validateStepIngredientUsage()` enforces:
+## Validation
+`validateRecipeIngredientUsage()` validates both executable steps and `advancePrep` items.
+
+It enforces:
 - `ingredientUsage` is an array when present;
-- local usage ids are unique inside one step;
+- local usage ids are unique inside one item;
 - each `ingredientId` exists in the top-level ingredient list;
 - quantities are valid non-negative numbers/ranges/null;
 - units are non-empty strings when supplied;
@@ -57,57 +63,44 @@ Examples:
 - scale types use the same vocabulary as top-level ingredients;
 - usage-local `step` breakpoints are strictly increasing and cover `servings.max`;
 - every `{{use:id}}` token resolves to a declared usage;
-- every declared usage is referenced by the step summary/details.
+- every declared usage is referenced in that item's text.
 
-Recipe loading fails before use if structured step usage is invalid.
+`validateStepIngredientUsage()` remains available for step-only validation. `validateAdvancePrepIngredientUsage()` provides the equivalent advance-prep check. Recipe loading uses the whole-recipe validator.
 
-## Rendering/materialization
-`materializeRecipeForServings(recipe, servings)` creates a non-mutating recipe view whose step summaries/details contain formatted quantities for the requested serving count.
+## Materialization
+`materializeRecipeForServings(recipe, servings)` returns a non-mutating serving-specific view in which:
+- step summaries/details are materialized;
+- advance-prep details are materialized.
 
-`buildMealSchedule()` performs this materialization before handing the recipe to the low-level planner. Active Cook therefore consumes the same selected serving count as the pre-cook ingredient view.
+`materializeAdvancePrepForServings()` is also used by the pre-cook layer directly.
 
-The low-level scheduling semantics are unchanged:
+`buildMealSchedule()` continues to materialize recipe step text before low-level scheduling, while shopping/prep rendering materializes advance-prep text for the same selected serving count.
+
+This does not change planner semantics:
 - no duration scaling;
 - no automatic batching;
-- no new resource reservations;
-- no dependency changes.
-
-If a larger serving count cannot realistically follow the same execution structure, the recipe's `servings.max` must stay below that point until capacity/batching semantics exist.
+- no dependency/resource change.
 
 ## Formatting
 Current display formatting:
-- decimal comma in French;
+- French decimal comma;
 - up to two decimal places;
 - ranges use an en dash;
-- units map to existing app labels such as `g`, `kg`, `mL`, `c. à soupe`, `c. à café`;
-- `displayUnit: false` suppresses the unit for prose such as `2 citron(s)`.
+- existing application unit labels such as `g`, `kg`, `mL`, `c. à soupe`, `c. à café`;
+- `displayUnit: false` suppresses the unit where prose provides the noun itself.
 
 ## Relationship to shopping totals
-V1 does not sum `ingredientUsage` to generate the shopping list. Top-level ingredient quantities remain authoritative there.
+V1 does not sum local `ingredientUsage` records to build the shopping list. Top-level ingredient quantities remain authoritative.
 
-This is deliberate because exact conservation is not universally meaningful:
-- one physical ingredient can be represented twice, e.g. lemon count and extracted juice;
-- some usages are optional;
-- ranges may overlap differently;
-- finishing/seasoning quantities can remain intentionally flexible.
+This is deliberate because exact conservation is not always meaningful: one ingredient can be represented in multiple ways, usages may be optional and finishing quantities can remain flexible. Curated content must nevertheless keep shopping totals and local instructions sensibly consistent.
 
-Curated recipes should nevertheless keep top-level shopping quantities and step usage sensibly consistent.
+## Reference migrations
+Pork Belly content version 6 established serving-aware active-step quantities.
 
-## Pork Belly reference migration
-Pork Belly content version 6 is the first curated recipe migrated to this mechanism.
-
-Serving-aware active-cook quantities now cover:
-- pork/rub;
-- covered-phase BBQ sauce, honey, apple juice and optional butter;
-- fresh sauce quantities;
-- potato boiling quantity;
-- potato oil/seasoning quantities.
-
-Regression tests explicitly cover 2, 4, 6 and 8 servings and ensure no unresolved `{{use:...}}` token reaches the generated schedule.
+Barbacoa content version 2 extends the same mechanism to advance preparation so the marinade shown before cooking follows the selected 6–8 serving configuration instead of remaining hard-coded to the 8-person reference. Its salsa, braise, toppings and shell quantities are also serving-aware in active-cook text while the established execution timeline remains unchanged.
 
 ## Future work
-Potential later extensions, only if justified by real meals:
-- usage-aware shopping aggregation;
-- explicit ingredient partition/conservation semantics;
-- capacity/batch rules tied to serving count;
-- structured preparation actions beyond textual substitution.
+Only if real meals justify it:
+- usage-aware shopping aggregation/conservation checks;
+- capacity/batch rules tied to servings;
+- richer structured preparation actions beyond textual substitution.

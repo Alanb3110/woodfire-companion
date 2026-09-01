@@ -1,4 +1,5 @@
 import { scaleIngredients } from './recipe.js';
+import { materializeAdvancePrepForServings } from './step-details.js';
 
 const CATEGORY_LABELS = {
   viande: 'Viande',
@@ -59,8 +60,9 @@ export function getRequiredEquipment(recipe) {
   return (recipe.equipment || []).filter(item => !item.consumable);
 }
 
-export function getAdvancePrep(recipe) {
-  return Array.isArray(recipe.advancePrep) ? recipe.advancePrep : [];
+export function getAdvancePrep(recipe, servings = recipe?.servings?.reference) {
+  if (!Array.isArray(recipe?.advancePrep)) return [];
+  return materializeAdvancePrepForServings(recipe, servings);
 }
 
 export function countShoppingItems(groups) {
