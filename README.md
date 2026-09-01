@@ -4,53 +4,79 @@ Mobile-first static PWA for planning and executing complete Ninja Woodfire meals
 
 Current product flow:
 
-**recipe library → servings + desired serving time → ingredients/courses + prep → generated meal plan → active cook → local cook journal**
+**illustrated recipe library → servings + desired serving time → scaled ingredients/shopping + prep → generated meal plan → active cook → local cook journal**
 
-No server, runtime API or account is required. Active state, shopping checks, settings and journal entries are stored locally in the browser. The app is designed to work offline after its assets and available recipes have been cached.
+No server, runtime API or account is required. Active state, shopping checks, settings and journal entries are stored locally in the browser. The application is designed for GitHub Pages and installed iPhone/Safari PWA use, including offline operation after the relevant assets have been cached.
 
-## Current library
+## Current maturity
 
-The library is driven by `recipes/index.json`.
+Woodfire Companion has moved beyond the original single-meal POC.
 
-Executable now:
-- **Pork Belly Burnt Ends** + smashed grenaille potatoes + fresh lemon-yogurt sauce;
+Implemented today:
+- manifest-driven illustrated multi-recipe library;
+- serving configuration and planner-derived recommended start time;
+- scaled ingredients and categorized shopping/prep checklist;
+- dependency-aware serving-time planner;
+- Woodfire exclusive-resource conflict resolution;
+- buffers, actual timestamps, explicit delays and observation-driven rechecks;
+- active-cook `upcoming / active / done` lifecycle;
+- fast optional temperature logging;
+- versioned active-session migration and frozen recipe snapshots;
+- local Cook Journal with rating/notes and JSON backup/restore;
+- conservative service-worker update lifecycle for long cooks;
+- automated CI acceptance for every executable recipe.
+
+The main remaining product risk is **real-cook qualification**, not basic planner construction.
+
+## Recipe library
+
+`recipes/index.json` is the library manifest and currently exposes 11 executable meals.
+
+### Validated after a documented real-cook refinement loop
+- **Pork Belly Burnt Ends** + smashed grenaille potatoes + fresh lemon-yogurt sauce.
+
+### Real-cooked baseline, not yet fully validated
 - **Roulé de dinde sucré-salé & gratin de courgettes**;
 - **Tacos barbacoa de bœuf fumée** + salsa fumée + garnitures fraîches.
 
-Recipe content lives in structured JSON under `recipes/` rather than being hard-coded into `app.js`.
+### Technically executable, real-cook qualification still required
+- **Saumon laqué soja-miel, asperges & riz citronné**;
+- **Poulet shawarma fumé, pommes de terre épicées & sauce yaourt**;
+- **Bœuf reverse-sear, grenailles croustillantes & sauce poivre**;
+- **Wings miel-soja fumées, potatoes croustillantes & coleslaw**;
+- **Magret de canard laqué miel-soja-orange, patate douce & sauce agrumes**;
+- **Ribs BBQ fumées, mac & cheese crémeux & coleslaw**;
+- **Halloumi grillé, légumes méditerranéens & couscous citronné**;
+- **Brochettes de poulet teriyaki, légumes grillés & riz**.
 
-## Current user flow
+Availability and culinary maturity are intentionally separate. `status: available` means the recipe is executable through the generic application pipeline; `qualification` is `untested`, `test_cooked` or `validated`. See `sources/RECIPE_QUALIFICATION_V1.md`.
 
-1. Open the recipe library.
-2. Select an available recipe.
-3. Choose servings and desired serving time.
-4. Review scaled ingredients/courses, advance prep and equipment.
-5. Start the cook.
-6. Follow dependency-aware planning with explicit active/upcoming/done step states.
-7. Use observations/rechecks when doneness matters more than a timer.
-8. Log temperatures manually when useful.
-9. Correct actual step/control timestamps if a tap was made late.
-10. Finish the meal and keep the completed session in the local cook journal.
+## User flow
 
-DEV builds also expose a **Cuisson test** tool to exercise the real active-cook UI around the current clock without waiting through a multi-hour meal. Test sessions do not pollute the real journal.
+1. Open the illustrated recipe library.
+2. Select an executable meal.
+3. Review its real-cook qualification.
+4. Choose servings and desired serving time.
+5. Review scaled ingredients, shopping/prep and equipment.
+6. Start the cook.
+7. Follow the generated dependency/resource-aware schedule.
+8. Start/complete phases, record observations/rechecks and log temperatures where useful.
+9. Correct actual timestamps if a tap was late.
+10. Serve the meal and retain the completed session in the local Cook Journal.
+
+DEV builds expose a **Cuisson test** tool that exercises the real active-cook UI around the current clock without waiting through a multi-hour meal. Test sessions do not pollute the real journal.
 
 ## Run locally
 
-Do not open `index.html` directly with `file://` because recipe/library loading and the service worker require HTTP.
-
-With the project's existing Node setup, the simplest option on Windows/PowerShell is:
+Do not open `index.html` through `file://`; recipe/library loading and service-worker behavior require HTTP.
 
 ```powershell
 npx http-server . -p 8000 -c-1
 ```
 
-Then open:
+Then open `http://localhost:8000`.
 
-```text
-http://localhost:8000
-```
-
-`-c-1` disables HTTP caching during development. If the local PWA still serves stale assets, unregister the localhost service worker from the browser dev tools and reload.
+`-c-1` disables HTTP caching during development. If localhost still serves stale PWA assets, unregister the localhost service worker in browser developer tools and reload.
 
 ## Tests
 
@@ -60,69 +86,9 @@ The project uses Node's built-in test runner and has no npm runtime dependency.
 npm test
 ```
 
-GitHub Actions runs the suite on pull requests and supported branch pushes. Coverage includes recipe/schema validation, generic acceptance of every `available` recipe, scaling/shopping, serving-time planning, dependencies/resources, buffers/rechecks, session migrations/lifecycle, journal behavior, DEV test-cook contracts, version consistency and static DOM/module contracts.
+GitHub Actions runs the suite on pull requests and supported branch pushes. The generic `available`-recipe contract verifies schema/content validation, qualification metadata, min/reference/max scaling, shopping/prep generation, schedule generation, structured active-step quantities, dependencies, service milestone resolution, Woodfire conflict freedom and local illustrated covers.
 
-## GitHub Pages
-
-Deploy from the `main` branch and repository root.
-
-Typical URL:
-
-```text
-https://<username>.github.io/woodfire-companion/
-```
-
-All app paths are relative so deployment from the repository subpath remains supported.
-
-## Install on iPhone
-
-In Safari:
-
-1. Open the GitHub Pages URL.
-2. Tap **Partager**.
-3. Choose **Sur l’écran d’accueil**.
-4. Tap **Ajouter**.
-
-After the first successful online load, the service worker caches the application shell, library manifest and every recipe marked `available` for offline use.
-
-## Current features
-
-### Library / pre-cook
-- manifest-driven multi-recipe library;
-- local realistic WebP covers for every executable recipe, reused in cards and recipe heroes;
-- available vs coming-soon status;
-- recipe metadata/components;
-- serving-size selector;
-- scaled ingredient/course checklist;
-- recipe-version-scoped shopping progress;
-- advance-prep and equipment lists;
-- 24-hour serving-time selector;
-- planner-derived recommended start time;
-- active-cook resume path;
-- local cook journal.
-
-### Planner / active cook
-- desired serving-time anchor;
-- dependency-aware backward planning;
-- buffers and parallel work;
-- Woodfire exclusive-resource conflict handling;
-- exact structured Woodfire configuration for relevant steps;
-- `upcoming / active / done` lifecycle with separate actual start/end timestamps;
-- next action + countdown;
-- current active step / Woodfire state;
-- observation-driven rechecks such as `Encore ferme / Presque prêt / Très tendre`;
-- +5/+10/+15 min explicit delay on the next unfinished action;
-- dependency-aware replanning from actual starts, finishes and pending rechecks;
-- editable real timestamps for late taps.
-
-### Temperature tracking
-- fast manual entry;
-- automatic timestamps;
-- adjustable target;
-- chart;
-- undo last sample;
-- CSV export;
-- persistent local state.
+Additional regression tests cover planner/replanning behavior, midnight handling, buffers/rechecks, session migrations, recipe snapshots, timestamp correction, journal backup/merge, optional temperature capability, PWA/offline contracts and static UI/module wiring.
 
 ## Architecture
 
@@ -133,65 +99,93 @@ woodfire-companion/
 ├── prep.css
 ├── journal.css
 ├── observations.css
-├── app.js                     # top-level UI/orchestration
+├── app.js                       # top-level view/render wiring
 ├── service-worker.js
 ├── manifest.webmanifest
 ├── package.json
 ├── js/
-│   ├── planner.js             # pure low-level scheduling solver
-│   ├── meal-planner.js        # stable recipe-facing planner facade
-│   ├── recipe.js              # validation/scaling/Woodfire formatting
+│   ├── planner.js               # pure low-level scheduling solver
+│   ├── meal-planner.js          # stable recipe-facing planning facade
+│   ├── active-cook-controller.js# DOM-free active-cook orchestration
+│   ├── recipe.js                # recipe validation/scaling
+│   ├── step-details.js          # serving-aware step quantity materialization
 │   ├── recipe-loader.js
-│   ├── library.js
-│   ├── session.js             # versioned active-session state/migrations
-│   ├── observations.js
+│   ├── library.js               # manifest + qualification semantics
 │   ├── shopping.js
 │   ├── prep-ui.js
+│   ├── session.js               # versioned session state/migrations
+│   ├── observations.js
+│   ├── temperature.js
+│   ├── temperature-ui.js
 │   ├── journal.js
 │   ├── journal-ui.js
 │   ├── timestamp-editor.js
 │   ├── dev-tools.js
 │   └── settings.js
-├── assets/
-│   └── recipes/                 # local illustrated recipe covers
+├── assets/recipes/              # local WebP recipe covers
 ├── recipes/
 │   ├── index.json
-│   ├── pork-belly-burnt-ends.json
-│   ├── sweet-savory-turkey-zucchini-gratin.json
-│   └── smoked-beef-barbacoa.json
+│   └── *.json                   # structured executable meals
 ├── tests/
-├── sources/                   # product/technical source of truth
+├── sources/                     # product/technical source of truth
 └── icons/
 ```
 
+Conceptual layers remain:
+1. recipe/content data;
+2. pure/testable planning engine;
+3. session/persistence/orchestration state;
+4. UI rendering/interactions.
+
+Do not re-couple recipe-specific timing or quantities into `app.js`.
+
 ## Planner status
 
-Planner V1 derives executable schedules from:
-- desired serving time;
-- step durations;
+Planner V1 builds schedules primarily from:
+- desired serving timestamp;
+- step durations/ranges;
 - dependencies;
 - planning buffers;
-- resource requirements/conflicts;
-- actual starts/completions;
-- explicit delays;
-- pending observation rechecks.
+- Woodfire resource reservations/conflicts;
+- actual starts and completions;
+- expected completion from pending observation rechecks;
+- explicit user delays.
 
-The Pork Belly reference no longer depends on legacy fixed start offsets. The Woodfire is the initial exclusive resource; other resources such as oven/stovetop/fridge/passive work may run in parallel but are not yet generally conflict-solved.
+The Pork Belly reference is fully migrated away from legacy preferred-start offsets. The Woodfire is currently the only automatically conflict-resolved exclusive resource. Other declared resources can run in parallel but are not generally conflict-solved yet.
 
-Serving count is carried through the planner context but Planner V1 does not yet synthesize extra batches or alter durations automatically from serving count. Recipe serving ranges therefore remain limited to quantities that can use the same declared execution structure.
-
-See:
-- `sources/PRODUCT_SPEC.md`
-- `sources/RECIPE_MODEL.md`
-- `sources/RECIPE_SCHEMA_V1.md`
-- `sources/PLANNER_V1.md`
-- `sources/ACTIVE_COOK_V1.md`
-- `sources/MULTI_RECIPE_CONTRACT.md`
-- `sources/SESSION_V3.md`
-- `sources/TECHNICAL_CONTEXT.md`
+Serving count scales ingredients and structured active-cook quantities, but Planner V1 does not synthesize extra batches or automatically alter duration from serving count. Recipe serving ranges must therefore stay within one credible declared execution structure.
 
 ## Persistence
 
-Active cook state remains in the compatibility namespace `woodfire-companion-v1`, but the stored record now carries an explicit schema version and migrations. Session V3 separates actual starts/completions, stores a recipe snapshot so an in-progress cook is insulated from later recipe deployments, and marks DEV test sessions explicitly.
+Active cook state remains under the compatibility key `woodfire-companion-v1`, with explicit schema migration. Current sessions store separate actual starts/completions and a detached recipe snapshot so a deployed recipe update cannot silently mutate a cook already in progress.
 
-The cook journal and settings/shopping stores remain separate because their lifecycles differ from the active session.
+Shopping, settings and Cook Journal use separate stores because their lifecycles differ. The journal supports local JSON backup/restore; active session/settings/shopping remain outside that backup by design.
+
+## PWA / update contract
+
+The service worker uses a separate cache generation and the normal waiting lifecycle. A newly deployed worker must not force activation over an already-open multi-hour cook. It activates after controlled clients close, then the next launch uses the new generation.
+
+This behavior is covered by automated contracts but still requires periodic installed-iPhone qualification, especially across offline/online transitions and deployed updates.
+
+## Current priorities
+
+1. Keep source documentation synchronized with `main`.
+2. Qualify the executable library through representative real cooks; record feedback in the Cook Journal and promote durable findings into recipe/source revisions.
+3. Prioritize test cooks that exercise distinct planner patterns: fast temperature-driven/parallel work, genuine Woodfire conflict, and long tenderness/recheck behavior.
+4. Continue small `app.js` extractions only when UI/orchestration responsibility becomes materially hard to reason about; do not introduce a framework for its own sake.
+5. Complete repository hygiene: inventory stale branches and protect `main` with CI when repository settings allow it.
+6. Extend planning windows, non-Woodfire conflict handling, reusable components or batching only when a real meal demonstrates the need.
+7. Defer predictive ETA until enough clean real-cook history exists to express uncertainty honestly.
+
+## Key sources
+
+- `sources/PRODUCT_SPEC.md`
+- `sources/RECIPE_MODEL.md`
+- `sources/RECIPE_SCHEMA_V1.md`
+- `sources/RECIPE_QUALIFICATION_V1.md`
+- `sources/MULTI_RECIPE_CONTRACT.md`
+- `sources/PLANNER_V1.md`
+- `sources/ACTIVE_COOK_V1.md`
+- `sources/SESSION_V3.md`
+- `sources/COOK_JOURNAL_V2.md`
+- `sources/TECHNICAL_CONTEXT.md`
