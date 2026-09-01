@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import { validateRecipe } from '../js/recipe.js';
 import { validateRecipeIngredientUsage, materializeRecipeForServings } from '../js/step-details.js';
 import { buildMealSchedule } from '../js/meal-planner.js';
@@ -10,6 +10,7 @@ import { buildShoppingGroups } from '../js/shopping.js';
 const pork = JSON.parse(await readFile(new URL('../recipes/korean-pulled-pork-woodfire.json', import.meta.url), 'utf8'));
 const rice = JSON.parse(await readFile(new URL('../recipes/egg-fried-rice.json', import.meta.url), 'utf8'));
 const library = JSON.parse(await readFile(new URL('../recipes/index.json', import.meta.url), 'utf8'));
+const recipeFiles = await readdir(new URL('../recipes/', import.meta.url));
 const targetServingAt = new Date(2026, 8, 1, 20, 0, 0, 0);
 
 function assertExecutable(recipe) {
@@ -71,7 +72,7 @@ test('Egg Fried Rice keeps gochujang and Korean pork optional, with no bacon', (
   assert.equal(allItems.find(item => item.sourceId === 'korean-pulled-pork').optional, true);
 });
 
-test('library exposes 17 executable meals including the two new recipes', () => {
+test('library exposes 17 executable meals including one canonical Korean pork recipe', () => {
   const available = library.recipes.filter(entry => entry.status === 'available');
   assert.equal(available.length, 17);
   for (const id of ['korean-pulled-pork-woodfire', 'egg-fried-rice']) {
@@ -80,4 +81,6 @@ test('library exposes 17 executable meals including the two new recipes', () => 
     assert.equal(entry.qualification, 'untested');
     assert.match(entry.visual.imageUrl, /^\.\/assets\/recipes\/.*\.webp$/);
   }
+
+  assert.equal(recipeFiles.filter(name => name.includes('korean-pulled-pork') && name.endsWith('.json')).length, 1);
 });
