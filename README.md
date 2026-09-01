@@ -32,7 +32,7 @@ The main remaining product risk is **real-cook qualification**, not basic planne
 
 ## Recipe library
 
-`recipes/index.json` currently exposes **17 executable meals**.
+`recipes/index.json` is the authoritative inventory; every entry marked `available` is executable through the generic application pipeline.
 
 ### Validated after a documented real-cook refinement loop
 - **Pork Belly Burnt Ends** + smashed grenaille potatoes + fresh lemon-yogurt sauce.
