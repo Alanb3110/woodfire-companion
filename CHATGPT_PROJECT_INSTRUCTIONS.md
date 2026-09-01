@@ -38,7 +38,7 @@ Prefer qualifying the current diverse library through real cooks before adding r
 This is no longer the original one-meal POC.
 
 Current merged product includes:
-- 11 manifest-driven executable illustrated meals;
+- a manifest-driven illustrated library where every `available` meal is executable through the generic app pipeline;
 - serving selection, scaled ingredients and shopping/prep;
 - dependency-aware serving-time planner with buffers and Woodfire conflict resolution;
 - actual starts/completions, +5/+10/+15 next-action delays and observation rechecks;
@@ -49,7 +49,7 @@ Current merged product includes:
 - conservative service-worker updates that do not force a new generation over an open cook;
 - CI acceptance for every `available` recipe.
 
-Pork Belly is the validated reference after a real-cook refinement loop. Turkey/gratin and barbacoa are real-cooked baselines. The 2026-08-31 expansion recipes remain technically executable but unqualified until representative real cooks are recorded.
+Pork Belly is the validated reference after a real-cook refinement loop. Turkey/gratin and barbacoa are real-cooked baselines. Every other currently `available` meal remains technically executable but unqualified until a representative real cook is recorded.
 
 ## Architecture
 Maintain separate conceptual layers:

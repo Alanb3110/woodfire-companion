@@ -36,7 +36,7 @@ The reusable V1 foundation is implemented rather than aspirational.
 
 Current merged capabilities include:
 - illustrated manifest-driven multi-recipe library;
-- 11 executable meals;
+- every `available` meal declared in `recipes/index.json` is executable through the generic app pipeline;
 - servings and serving-time configuration;
 - ingredient scaling and categorized shopping/prep;
 - planner-derived recommended start time;
@@ -87,7 +87,7 @@ Current baseline:
 - Pork Belly Burnt Ends — `validated`;
 - turkey + zucchini gratin — `test_cooked`;
 - smoked beef barbacoa — `test_cooked`;
-- the eight 2026-08-31 expansion meals — `untested` until representative real cooks are recorded.
+- every other currently `available` meal — `untested` until representative real cooks are recorded.
 
 See `sources/RECIPE_QUALIFICATION_V1.md`.
 
