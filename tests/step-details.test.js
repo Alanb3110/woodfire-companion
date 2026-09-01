@@ -3,7 +3,10 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { buildMealSchedule } from '../js/meal-planner.js';
 import {
+  materializeAdvancePrepForServings,
   materializeRecipeForServings,
+  validateAdvancePrepIngredientUsage,
+  validateRecipeIngredientUsage,
   validateStepIngredientUsage
 } from '../js/step-details.js';
 
@@ -19,7 +22,7 @@ function allStepText(recipe) {
 }
 
 test('Pork Belly structured step ingredient usage validates', () => {
-  const validation = validateStepIngredientUsage(pork);
+  const validation = validateRecipeIngredientUsage(pork);
   assert.equal(validation.valid, true, validation.errors.join('\n'));
 });
 
@@ -125,4 +128,44 @@ test('step-local step scaling must cover the recipe maximum serving count', () =
   const validation = validateStepIngredientUsage(fixture);
   assert.equal(validation.valid, false);
   assert.ok(validation.errors.some(error => error.includes('must cover servings.max')));
+});
+
+test('advance-prep ingredient usage materializes with the same serving semantics as steps', () => {
+  const fixture = {
+    servings: { reference: 4, min: 2, max: 8 },
+    ingredients: [
+      { id: 'meat', name: 'Meat', quantity: 2, unit: 'kg', scale: { type: 'linear' } },
+      { id: 'lime', name: 'Lime', quantity: 2, unit: 'piece', scale: { type: 'fixed' } }
+    ],
+    advancePrep: [
+      {
+        id: 'marinate',
+        title: 'Marinate',
+        details: 'Mariner {{use:meat}} avec {{use:lime}} citron(s).',
+        ingredientUsage: [
+          { id: 'meat', ingredientId: 'meat' },
+          { id: 'lime', ingredientId: 'lime', displayUnit: false }
+        ]
+      }
+    ],
+    steps: []
+  };
+
+  const validation = validateAdvancePrepIngredientUsage(fixture);
+  assert.equal(validation.valid, true, validation.errors.join('\n'));
+  assert.equal(materializeAdvancePrepForServings(fixture, 8)[0].details, 'Mariner 4 kg avec 2 citron(s).');
+});
+
+test('advance-prep tokens are included in whole-recipe usage validation', () => {
+  const fixture = {
+    servings: { reference: 4, min: 2, max: 8 },
+    ingredients: [{ id: 'item', name: 'Item', quantity: 1, unit: 'piece', scale: { type: 'fixed' } }],
+    advancePrep: [{ id: 'bad-prep', title: 'Bad prep', details: '{{use:missing}}' }],
+    steps: []
+  };
+
+  const validation = validateRecipeIngredientUsage(fixture);
+  assert.equal(validation.valid, false);
+  assert.ok(validation.errors.some(error => error.includes('advancePrep bad-prep')));
+  assert.ok(validation.errors.some(error => error.includes('without ingredientUsage')));
 });
