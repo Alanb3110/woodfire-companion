@@ -48,9 +48,10 @@ test('Korean pulled pork is an executable long Woodfire recipe', () => {
   assert.match(check.completion.description, /94–95 °C/);
 });
 
-test('Egg Fried Rice keeps gochujang and Korean pork optional', () => {
+test('Egg Fried Rice keeps gochujang and Korean pork optional, with no bacon', () => {
   assertExecutable(rice);
   assert.equal(rice.temperature, undefined);
+  assert.doesNotMatch(JSON.stringify(rice), /bacon/i);
 
   const gochujang = rice.ingredients.find(item => item.id === 'gochujang');
   const porkOption = rice.ingredients.find(item => item.id === 'korean-pulled-pork');
