@@ -78,6 +78,40 @@ test('editing a ready observation updates linked start and completion timestamps
   assert.equal(latestObservationForStep(edited.observations, 'first-check').timestamp, '2026-08-29T18:31:00.000Z');
 });
 
+test('editing a completion observation cannot move it before the recorded start', () => {
+  const stepId = 'finish';
+  const observedAt = '2026-08-29T18:30:00.000Z';
+  const state = {
+    observations: [{
+      stepId,
+      observationId: 'ready',
+      label: 'Prêt',
+      outcome: 'complete',
+      timestamp: observedAt,
+      recheckDueAt: null
+    }],
+    rechecks: {},
+    started: { [stepId]: '2026-08-29T18:00:00.000Z' },
+    completed: { [stepId]: observedAt }
+  };
+
+  assert.throws(
+    () => editLatestObservationTimestamp(state, stepId, new Date('2026-08-29T17:45:00.000Z')),
+    /ne peut pas précéder le début réel/
+  );
+});
+
+test('editing the latest observation preserves observation order', () => {
+  const options = getObservationOptions(porkCheck, pork);
+  const first = applyObservation({ observations: [], rechecks: {}, completed: {} }, porkCheck, options[0], new Date('2026-08-29T18:15:00.000Z'));
+  const ready = applyObservation(first, porkCheck, options[2], new Date('2026-08-29T18:28:00.000Z'));
+
+  assert.throws(
+    () => editLatestObservationTimestamp({ ...ready, started: { 'first-check': '2026-08-29T18:00:00.000Z' } }, 'first-check', new Date('2026-08-29T18:10:00.000Z')),
+    /ne peut pas précéder le contrôle précédent/
+  );
+});
+
 test('pending recheck helpers tolerate stored ISO timestamps', () => {
   const rechecks = { 'first-check': '2026-08-29T18:35:00.000Z' };
   assert.equal(pendingRecheckDate(rechecks, 'first-check').toISOString(), '2026-08-29T18:35:00.000Z');
