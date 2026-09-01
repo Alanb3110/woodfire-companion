@@ -1,5 +1,5 @@
 const APP_VERSION = '0.3.0-dev.10';
-const CACHE_REVISION = 'quick-overnight-recipes-1';
+const CACHE_REVISION = 'final-covers-share-1';
 const CACHE_NAME = `woodfire-companion-${APP_VERSION}-${CACHE_REVISION}`;
 const APP_ASSETS = [
   './',
@@ -8,6 +8,7 @@ const APP_ASSETS = [
   './prep.css',
   './journal.css',
   './observations.css',
+  './share.css',
   './app.js',
   './js/active-cook-controller.js',
   './js/planner.js',
@@ -18,6 +19,7 @@ const APP_ASSETS = [
   './js/library.js',
   './js/recipe-hero.js',
   './js/settings.js',
+  './js/share.js',
   './js/shopping.js',
   './js/prep-ui.js',
   './js/journal.js',
