@@ -22,7 +22,7 @@ Three top-level views:
 State is local-first and designed to remain usable offline once required assets are cached.
 
 ## Library and qualification
-`recipes/index.json` is the discovery manifest and currently contains 11 `available` executable meals.
+`recipes/index.json` is the discovery manifest and currently contains **15 `available` executable meals**.
 
 Availability and culinary maturity are separate:
 - `status: available` means the generic app pipeline can execute the recipe;
@@ -31,7 +31,7 @@ Availability and culinary maturity are separate:
 Current baseline:
 - Pork Belly — `validated`;
 - turkey/gratin and barbacoa — `test_cooked`;
-- eight 2026-08-31 expansion recipes — `untested` until representative real cooks are recorded.
+- the eight 2026-08-31 expansion recipes plus the four quick overnight-prep meals added 2026-09-01 — `untested` until representative real cooks are recorded.
 
 See `sources/RECIPE_QUALIFICATION_V1.md`.
 
@@ -50,7 +50,7 @@ Top-level ingredients remain authoritative for shopping totals. Local usage reco
 
 `js/recipe-loader.js` applies core recipe validation plus whole-recipe ingredient-usage validation.
 
-This closes a previous inconsistency where the shopping list could scale while an advance marinade reminder remained hard-coded to reference servings.
+Serving selection therefore stays coherent across shopping, night-before preparation and active-cook instructions.
 
 ## Current executable recipe set
 The manifest exposes:
@@ -64,18 +64,29 @@ The manifest exposes:
 - magret miel-soja-orange + patate douce;
 - ribs BBQ + mac & cheese + coleslaw;
 - halloumi + légumes + couscous;
-- brochettes teriyaki + légumes + riz.
+- brochettes teriyaki + légumes + riz;
+- poulet gochujang miel-soja + riz + concombre;
+- bavette bulgogi + udon + crudités;
+- filet mignon érable-moutarde-soja + couscous + haricots verts;
+- saumon miso-miel + soba + pak choï.
 
 ### Barbacoa V2
 `recipes/smoked-beef-barbacoa.json` is content version 2.
 
-V2 recovers serving-aware quantities that had been developed on an abandoned branch but never merged:
-- advance marinade now materializes for 6–8 servings;
-- salsa, braise, toppings and shell quantities are serving-aware in Active Cook;
-- practical garlic step scaling avoids fractional cloves;
-- the established 19:00 reference timeline, Woodfire sequence, tenderness criterion and planner buffers are unchanged.
+V2 provides serving-aware quantities for advance marinade, salsa, braise, toppings and shells while preserving the established long-cook planning semantics. See `sources/BARBACOA_TACOS_MEAL.md`.
 
-See `sources/BARBACOA_TACOS_MEAL.md`.
+### Quick overnight-prep batch
+Four recipes added on 2026-09-01 are optimized for a different real-use pattern: do most flavor preparation the previous evening and keep the next-day executable meal short.
+
+They use the existing `advancePrep.ingredientUsage` mechanism and deliberately require no planner extension:
+- gochujang chicken: GRILL 210 °C, 12–18 min cook window, 74 °C endpoint, 2–6 servings;
+- bulgogi bavette: GRILL 230 °C, 8–12 min cook window + 3 min rest, 63 °C reference endpoint, 2–4 servings;
+- maple/mustard/soy pork tenderloin: AIR FRY 200 °C, 18–25 min cook window + 3 min rest, 63 °C endpoint, 2–4 servings;
+- miso/honey salmon: BAKE/ROAST 200 °C, 10–16 min cook window, 63 °C endpoint, 2–4 servings.
+
+The serving caps are conservative so the advertised fast execution does not silently require another batch. All four are `untested`; their minute windows are estimates until real Woodfire cooks provide actual observations.
+
+See `sources/QUICK_OVERNIGHT_RECIPES_2026-09-01.md`.
 
 ## Generic multi-recipe acceptance
 Every manifest entry with `status: available` is covered automatically; generic tests must not enumerate recipe ids.
@@ -92,10 +103,12 @@ At minimum CI verifies:
 - unambiguous service milestone;
 - local illustrated cover.
 
+The quick overnight batch additionally has a recipe-specific regression suite that protects its qualification, safety targets/rest steps, Woodfire state, advertised quick cook windows and min/reference/max planner executability.
+
 See `sources/MULTI_RECIPE_CONTRACT.md`.
 
 ## Serving configuration and pre-cook
-`js/shopping.js` owns pure shopping/prep data logic. `getAdvancePrep(recipe, servings)` now materializes advance preparation for the selected servings using the same scaling semantics as active steps.
+`js/shopping.js` owns pure shopping/prep data logic. `getAdvancePrep(recipe, servings)` materializes advance preparation for the selected servings using the same scaling semantics as active steps.
 
 `js/prep-ui.js` passes the current serving selection into shopping and advance-prep rendering. Serving changes therefore update:
 - shopping quantities;
@@ -167,12 +180,14 @@ Journal entries retain recipe/version, servings, target/actual service, schedule
 
 Raw real-cook feedback should be captured in the journal first; durable findings are promoted into recipe/source revisions and may justify qualification changes.
 
+This is the intended qualification path for the four quick overnight-prep recipes as they are tested progressively in normal use.
+
 ## PWA/offline
 The service worker uses network-first fetch with offline fallback and a separate cache generation.
 
-Current dev application version remains `0.3.0-dev.10`. This change rotates `CACHE_REVISION` so installed clients can preload the recovered serving-aware modules/content through the normal conservative service-worker lifecycle.
+Current dev application version remains `0.3.0-dev.10`. This batch rotates `CACHE_REVISION` to `quick-overnight-recipes-1` so installed clients preload the four new recipe JSON files and local covers through the normal conservative service-worker lifecycle.
 
-No `skipWaiting()` is used: a new generation must not replace the worker controlling an already-open long cook. It activates after existing controlled clients close.
+No `skipWaiting()` is used: a new generation must not replace the worker controlling an already-open cook. It activates after existing controlled clients close.
 
 Available recipe JSON and covers are discovered from `recipes/index.json`; individual recipe files are not hard-coded in the static shell list.
 
@@ -183,11 +198,11 @@ Run:
 npm test
 ```
 
-GitHub Actions covers generic recipe acceptance, qualification, serving/prep materialization, planner behavior, observations, session migration/snapshots, timestamp correction, journal backup, optional temperature tracking, PWA/offline lifecycle and static UI/module contracts.
+GitHub Actions covers generic recipe acceptance, qualification, serving/prep materialization, planner behavior, observations, session migration/snapshots, timestamp correction, journal backup, optional temperature tracking, PWA/offline lifecycle, quick overnight-prep recipe contracts and static UI/module contracts.
 
 ## Current technical priorities
 1. Keep source contracts synchronized with merged behavior.
-2. Qualify representative current recipes through installed-iPhone real cooks before expanding recipe count by default.
+2. Qualify the executable library progressively through installed-iPhone real cooks, including the four quick overnight-prep recipes as low-friction test cases.
 3. Use real cooks to decide whether flexible windows, non-Woodfire conflicts, batching or external components are needed.
 4. Continue small `app.js` extractions only where ownership becomes materially unclear.
 5. Complete safe branch cleanup and protect `main` with CI if repository settings allow it.
@@ -201,6 +216,7 @@ GitHub Actions covers generic recipe acceptance, qualification, serving/prep mat
 - `sources/RECIPE_QUALIFICATION_V1.md`;
 - `sources/STEP_INGREDIENT_USAGE_V1.md`;
 - `sources/SHOPPING_PREP.md`;
+- `sources/QUICK_OVERNIGHT_RECIPES_2026-09-01.md`;
 - `sources/MULTI_RECIPE_CONTRACT.md`;
 - `sources/PLANNER_V1.md`;
 - `sources/ACTIVE_COOK_V1.md`;
