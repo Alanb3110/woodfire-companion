@@ -15,7 +15,7 @@ Independent settings, shopping and journal stores remain separate when their lif
 
 ## Application flow
 Three top-level views:
-1. `library` — illustrated recipes, qualification, active-cook resume, DEV test-cook and Cook Journal;
+1. `library` — illustrated recipes, qualification, app sharing, active-cook resume, DEV test-cook and Cook Journal;
 2. `recipe` — servings/service time, scaled shopping, serving-aware advance prep/equipment and planner-derived recommended start;
 3. `cook` — active plan plus optional temperature tracking.
 
@@ -86,7 +86,25 @@ They use the existing `advancePrep.ingredientUsage` mechanism and deliberately r
 
 The serving caps are conservative so the advertised fast execution does not silently require another batch. All four are `untested`; their minute windows are estimates until real Woodfire cooks provide actual observations.
 
+The four quick meals now have dedicated local WebP food renders. Targeted regression tests ensure those assets remain valid, distinct from one another and do not regress to the previously reused covers.
+
 See `sources/QUICK_OVERNIGHT_RECIPES_2026-09-01.md`.
+
+## Sharing V1
+The library exposes a `Partager l’app` action without adding a backend, account or analytics dependency.
+
+`js/share.js` owns pure URL/payload handling plus the browser capability fallback:
+- primary path: `navigator.share(...)`, giving iPhone/Safari/PWA the native share sheet;
+- fallback: copy the canonical public app URL to the clipboard and show a short status toast;
+- an `AbortError` from the native share sheet is treated as deliberate cancellation and does not write to the clipboard.
+
+The canonical share URL preserves the GitHub Pages application subpath while removing query parameters/fragments and normalizing a trailing `index.html` to the application directory.
+
+V1 shares the application itself rather than introducing recipe-specific deep-link routing. The share control stays in the library and is intentionally absent from active-cook controls so it cannot compete with next/current actions during a cook.
+
+No local user data is included in the share payload. Cook Journal entries, session state, shopping checks, settings and temperature logs remain local.
+
+See `sources/SHARING_V1.md`.
 
 ## Generic multi-recipe acceptance
 Every manifest entry with `status: available` is covered automatically; generic tests must not enumerate recipe ids.
@@ -103,7 +121,7 @@ At minimum CI verifies:
 - unambiguous service milestone;
 - local illustrated cover.
 
-The quick overnight batch additionally has a recipe-specific regression suite that protects its qualification, safety targets/rest steps, Woodfire state, advertised quick cook windows and min/reference/max planner executability.
+The quick overnight batch additionally has a recipe-specific regression suite that protects its qualification, safety targets/rest steps, Woodfire state, advertised quick cook windows and min/reference/max planner executability. Dedicated-cover tests protect the final four local renders.
 
 See `sources/MULTI_RECIPE_CONTRACT.md`.
 
@@ -185,11 +203,11 @@ This is the intended qualification path for the four quick overnight-prep recipe
 ## PWA/offline
 The service worker uses network-first fetch with offline fallback and a separate cache generation.
 
-Current dev application version remains `0.3.0-dev.10`. This batch rotates `CACHE_REVISION` to `quick-overnight-recipes-1` so installed clients preload the four new recipe JSON files and local covers through the normal conservative service-worker lifecycle.
+Current dev application version remains `0.3.0-dev.10`. The final-cover/sharing change rotates `CACHE_REVISION` to `final-covers-share-1` so installed clients refresh the four dedicated covers and preload `share.css` / `js/share.js` through the normal conservative service-worker lifecycle.
 
 No `skipWaiting()` is used: a new generation must not replace the worker controlling an already-open cook. It activates after existing controlled clients close.
 
-Available recipe JSON and covers are discovered from `recipes/index.json`; individual recipe files are not hard-coded in the static shell list.
+Available recipe JSON and covers are discovered from `recipes/index.json`; individual recipe files are not hard-coded in the static shell list. Sharing JS/CSS are part of the static shell because the library UI needs them even after an offline launch.
 
 ## Testing and CI
 Run:
@@ -198,7 +216,7 @@ Run:
 npm test
 ```
 
-GitHub Actions covers generic recipe acceptance, qualification, serving/prep materialization, planner behavior, observations, session migration/snapshots, timestamp correction, journal backup, optional temperature tracking, PWA/offline lifecycle, quick overnight-prep recipe contracts and static UI/module contracts.
+GitHub Actions covers generic recipe acceptance, qualification, serving/prep materialization, planner behavior, observations, session migration/snapshots, timestamp correction, journal backup, optional temperature tracking, PWA/offline lifecycle, quick overnight-prep recipe contracts, dedicated cover assets, app-sharing behavior and static UI/module contracts.
 
 ## Current technical priorities
 1. Keep source contracts synchronized with merged behavior.
@@ -217,6 +235,7 @@ GitHub Actions covers generic recipe acceptance, qualification, serving/prep mat
 - `sources/STEP_INGREDIENT_USAGE_V1.md`;
 - `sources/SHOPPING_PREP.md`;
 - `sources/QUICK_OVERNIGHT_RECIPES_2026-09-01.md`;
+- `sources/SHARING_V1.md`;
 - `sources/MULTI_RECIPE_CONTRACT.md`;
 - `sources/PLANNER_V1.md`;
 - `sources/ACTIVE_COOK_V1.md`;
