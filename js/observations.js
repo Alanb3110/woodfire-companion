@@ -130,6 +130,28 @@ export function editLatestObservationTimestamp({ observations = [], rechecks = {
   if (!previousAt) throw new Error('L’heure enregistrée du contrôle est invalide.');
   const deltaMs = nextAt.getTime() - previousAt.getTime();
   const previousTimestamp = previousAt.toISOString();
+  const startMovesWithObservation = nextStarted[stepId] === previousTimestamp;
+  const completionMovesWithObservation = current.outcome === 'complete' && nextCompleted[stepId] === previousTimestamp;
+  const startedAt = toDate(nextStarted[stepId]);
+  const completedAt = toDate(nextCompleted[stepId]);
+  const previousObservation = nextObservations
+    .slice(0, index)
+    .reverse()
+    .find(item => item?.stepId === stepId);
+  const previousObservationAt = previousObservation ? toDate(previousObservation.timestamp) : null;
+
+  if (nextStarted[stepId] && !startedAt) throw new Error('L’heure de début enregistrée est invalide.');
+  if (nextCompleted[stepId] && !completedAt) throw new Error('L’heure de fin enregistrée est invalide.');
+  if (previousObservation && !previousObservationAt) throw new Error('L’heure du contrôle précédent est invalide.');
+  if (startedAt && !startMovesWithObservation && nextAt < startedAt) {
+    throw new Error('L’heure du contrôle ne peut pas précéder le début réel.');
+  }
+  if (previousObservationAt && nextAt < previousObservationAt) {
+    throw new Error('L’heure du dernier contrôle ne peut pas précéder le contrôle précédent.');
+  }
+  if (completedAt && !completionMovesWithObservation && nextAt > completedAt) {
+    throw new Error('L’heure du contrôle ne peut pas suivre la fin réelle.');
+  }
 
   current.timestamp = nextAt.toISOString();
 
@@ -141,8 +163,8 @@ export function editLatestObservationTimestamp({ observations = [], rechecks = {
     current.recheckDueAt = shiftedDue;
   }
 
-  if (nextStarted[stepId] === previousTimestamp) nextStarted[stepId] = nextAt.toISOString();
-  if (current.outcome === 'complete' && nextCompleted[stepId] === previousTimestamp) {
+  if (startMovesWithObservation) nextStarted[stepId] = nextAt.toISOString();
+  if (completionMovesWithObservation) {
     nextCompleted[stepId] = nextAt.toISOString();
   }
 
