@@ -22,7 +22,7 @@ Three top-level views:
 State is local-first and designed to remain usable offline once required assets are cached.
 
 ## Library and qualification
-`recipes/index.json` is the discovery manifest and currently contains **15 `available` executable meals**.
+`recipes/index.json` is the discovery manifest and currently contains **17 `available` executable meals**.
 
 Availability and culinary maturity are separate:
 - `status: available` means the generic app pipeline can execute the recipe;
@@ -31,7 +31,7 @@ Availability and culinary maturity are separate:
 Current baseline:
 - Pork Belly — `validated`;
 - turkey/gratin and barbacoa — `test_cooked`;
-- the eight 2026-08-31 expansion recipes plus the four quick overnight-prep meals added 2026-09-01 — `untested` until representative real cooks are recorded.
+- all other currently available meals — `untested` until representative real cooks are recorded.
 
 See `sources/RECIPE_QUALIFICATION_V1.md`.
 
@@ -68,7 +68,9 @@ The manifest exposes:
 - poulet gochujang miel-soja + riz + concombre;
 - bavette bulgogi + udon + crudités;
 - filet mignon érable-moutarde-soja + couscous + haricots verts;
-- saumon miso-miel + soba + pak choï.
+- saumon miso-miel + soba + pak choï;
+- porc coréen effiloché au Woodfire;
+- Egg Fried Rice générique, avec gochujang et porc coréen optionnels.
 
 ### Barbacoa V2
 `recipes/smoked-beef-barbacoa.json` is content version 2.
@@ -86,9 +88,34 @@ They use the existing `advancePrep.ingredientUsage` mechanism and deliberately r
 
 The serving caps are conservative so the advertised fast execution does not silently require another batch. All four are `untested`; their minute windows are estimates until real Woodfire cooks provide actual observations.
 
-The four quick meals now have dedicated local WebP food renders. Targeted regression tests ensure those assets remain valid, distinct from one another and do not regress to the previously reused covers.
+The four quick meals have dedicated local WebP food renders. Targeted regression tests ensure those assets remain valid, distinct from one another and do not regress to the previously reused covers.
 
 See `sources/QUICK_OVERNIGHT_RECIPES_2026-09-01.md`.
+
+### Korean pulled pork + generic Egg Fried Rice
+The two new recipes intentionally remain separate.
+
+`korean-pulled-pork-woodfire` is a standalone long cook based on the user-provided Korean pork card:
+- 12–24 h overnight marinade;
+- short smoke phase represented in the executable app as SMOKER 120 °C with smoke ON and pellets loaded;
+- GRILL 240 °C browning;
+- BAKE/ROAST 130 °C covered slow cooking;
+- first tenderness check after 4 h 30, then 20 min rechecks;
+- 94–95 °C plus near-resistance-free probe as the completion criterion;
+- 30–45 min covered rest before shredding.
+
+The original card described the smoke as optional/cold smoking. Because Recipe Schema V1 does not model optional executable branches and each Woodfire task must declare a setpoint, 120 °C is an explicit app adaptation rather than a literal source value.
+
+`egg-fried-rice` is a generic stovetop recipe. It is fully executable without either optional add-in:
+- base sauce: soy + rice vinegar/lime + sesame oil;
+- optional gochujang: added to the same sauce, with only enough water to loosen if necessary;
+- optional cooked Korean pulled pork: 150–250 g at the 2-serving reference, folded in near the end to reheat.
+
+The user’s recollection is therefore materially correct: the gochujang version is the same fried-rice method with gochujang added to the sauce; the only practical adjustment is that water is mainly useful to loosen the paste and is not required for the classic sauce.
+
+Options are currently represented through `optional: true` ingredients plus conditional prose. They do not alter the planner graph because neither option changes the actual execution sequence in a meaningful way.
+
+See `sources/KOREAN_PORK_EGG_FRIED_RICE.md`.
 
 ## Sharing V1
 The library exposes a `Partager l’app` action without adding a backend, account or analytics dependency.
@@ -121,7 +148,7 @@ At minimum CI verifies:
 - unambiguous service milestone;
 - local illustrated cover.
 
-The quick overnight batch additionally has a recipe-specific regression suite that protects its qualification, safety targets/rest steps, Woodfire state, advertised quick cook windows and min/reference/max planner executability. Dedicated-cover tests protect the final four local renders.
+The quick overnight batch additionally has a recipe-specific regression suite that protects its qualification, safety targets/rest steps, Woodfire state, advertised quick cook windows and min/reference/max planner executability. Dedicated-cover tests protect the final four local renders. The Korean pork/fried-rice suite protects optional-ingredient semantics, long-cook state and min/reference/max executability.
 
 See `sources/MULTI_RECIPE_CONTRACT.md`.
 
@@ -198,16 +225,14 @@ Journal entries retain recipe/version, servings, target/actual service, schedule
 
 Raw real-cook feedback should be captured in the journal first; durable findings are promoted into recipe/source revisions and may justify qualification changes.
 
-This is the intended qualification path for the four quick overnight-prep recipes as they are tested progressively in normal use.
-
 ## PWA/offline
 The service worker uses network-first fetch with offline fallback and a separate cache generation.
 
-Current dev application version remains `0.3.0-dev.10`. The final-cover/sharing change rotates `CACHE_REVISION` to `final-covers-share-1` so installed clients refresh the four dedicated covers and preload `share.css` / `js/share.js` through the normal conservative service-worker lifecycle.
+Current dev application version remains `0.3.0-dev.10`. This content addition rotates `CACHE_REVISION` to `korean-pork-fried-rice-1` so installed clients preload both new recipe JSON files and dedicated covers through the normal conservative service-worker lifecycle.
 
 No `skipWaiting()` is used: a new generation must not replace the worker controlling an already-open cook. It activates after existing controlled clients close.
 
-Available recipe JSON and covers are discovered from `recipes/index.json`; individual recipe files are not hard-coded in the static shell list. Sharing JS/CSS are part of the static shell because the library UI needs them even after an offline launch.
+Available recipe JSON and covers are discovered from `recipes/index.json`; individual recipe files are not hard-coded in the static shell list. Sharing JS/CSS remain part of the static shell because the library UI needs them even after an offline launch.
 
 ## Testing and CI
 Run:
@@ -216,12 +241,12 @@ Run:
 npm test
 ```
 
-GitHub Actions covers generic recipe acceptance, qualification, serving/prep materialization, planner behavior, observations, session migration/snapshots, timestamp correction, journal backup, optional temperature tracking, PWA/offline lifecycle, quick overnight-prep recipe contracts, dedicated cover assets, app-sharing behavior and static UI/module contracts.
+GitHub Actions covers generic recipe acceptance, qualification, serving/prep materialization, planner behavior, observations, session migration/snapshots, timestamp correction, journal backup, optional temperature tracking, PWA/offline lifecycle, quick overnight-prep recipe contracts, dedicated cover assets, Korean pork/fried-rice contracts, app-sharing behavior and static UI/module contracts.
 
 ## Current technical priorities
 1. Keep source contracts synchronized with merged behavior.
-2. Qualify the executable library progressively through installed-iPhone real cooks, including the four quick overnight-prep recipes as low-friction test cases.
-3. Use real cooks to decide whether flexible windows, non-Woodfire conflicts, batching or external components are needed.
+2. Qualify the executable library progressively through installed-iPhone real cooks, including Korean pulled pork / Egg Fried Rice as a likely near-term cook.
+3. Use real cooks to decide whether flexible windows, non-Woodfire conflicts, explicit option toggles, batching or external components are needed.
 4. Continue small `app.js` extractions only where ownership becomes materially unclear.
 5. Complete safe branch cleanup and protect `main` with CI if repository settings allow it.
 6. Periodically validate PWA update/offline behavior on installed iPhone.
@@ -235,6 +260,7 @@ GitHub Actions covers generic recipe acceptance, qualification, serving/prep mat
 - `sources/STEP_INGREDIENT_USAGE_V1.md`;
 - `sources/SHOPPING_PREP.md`;
 - `sources/QUICK_OVERNIGHT_RECIPES_2026-09-01.md`;
+- `sources/KOREAN_PORK_EGG_FRIED_RICE.md`;
 - `sources/SHARING_V1.md`;
 - `sources/MULTI_RECIPE_CONTRACT.md`;
 - `sources/PLANNER_V1.md`;
