@@ -14,6 +14,7 @@ Woodfire Companion has moved beyond the original single-meal POC.
 
 Implemented today:
 - manifest-driven illustrated multi-recipe library;
+- one-tap app sharing through the native system share sheet with clipboard fallback;
 - serving configuration and planner-derived recommended start time;
 - scaled ingredients and categorized shopping/prep checklist;
 - serving-aware advance preparation for night-before marinades/prep;
@@ -54,23 +55,30 @@ The main remaining product risk is **real-cook qualification**, not basic planne
 - **Filet mignon érable-moutarde-soja, couscous citronné & haricots verts**;
 - **Saumon miso-miel, soba au sésame & pak choï**.
 
-The last four form the quick overnight-prep batch: most flavor prep happens the previous evening, while the next-day executable meal is intentionally short. See `sources/QUICK_OVERNIGHT_RECIPES_2026-09-01.md`.
+The last four form the quick overnight-prep batch: most flavor prep happens the previous evening, while the next-day executable meal is intentionally short. They now have dedicated local food renders rather than temporary reused covers. See `sources/QUICK_OVERNIGHT_RECIPES_2026-09-01.md`.
 
 Availability and culinary maturity are intentionally separate. `status: available` means the recipe is executable through the generic application pipeline; `qualification` is `untested`, `test_cooked` or `validated`. See `sources/RECIPE_QUALIFICATION_V1.md`.
+
+## Sharing
+
+The library exposes **Partager l’app**. On iPhone/Safari/PWA it uses the Web Share API to open the native share sheet. Other browsers fall back to copying the canonical public app URL and showing a short confirmation toast.
+
+The shared URL keeps the GitHub Pages application subpath but removes transient query parameters/fragments. Sharing does not include Cook Journal, shopping, settings, temperatures or active-session data. V1 deliberately shares the application rather than introducing recipe-specific deep-link routing. See `sources/SHARING_V1.md`.
 
 ## User flow
 
 1. Open the illustrated recipe library.
-2. Select an executable meal.
-3. Review its real-cook qualification.
-4. Choose servings and desired serving time.
-5. Review scaled ingredients, shopping/prep and equipment.
-6. Complete any advance preparation when relevant.
-7. Start the cook.
-8. Follow the generated dependency/resource-aware schedule.
-9. Start/complete phases, record observations/rechecks and log temperatures where useful.
-10. Correct actual timestamps if a tap was late.
-11. Serve the meal and retain the completed session in the local Cook Journal.
+2. Optionally share the public app with another cook.
+3. Select an executable meal.
+4. Review its real-cook qualification.
+5. Choose servings and desired serving time.
+6. Review scaled ingredients, shopping/prep and equipment.
+7. Complete any advance preparation when relevant.
+8. Start the cook.
+9. Follow the generated dependency/resource-aware schedule.
+10. Start/complete phases, record observations/rechecks and log temperatures where useful.
+11. Correct actual timestamps if a tap was late.
+12. Serve the meal and retain the completed session in the local Cook Journal.
 
 DEV builds expose a **Cuisson test** tool that exercises the real active-cook UI around the current clock without waiting through a multi-hour meal. Test sessions do not pollute the real journal.
 
@@ -96,7 +104,7 @@ npm test
 
 GitHub Actions runs the suite on pull requests and supported branch pushes. The generic `available`-recipe contract verifies schema/content validation, qualification metadata, min/reference/max scaling, shopping/prep generation, serving-aware advance-prep materialization, schedule generation, structured active-step quantities, dependencies, service milestone resolution, Woodfire conflict freedom and local illustrated covers.
 
-Additional regression tests cover planner/replanning behavior, midnight handling, buffers/rechecks, session migrations, recipe snapshots, timestamp correction, journal backup/merge, optional temperature capability, PWA/offline contracts, the quick overnight-prep recipe batch and static UI/module wiring.
+Additional regression tests cover planner/replanning behavior, midnight handling, buffers/rechecks, session migrations, recipe snapshots, timestamp correction, journal backup/merge, optional temperature capability, PWA/offline contracts, dedicated quick-recipe covers, app sharing, the quick overnight-prep recipe batch and static UI/module wiring.
 
 ## Architecture
 
@@ -107,6 +115,7 @@ woodfire-companion/
 ├── prep.css
 ├── journal.css
 ├── observations.css
+├── share.css
 ├── app.js                       # top-level view/render wiring
 ├── service-worker.js
 ├── manifest.webmanifest
@@ -119,6 +128,7 @@ woodfire-companion/
 │   ├── step-details.js          # serving-aware step + advance-prep quantities
 │   ├── recipe-loader.js
 │   ├── library.js               # manifest + qualification semantics
+│   ├── share.js                 # native share + clipboard fallback
 │   ├── shopping.js
 │   ├── prep-ui.js
 │   ├── session.js               # versioned session state/migrations
@@ -173,7 +183,7 @@ Shopping, settings and Cook Journal use separate stores because their lifecycles
 
 The service worker uses a separate cache generation and the normal waiting lifecycle. A newly deployed worker must not force activation over an already-open cook. It activates after controlled clients close, then the next launch uses the new generation.
 
-Available recipe JSON and covers are discovered from `recipes/index.json` and preloaded automatically for offline use.
+Available recipe JSON and covers are discovered from `recipes/index.json` and preloaded automatically for offline use. Sharing JS/CSS are also part of the static offline shell.
 
 ## Current priorities
 
@@ -192,6 +202,7 @@ Available recipe JSON and covers are discovered from `recipes/index.json` and pr
 - `sources/RECIPE_SCHEMA_V1.md`
 - `sources/RECIPE_QUALIFICATION_V1.md`
 - `sources/QUICK_OVERNIGHT_RECIPES_2026-09-01.md`
+- `sources/SHARING_V1.md`
 - `sources/MULTI_RECIPE_CONTRACT.md`
 - `sources/PLANNER_V1.md`
 - `sources/ACTIVE_COOK_V1.md`

@@ -1,0 +1,30 @@
+.share-app-button {
+  margin-top: 16px;
+  min-width: 150px;
+}
+
+.share-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(22px + env(safe-area-inset-bottom));
+  z-index: 9999;
+  max-width: calc(100vw - 32px);
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface-3) 94%, transparent);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  font-size: 14px;
+  font-weight: 750;
+  text-align: center;
+  opacity: 0;
+  transform: translate(-50%, 10px);
+  transition: opacity .18s ease, transform .18s ease;
+  pointer-events: none;
+}
+
+.share-toast.visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}

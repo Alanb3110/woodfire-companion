@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="./prep.css" />
   <link rel="stylesheet" href="./journal.css" />
   <link rel="stylesheet" href="./observations.css" />
+  <link rel="stylesheet" href="./share.css" />
   <title>Woodfire Companion</title>
 </head>
 <body>
@@ -29,12 +30,14 @@
     </header>
 
     <div id="appError" class="app-error" hidden></div>
+    <div id="shareToast" class="share-toast" role="status" aria-live="polite" hidden></div>
 
     <section id="libraryView" class="app-view">
       <div class="page-heading">
         <p class="kicker">BIBLIOTHÈQUE</p>
         <h1>Qu’est-ce qu’on cuisine ?</h1>
         <p>Choisis un repas. Woodfire Companion calculera ensuite les quantités et le déroulé à partir de ton heure de service.</p>
+        <button id="shareAppBtn" class="secondary-btn share-app-button" type="button">Partager l’app</button>
       </div>
 
       <button id="resumeCookBtn" class="resume-card" type="button" hidden>
@@ -333,6 +336,7 @@
   </main>
 
   <script type="module" src="./js/settings.js"></script>
+  <script type="module" src="./js/share.js"></script>
   <script type="module" src="./app.js"></script>
 </body>
 </html>
