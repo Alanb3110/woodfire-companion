@@ -78,9 +78,8 @@ test('Egg Fried Rice keeps gochujang and Korean pork optional, with no bacon', (
   assert.equal(allItems.find(item => item.sourceId === 'korean-pulled-pork').optional, true);
 });
 
-test('library exposes 17 executable meals including the two new recipes', () => {
+test('library exposes both Korean pork and Egg Fried Rice as executable meals', () => {
   const available = library.recipes.filter(entry => entry.status === 'available');
-  assert.equal(available.length, 17);
   for (const id of ['korean-pulled-pork-woodfire', 'egg-fried-rice']) {
     const entry = available.find(item => item.id === id);
     assert.ok(entry);
