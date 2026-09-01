@@ -1,5 +1,5 @@
 const APP_VERSION = '0.3.0-dev.10';
-const CACHE_REVISION = 'advance-prep-scaling-1';
+const CACHE_REVISION = 'quick-overnight-recipes-1';
 const CACHE_NAME = `woodfire-companion-${APP_VERSION}-${CACHE_REVISION}`;
 const APP_ASSETS = [
   './',

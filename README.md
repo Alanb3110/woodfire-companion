@@ -16,6 +16,7 @@ Implemented today:
 - manifest-driven illustrated multi-recipe library;
 - serving configuration and planner-derived recommended start time;
 - scaled ingredients and categorized shopping/prep checklist;
+- serving-aware advance preparation for night-before marinades/prep;
 - dependency-aware serving-time planner;
 - Woodfire exclusive-resource conflict resolution;
 - buffers, actual timestamps, explicit delays and observation-driven rechecks;
@@ -30,7 +31,7 @@ The main remaining product risk is **real-cook qualification**, not basic planne
 
 ## Recipe library
 
-`recipes/index.json` is the library manifest and currently exposes 11 executable meals.
+`recipes/index.json` currently exposes **15 executable meals**.
 
 ### Validated after a documented real-cook refinement loop
 - **Pork Belly Burnt Ends** + smashed grenaille potatoes + fresh lemon-yogurt sauce.
@@ -47,7 +48,13 @@ The main remaining product risk is **real-cook qualification**, not basic planne
 - **Magret de canard laqué miel-soja-orange, patate douce & sauce agrumes**;
 - **Ribs BBQ fumées, mac & cheese crémeux & coleslaw**;
 - **Halloumi grillé, légumes méditerranéens & couscous citronné**;
-- **Brochettes de poulet teriyaki, légumes grillés & riz**.
+- **Brochettes de poulet teriyaki, légumes grillés & riz**;
+- **Poulet gochujang miel-soja, riz jasmin & concombre au sésame**;
+- **Bavette bulgogi express, udon au sésame & concombre-carotte**;
+- **Filet mignon érable-moutarde-soja, couscous citronné & haricots verts**;
+- **Saumon miso-miel, soba au sésame & pak choï**.
+
+The last four form the quick overnight-prep batch: most flavor prep happens the previous evening, while the next-day executable meal is intentionally short. See `sources/QUICK_OVERNIGHT_RECIPES_2026-09-01.md`.
 
 Availability and culinary maturity are intentionally separate. `status: available` means the recipe is executable through the generic application pipeline; `qualification` is `untested`, `test_cooked` or `validated`. See `sources/RECIPE_QUALIFICATION_V1.md`.
 
@@ -58,11 +65,12 @@ Availability and culinary maturity are intentionally separate. `status: availabl
 3. Review its real-cook qualification.
 4. Choose servings and desired serving time.
 5. Review scaled ingredients, shopping/prep and equipment.
-6. Start the cook.
-7. Follow the generated dependency/resource-aware schedule.
-8. Start/complete phases, record observations/rechecks and log temperatures where useful.
-9. Correct actual timestamps if a tap was late.
-10. Serve the meal and retain the completed session in the local Cook Journal.
+6. Complete any advance preparation when relevant.
+7. Start the cook.
+8. Follow the generated dependency/resource-aware schedule.
+9. Start/complete phases, record observations/rechecks and log temperatures where useful.
+10. Correct actual timestamps if a tap was late.
+11. Serve the meal and retain the completed session in the local Cook Journal.
 
 DEV builds expose a **Cuisson test** tool that exercises the real active-cook UI around the current clock without waiting through a multi-hour meal. Test sessions do not pollute the real journal.
 
@@ -86,9 +94,9 @@ The project uses Node's built-in test runner and has no npm runtime dependency.
 npm test
 ```
 
-GitHub Actions runs the suite on pull requests and supported branch pushes. The generic `available`-recipe contract verifies schema/content validation, qualification metadata, min/reference/max scaling, shopping/prep generation, schedule generation, structured active-step quantities, dependencies, service milestone resolution, Woodfire conflict freedom and local illustrated covers.
+GitHub Actions runs the suite on pull requests and supported branch pushes. The generic `available`-recipe contract verifies schema/content validation, qualification metadata, min/reference/max scaling, shopping/prep generation, serving-aware advance-prep materialization, schedule generation, structured active-step quantities, dependencies, service milestone resolution, Woodfire conflict freedom and local illustrated covers.
 
-Additional regression tests cover planner/replanning behavior, midnight handling, buffers/rechecks, session migrations, recipe snapshots, timestamp correction, journal backup/merge, optional temperature capability, PWA/offline contracts and static UI/module wiring.
+Additional regression tests cover planner/replanning behavior, midnight handling, buffers/rechecks, session migrations, recipe snapshots, timestamp correction, journal backup/merge, optional temperature capability, PWA/offline contracts, the quick overnight-prep recipe batch and static UI/module wiring.
 
 ## Architecture
 
@@ -108,7 +116,7 @@ woodfire-companion/
 │   ├── meal-planner.js          # stable recipe-facing planning facade
 │   ├── active-cook-controller.js# DOM-free active-cook orchestration
 │   ├── recipe.js                # recipe validation/scaling
-│   ├── step-details.js          # serving-aware step quantity materialization
+│   ├── step-details.js          # serving-aware step + advance-prep quantities
 │   ├── recipe-loader.js
 │   ├── library.js               # manifest + qualification semantics
 │   ├── shopping.js
@@ -151,9 +159,9 @@ Planner V1 builds schedules primarily from:
 - expected completion from pending observation rechecks;
 - explicit user delays.
 
-The Pork Belly reference is fully migrated away from legacy preferred-start offsets. The Woodfire is currently the only automatically conflict-resolved exclusive resource. Other declared resources can run in parallel but are not generally conflict-solved yet.
+The Woodfire is currently the only automatically conflict-resolved exclusive resource. Other declared resources can run in parallel but are not generally conflict-solved yet.
 
-Serving count scales ingredients and structured active-cook quantities, but Planner V1 does not synthesize extra batches or automatically alter duration from serving count. Recipe serving ranges must therefore stay within one credible declared execution structure.
+Serving count scales ingredients, advance-prep guidance and structured active-cook quantities, but Planner V1 does not synthesize extra batches or automatically alter duration from serving count. Recipe serving ranges must therefore stay within one credible declared execution structure.
 
 ## Persistence
 
@@ -163,15 +171,15 @@ Shopping, settings and Cook Journal use separate stores because their lifecycles
 
 ## PWA / update contract
 
-The service worker uses a separate cache generation and the normal waiting lifecycle. A newly deployed worker must not force activation over an already-open multi-hour cook. It activates after controlled clients close, then the next launch uses the new generation.
+The service worker uses a separate cache generation and the normal waiting lifecycle. A newly deployed worker must not force activation over an already-open cook. It activates after controlled clients close, then the next launch uses the new generation.
 
-This behavior is covered by automated contracts but still requires periodic installed-iPhone qualification, especially across offline/online transitions and deployed updates.
+Available recipe JSON and covers are discovered from `recipes/index.json` and preloaded automatically for offline use.
 
 ## Current priorities
 
 1. Keep source documentation synchronized with `main`.
-2. Qualify the executable library through representative real cooks; record feedback in the Cook Journal and promote durable findings into recipe/source revisions.
-3. Prioritize test cooks that exercise distinct planner patterns: fast temperature-driven/parallel work, genuine Woodfire conflict, and long tenderness/recheck behavior.
+2. Qualify the executable library progressively through real cooks; record feedback in Cook Journal and promote durable findings into recipe/source revisions.
+3. Use the quick overnight-prep meals as low-friction real-use cases while retaining distinct planner-pattern tests for fast temperature work, Woodfire conflicts and long tenderness/rechecks.
 4. Continue small `app.js` extractions only when UI/orchestration responsibility becomes materially hard to reason about; do not introduce a framework for its own sake.
 5. Complete repository hygiene: inventory stale branches and protect `main` with CI when repository settings allow it.
 6. Extend planning windows, non-Woodfire conflict handling, reusable components or batching only when a real meal demonstrates the need.
@@ -183,6 +191,7 @@ This behavior is covered by automated contracts but still requires periodic inst
 - `sources/RECIPE_MODEL.md`
 - `sources/RECIPE_SCHEMA_V1.md`
 - `sources/RECIPE_QUALIFICATION_V1.md`
+- `sources/QUICK_OVERNIGHT_RECIPES_2026-09-01.md`
 - `sources/MULTI_RECIPE_CONTRACT.md`
 - `sources/PLANNER_V1.md`
 - `sources/ACTIVE_COOK_V1.md`
