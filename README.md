@@ -32,7 +32,7 @@ The main remaining product risk is **real-cook qualification**, not basic planne
 
 ## Recipe library
 
-`recipes/index.json` currently exposes **15 executable meals**.
+`recipes/index.json` currently exposes **17 executable meals**.
 
 ### Validated after a documented real-cook refinement loop
 - **Pork Belly Burnt Ends** + smashed grenaille potatoes + fresh lemon-yogurt sauce.
@@ -53,9 +53,13 @@ The main remaining product risk is **real-cook qualification**, not basic planne
 - **Poulet gochujang miel-soja, riz jasmin & concombre au sésame**;
 - **Bavette bulgogi express, udon au sésame & concombre-carotte**;
 - **Filet mignon érable-moutarde-soja, couscous citronné & haricots verts**;
-- **Saumon miso-miel, soba au sésame & pak choï**.
+- **Saumon miso-miel, soba au sésame & pak choï**;
+- **Porc coréen effiloché au Woodfire**;
+- **Egg Fried Rice** — gochujang et porc coréen disponibles comme options indépendantes.
 
-The last four form the quick overnight-prep batch: most flavor prep happens the previous evening, while the next-day executable meal is intentionally short. They now have dedicated local food renders rather than temporary reused covers. See `sources/QUICK_OVERNIGHT_RECIPES_2026-09-01.md`.
+The four quick overnight-prep meals have dedicated local food renders and keep most flavor preparation on the previous evening. See `sources/QUICK_OVERNIGHT_RECIPES_2026-09-01.md`.
+
+The Korean pulled-pork / fried-rice pair is deliberately modular: the pork is a standalone long cook, while Egg Fried Rice remains a generic rapid recipe that can optionally reuse the pork as leftovers and optionally add gochujang to the sauce. See `sources/KOREAN_PORK_EGG_FRIED_RICE.md`.
 
 Availability and culinary maturity are intentionally separate. `status: available` means the recipe is executable through the generic application pipeline; `qualification` is `untested`, `test_cooked` or `validated`. See `sources/RECIPE_QUALIFICATION_V1.md`.
 
@@ -104,7 +108,7 @@ npm test
 
 GitHub Actions runs the suite on pull requests and supported branch pushes. The generic `available`-recipe contract verifies schema/content validation, qualification metadata, min/reference/max scaling, shopping/prep generation, serving-aware advance-prep materialization, schedule generation, structured active-step quantities, dependencies, service milestone resolution, Woodfire conflict freedom and local illustrated covers.
 
-Additional regression tests cover planner/replanning behavior, midnight handling, buffers/rechecks, session migrations, recipe snapshots, timestamp correction, journal backup/merge, optional temperature capability, PWA/offline contracts, dedicated quick-recipe covers, app sharing, the quick overnight-prep recipe batch and static UI/module wiring.
+Additional regression tests cover planner/replanning behavior, midnight handling, buffers/rechecks, session migrations, recipe snapshots, timestamp correction, journal backup/merge, optional temperature capability, PWA/offline contracts, dedicated quick-recipe covers, app sharing, the quick overnight-prep recipe batch, Korean pork/fried-rice option semantics and static UI/module wiring.
 
 ## Architecture
 
@@ -189,10 +193,10 @@ Available recipe JSON and covers are discovered from `recipes/index.json` and pr
 
 1. Keep source documentation synchronized with `main`.
 2. Qualify the executable library progressively through real cooks; record feedback in Cook Journal and promote durable findings into recipe/source revisions.
-3. Use the quick overnight-prep meals as low-friction real-use cases while retaining distinct planner-pattern tests for fast temperature work, Woodfire conflicts and long tenderness/rechecks.
+3. Use quick overnight-prep meals and Egg Fried Rice as low-friction real-use cases while retaining planner-pattern tests for fast temperature work, Woodfire conflicts and long tenderness/rechecks.
 4. Continue small `app.js` extractions only when UI/orchestration responsibility becomes materially hard to reason about; do not introduce a framework for its own sake.
 5. Complete repository hygiene: inventory stale branches and protect `main` with CI when repository settings allow it.
-6. Extend planning windows, non-Woodfire conflict handling, reusable components or batching only when a real meal demonstrates the need.
+6. Extend planning windows, non-Woodfire conflict handling, reusable components, explicit option toggles or batching only when a real meal demonstrates the need.
 7. Defer predictive ETA until enough clean real-cook history exists to express uncertainty honestly.
 
 ## Key sources
@@ -202,6 +206,7 @@ Available recipe JSON and covers are discovered from `recipes/index.json` and pr
 - `sources/RECIPE_SCHEMA_V1.md`
 - `sources/RECIPE_QUALIFICATION_V1.md`
 - `sources/QUICK_OVERNIGHT_RECIPES_2026-09-01.md`
+- `sources/KOREAN_PORK_EGG_FRIED_RICE.md`
 - `sources/SHARING_V1.md`
 - `sources/MULTI_RECIPE_CONTRACT.md`
 - `sources/PLANNER_V1.md`

@@ -57,6 +57,7 @@ for (const spec of specs) {
   });
 }
 
-test('quick overnight batch expands the executable library to 15 meals', () => {
-  assert.equal(library.recipes.filter(item => item.status === 'available').length, 15);
+test('quick overnight batch remains four available recipes regardless of later library growth', () => {
+  const availableIds = new Set(library.recipes.filter(item => item.status === 'available').map(item => item.id));
+  assert.equal(specs.filter(spec => availableIds.has(spec.id)).length, specs.length);
 });

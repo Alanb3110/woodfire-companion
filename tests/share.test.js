@@ -74,5 +74,5 @@ test('library exposes a mobile share button and status toast', () => {
 test('sharing UI is part of the offline shell', () => {
   assert.match(serviceWorker, /'\.\/share\.css'/);
   assert.match(serviceWorker, /'\.\/js\/share\.js'/);
-  assert.match(serviceWorker, /final-covers-share-1/);
+  assert.match(serviceWorker, /const CACHE_REVISION = '[^']+';/);
 });
