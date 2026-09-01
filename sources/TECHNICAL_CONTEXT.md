@@ -22,7 +22,7 @@ Three top-level views:
 State is local-first and designed to remain usable offline once required assets are cached.
 
 ## Library and qualification
-`recipes/index.json` is the discovery manifest and currently contains **17 `available` executable meals**.
+`recipes/index.json` is the authoritative discovery manifest; every meal marked `available` is executable through the generic application pipeline.
 
 Availability and culinary maturity are separate:
 - `status: available` means the generic app pipeline can execute the recipe;
@@ -228,7 +228,7 @@ Raw real-cook feedback should be captured in the journal first; durable findings
 ## PWA/offline
 The service worker uses network-first fetch with offline fallback and a separate cache generation.
 
-Current dev application version remains `0.3.0-dev.10`. This content addition rotates `CACHE_REVISION` to `korean-pork-fried-rice-1` so installed clients preload both new recipe JSON files and dedicated covers through the normal conservative service-worker lifecycle.
+Application and cache generation identifiers are authoritative in `package.json`, `index.html` and `service-worker.js`. Rotate `CACHE_REVISION` whenever cached application or recipe content changes so a waiting worker prepares a separate generation through the normal conservative lifecycle.
 
 No `skipWaiting()` is used: a new generation must not replace the worker controlling an already-open cook. It activates after existing controlled clients close.
 
