@@ -54,18 +54,26 @@ function validateScale(scale, usageLabel, errors, maxServings) {
   }
 }
 
-function stepTokens(step) {
-  const fragments = [step?.summary, ...(Array.isArray(step?.details) ? step.details : [])]
-    .filter(value => value !== undefined && value !== null);
-  return fragments.flatMap(fragment => [...String(fragment).matchAll(USAGE_TOKEN)].map(match => match[1]));
+function tokensFromFragments(fragments) {
+  return fragments
+    .filter(value => value !== undefined && value !== null)
+    .flatMap(fragment => [...String(fragment).matchAll(USAGE_TOKEN)].map(match => match[1]));
 }
 
-function buildReplacements(recipe, step, servings) {
+function stepTokens(step) {
+  return tokensFromFragments([step?.summary, ...(Array.isArray(step?.details) ? step.details : [])]);
+}
+
+function advancePrepTokens(item) {
+  return tokensFromFragments([item?.details]);
+}
+
+function buildReplacements(recipe, item, servings) {
   const ingredients = new Map((recipe.ingredients || []).map(ingredient => [ingredient.id, ingredient]));
   const referenceServings = recipe.servings?.reference;
   const replacements = new Map();
 
-  for (const usage of step.ingredientUsage || []) {
+  for (const usage of item.ingredientUsage || []) {
     const ingredient = ingredients.get(usage.ingredientId);
     const scaled = scaleIngredient({
       ...ingredient,
@@ -86,65 +94,79 @@ function materializeText(text, replacements) {
   return String(text).replace(USAGE_TOKEN, (_, id) => replacements.get(id));
 }
 
-export function validateStepIngredientUsage(recipe) {
+function validateUsageItem(recipe, item, tokens, itemLabel) {
   const errors = [];
   const ingredients = new Map((recipe?.ingredients || []).map(ingredient => [ingredient.id, ingredient]));
   const maxServings = recipe?.servings?.max;
+  const usages = item?.ingredientUsage;
 
-  for (const step of recipe?.steps || []) {
-    const usages = step.ingredientUsage;
-    const tokens = stepTokens(step);
-
-    if (usages === undefined) {
-      if (tokens.length) errors.push(`Step ${step.id || '?'} uses quantity tokens without ingredientUsage.`);
-      continue;
-    }
-    if (!Array.isArray(usages)) {
-      errors.push(`Step ${step.id || '?'} ingredientUsage must be an array.`);
-      continue;
-    }
-
-    const ids = new Set();
-    for (const usage of usages) {
-      const label = `Step ${step.id || '?'} ingredientUsage ${usage?.id || '?'}`;
-      if (!usage || typeof usage !== 'object' || Array.isArray(usage)) {
-        errors.push(`Step ${step.id || '?'} ingredientUsage entries must be objects.`);
-        continue;
-      }
-      if (!usage.id || typeof usage.id !== 'string') errors.push(`${label} requires an id.`);
-      else if (ids.has(usage.id)) errors.push(`Step ${step.id || '?'} has duplicate ingredientUsage id ${usage.id}.`);
-      else ids.add(usage.id);
-
-      const ingredient = ingredients.get(usage.ingredientId);
-      if (!ingredient) {
-        errors.push(`${label} references missing ingredient ${usage.ingredientId || '?'}.`);
-      } else if (usage.unit !== undefined && usage.unit !== ingredient.unit && usage.quantity === undefined) {
-        errors.push(`${label} changes unit without an explicit converted quantity.`);
-      }
-      if (usage.quantity !== undefined && !quantityIsValid(usage.quantity)) errors.push(`${label} has invalid quantity.`);
-      if (usage.unit !== undefined && (typeof usage.unit !== 'string' || !usage.unit)) errors.push(`${label} unit must be a non-empty string.`);
-      if (usage.displayUnit !== undefined && typeof usage.displayUnit !== 'boolean') errors.push(`${label} displayUnit must be boolean.`);
-      validateScale(usage.scale, label, errors, maxServings);
-    }
-
-    for (const token of tokens) {
-      if (!ids.has(token)) errors.push(`Step ${step.id || '?'} text references missing ingredientUsage token ${token}.`);
-    }
-    for (const id of ids) {
-      if (!tokens.includes(id)) errors.push(`Step ${step.id || '?'} ingredientUsage ${id} is not referenced by step text.`);
-    }
+  if (usages === undefined) {
+    if (tokens.length) errors.push(`${itemLabel} uses quantity tokens without ingredientUsage.`);
+    return errors;
+  }
+  if (!Array.isArray(usages)) {
+    errors.push(`${itemLabel} ingredientUsage must be an array.`);
+    return errors;
   }
 
+  const ids = new Set();
+  for (const usage of usages) {
+    const label = `${itemLabel} ingredientUsage ${usage?.id || '?'}`;
+    if (!usage || typeof usage !== 'object' || Array.isArray(usage)) {
+      errors.push(`${itemLabel} ingredientUsage entries must be objects.`);
+      continue;
+    }
+    if (!usage.id || typeof usage.id !== 'string') errors.push(`${label} requires an id.`);
+    else if (ids.has(usage.id)) errors.push(`${itemLabel} has duplicate ingredientUsage id ${usage.id}.`);
+    else ids.add(usage.id);
+
+    const ingredient = ingredients.get(usage.ingredientId);
+    if (!ingredient) {
+      errors.push(`${label} references missing ingredient ${usage.ingredientId || '?'}.`);
+    } else if (usage.unit !== undefined && usage.unit !== ingredient.unit && usage.quantity === undefined) {
+      errors.push(`${label} changes unit without an explicit converted quantity.`);
+    }
+    if (usage.quantity !== undefined && !quantityIsValid(usage.quantity)) errors.push(`${label} has invalid quantity.`);
+    if (usage.unit !== undefined && (typeof usage.unit !== 'string' || !usage.unit)) errors.push(`${label} unit must be a non-empty string.`);
+    if (usage.displayUnit !== undefined && typeof usage.displayUnit !== 'boolean') errors.push(`${label} displayUnit must be boolean.`);
+    validateScale(usage.scale, label, errors, maxServings);
+  }
+
+  for (const token of tokens) {
+    if (!ids.has(token)) errors.push(`${itemLabel} text references missing ingredientUsage token ${token}.`);
+  }
+  for (const id of ids) {
+    if (!tokens.includes(id)) errors.push(`${itemLabel} ingredientUsage ${id} is not referenced by item text.`);
+  }
+  return errors;
+}
+
+export function validateStepIngredientUsage(recipe) {
+  const errors = [];
+  for (const step of recipe?.steps || []) {
+    errors.push(...validateUsageItem(recipe, step, stepTokens(step), `Step ${step?.id || '?'}`));
+  }
+  return { valid: errors.length === 0, errors };
+}
+
+export function validateAdvancePrepIngredientUsage(recipe) {
+  const errors = [];
+  for (const item of recipe?.advancePrep || []) {
+    errors.push(...validateUsageItem(recipe, item, advancePrepTokens(item), `advancePrep ${item?.id || '?'}`));
+  }
+  return { valid: errors.length === 0, errors };
+}
+
+export function validateRecipeIngredientUsage(recipe) {
+  const step = validateStepIngredientUsage(recipe);
+  const advance = validateAdvancePrepIngredientUsage(recipe);
+  const errors = [...step.errors, ...advance.errors];
   return { valid: errors.length === 0, errors };
 }
 
 export function materializeStepDetails(recipe, step, servings) {
-  const validation = validateStepIngredientUsage({
-    servings: recipe.servings,
-    ingredients: recipe.ingredients,
-    steps: [step]
-  });
-  if (!validation.valid) throw new Error(`Invalid step ingredient usage: ${validation.errors.join(' | ')}`);
+  const validation = validateUsageItem(recipe, step, stepTokens(step), `Step ${step?.id || '?'}`);
+  if (validation.length) throw new Error(`Invalid step ingredient usage: ${validation.join(' | ')}`);
   if (!Array.isArray(step.details)) return [];
   if (!step.ingredientUsage?.length) return [...step.details];
   const replacements = buildReplacements(recipe, step, servings);
@@ -152,21 +174,34 @@ export function materializeStepDetails(recipe, step, servings) {
 }
 
 export function materializeStepSummary(recipe, step, servings) {
-  const validation = validateStepIngredientUsage({
-    servings: recipe.servings,
-    ingredients: recipe.ingredients,
-    steps: [step]
-  });
-  if (!validation.valid) throw new Error(`Invalid step ingredient usage: ${validation.errors.join(' | ')}`);
+  const validation = validateUsageItem(recipe, step, stepTokens(step), `Step ${step?.id || '?'}`);
+  if (validation.length) throw new Error(`Invalid step ingredient usage: ${validation.join(' | ')}`);
   if (!step.ingredientUsage?.length) return step.summary;
   return materializeText(step.summary, buildReplacements(recipe, step, servings));
 }
 
+export function materializeAdvancePrepItem(recipe, item, servings) {
+  const validation = validateUsageItem(recipe, item, advancePrepTokens(item), `advancePrep ${item?.id || '?'}`);
+  if (validation.length) throw new Error(`Invalid advance-prep ingredient usage: ${validation.join(' | ')}`);
+  if (!item?.ingredientUsage?.length) return { ...item };
+  return {
+    ...item,
+    details: materializeText(item.details, buildReplacements(recipe, item, servings))
+  };
+}
+
+export function materializeAdvancePrepForServings(recipe, servings) {
+  const validation = validateAdvancePrepIngredientUsage(recipe);
+  if (!validation.valid) throw new Error(`Invalid advance-prep ingredient usage: ${validation.errors.join(' | ')}`);
+  return (recipe.advancePrep || []).map(item => materializeAdvancePrepItem(recipe, item, servings));
+}
+
 export function materializeRecipeForServings(recipe, servings) {
-  const validation = validateStepIngredientUsage(recipe);
-  if (!validation.valid) throw new Error(`Invalid step ingredient usage: ${validation.errors.join(' | ')}`);
+  const validation = validateRecipeIngredientUsage(recipe);
+  if (!validation.valid) throw new Error(`Invalid recipe ingredient usage: ${validation.errors.join(' | ')}`);
   return {
     ...recipe,
+    advancePrep: materializeAdvancePrepForServings(recipe, servings),
     steps: (recipe.steps || []).map(step => ({
       ...step,
       summary: materializeStepSummary(recipe, step, servings),
