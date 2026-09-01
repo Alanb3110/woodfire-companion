@@ -244,13 +244,17 @@ export function validateRecipe(recipe) {
       errors.push(`Invalid plan placement for step ${step.id || '?'}: ${plan.placement}`);
     }
 
-    const duration = step.durationMin ?? step.durationPlanMin ?? 0;
-    if (!isFiniteNumber(duration) || duration < 0) errors.push(`Invalid duration for step ${step.id || '?'}.`);
+    for (const field of ['durationMin', 'durationPlanMin']) {
+      if (step[field] !== undefined && (!isFiniteNumber(step[field]) || step[field] < 0)) {
+        errors.push(`Invalid ${field} for step ${step.id || '?'}.`);
+      }
+    }
 
-    if (step.durationRangeMin !== undefined && !numericRangeIsValid(step.durationRangeMin)) {
+    const durationRangeValid = step.durationRangeMin === undefined || numericRangeIsValid(step.durationRangeMin);
+    if (!durationRangeValid) {
       errors.push(`Invalid durationRangeMin for step ${step.id || '?'}.`);
     }
-    if (step.durationRangeMin && step.durationPlanMin !== undefined) {
+    if (durationRangeValid && step.durationRangeMin && isFiniteNumber(step.durationPlanMin)) {
       const [min, max] = step.durationRangeMin;
       if (step.durationPlanMin < min || step.durationPlanMin > max) {
         errors.push(`durationPlanMin for step ${step.id || '?'} must lie inside durationRangeMin.`);
@@ -370,8 +374,6 @@ export function validateRecipe(recipe) {
       errors.push(`Step ${step.id} belongs to component ${step.component} but is missing from component.stepIds.`);
     }
   }
-
-  if (!recipe.heroImage) warnings.push('Recipe has no heroImage yet.');
 
   return { valid: errors.length === 0, errors, warnings };
 }

@@ -8,6 +8,31 @@ const recipe = JSON.parse(await readFile(new URL('../recipes/pork-belly-burnt-en
 test('reference recipe validates against schema v1 semantics', () => {
   const result = validateRecipe(recipe);
   assert.equal(result.valid, true, result.errors.join('\n'));
+  assert.equal(result.warnings.includes('Recipe has no heroImage yet.'), false);
+});
+
+test('every supplied planner duration must be a non-negative finite number', () => {
+  for (const invalidDuration of [-5, '20']) {
+    const candidate = structuredClone(recipe);
+    candidate.steps[0].durationMin = 10;
+    candidate.steps[0].durationPlanMin = invalidDuration;
+    delete candidate.steps[0].durationRangeMin;
+
+    const result = validateRecipe(candidate);
+    assert.equal(result.valid, false);
+    assert.ok(result.errors.some(error => error.includes('Invalid durationPlanMin')));
+  }
+});
+
+test('an invalid duration range is reported instead of crashing validation', () => {
+  const candidate = structuredClone(recipe);
+  candidate.steps[0].durationRangeMin = {};
+  candidate.steps[0].durationPlanMin = 10;
+
+  assert.doesNotThrow(() => validateRecipe(candidate));
+  const result = validateRecipe(candidate);
+  assert.equal(result.valid, false);
+  assert.ok(result.errors.some(error => error.includes('Invalid durationRangeMin')));
 });
 
 test('reference recipe is fully migrated away from preferred start offsets', () => {

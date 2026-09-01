@@ -1,6 +1,7 @@
 const APP_VERSION = '0.3.0-dev.10';
-const CACHE_REVISION = 'egg-fried-rice-cover-fix-1';
-const CACHE_NAME = `woodfire-companion-${APP_VERSION}-${CACHE_REVISION}`;
+const CACHE_REVISION = 'audit-runtime-hardening-2';
+const CACHE_PREFIX = 'woodfire-companion-';
+const CACHE_NAME = `${CACHE_PREFIX}${APP_VERSION}-${CACHE_REVISION}`;
 const APP_ASSETS = [
   './',
   './index.html',
@@ -61,13 +62,15 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))))
-  );
-  // Claim is retained so a first installation can control the already-open
-  // page as soon as activation is allowed. For updates, activation itself is
-  // deferred by the normal service-worker lifecycle until old clients close.
-  self.clients.claim();
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    const obsoleteAppCaches = keys.filter(key => key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME);
+    await Promise.all(obsoleteAppCaches.map(key => caches.delete(key)));
+    // Claim is retained so a first installation can control the already-open
+    // page as soon as activation is allowed. For updates, activation itself is
+    // deferred by the normal service-worker lifecycle until old clients close.
+    await self.clients.claim();
+  })());
 });
 
 self.addEventListener('fetch', event => {
@@ -85,9 +88,10 @@ self.addEventListener('fetch', event => {
         return response;
       })
       .catch(async () => {
-        const cached = await caches.match(event.request);
+        const cache = await caches.open(CACHE_NAME);
+        const cached = await cache.match(event.request);
         if (cached) return cached;
-        if (event.request.mode === 'navigate') return caches.match('./index.html');
+        if (event.request.mode === 'navigate') return cache.match('./index.html');
         return Response.error();
       })
   );
