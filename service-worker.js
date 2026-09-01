@@ -1,5 +1,5 @@
 const APP_VERSION = '0.3.0-dev.10';
-const CACHE_REVISION = 'audit-runtime-hardening-2';
+const CACHE_REVISION = 'egg-fried-rice-safety-1';
 const CACHE_PREFIX = 'woodfire-companion-';
 const CACHE_NAME = `${CACHE_PREFIX}${APP_VERSION}-${CACHE_REVISION}`;
 const APP_ASSETS = [

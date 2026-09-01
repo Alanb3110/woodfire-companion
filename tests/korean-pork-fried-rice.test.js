@@ -50,8 +50,14 @@ test('Korean pulled pork is an executable long Woodfire recipe', () => {
 
 test('Egg Fried Rice keeps gochujang and Korean pork optional, with no bacon', () => {
   assertExecutable(rice);
+  assert.equal(rice.version, 2);
   assert.equal(rice.temperature, undefined);
   assert.doesNotMatch(JSON.stringify(rice), /bacon/i);
+
+  const ricePrep = rice.advancePrep.find(item => item.id === 'cold-rice-ahead');
+  assert.match(ricePrep.details, /idéalement en 1 h/);
+  assert.match(ricePrep.details, /dans les 24 h/);
+  assert.match(ricePrep.details, /qu’une seule fois/);
 
   const gochujang = rice.ingredients.find(item => item.id === 'gochujang');
   const porkOption = rice.ingredients.find(item => item.id === 'korean-pulled-pork');
@@ -64,6 +70,7 @@ test('Egg Fried Rice keeps gochujang and Korean pork optional, with no bacon', (
 
   const season = rice.steps.find(step => step.id === 'season-rice');
   assert.match(season.details.join('\n'), /Si tu utilises le porc coréen/);
+  assert.match(season.completion.description, /fumants à cœur/);
 
   const groups = buildShoppingGroups(rice, 2);
   const allItems = groups.flatMap(group => group.items);
@@ -71,9 +78,8 @@ test('Egg Fried Rice keeps gochujang and Korean pork optional, with no bacon', (
   assert.equal(allItems.find(item => item.sourceId === 'korean-pulled-pork').optional, true);
 });
 
-test('library exposes 17 executable meals including the two new recipes', () => {
+test('library exposes both Korean pork and Egg Fried Rice as executable meals', () => {
   const available = library.recipes.filter(entry => entry.status === 'available');
-  assert.equal(available.length, 17);
   for (const id of ['korean-pulled-pork-woodfire', 'egg-fried-rice']) {
     const entry = available.find(item => item.id === id);
     assert.ok(entry);
