@@ -1,29 +1,62 @@
 # Woodfire Companion — Multi-recipe acceptance contract
 
 ## Purpose
-A recipe marked `available` in `recipes/index.json` is executable product content, not just a library card. It must work through the complete local flow without recipe-specific application code.
+A recipe marked `available` in `recipes/index.json` is executable product content, not merely a library card. It must work through the complete local application flow without recipe-specific application code.
+
+Executability is deliberately separate from culinary qualification. Passing this contract does **not** by itself promote a recipe beyond `qualification: untested`.
+
+See `sources/RECIPE_QUALIFICATION_V1.md`.
+
+## Manifest contract
+For each `available` recipe, the manifest must include:
+- stable `id`;
+- `recipeUrl` resolving to committed local JSON;
+- title/description/tags/difficulty/timing/serving metadata;
+- local `visual.imageUrl` cover;
+- one valid `qualification`: `untested`, `test_cooked` or `validated`.
+
+`status` controls whether content is executable. `qualification` describes real-cook evidence only and must not change planner/session behavior.
 
 ## CI contract for every `available` recipe
 The automated suite must verify that:
-- `recipeUrl` resolves to a committed JSON recipe;
+- `recipeUrl` resolves to committed JSON;
 - manifest id/title/serving range agree with the recipe;
+- the manifest carries valid qualification metadata;
 - `validateRecipe()` accepts the recipe;
+- structured step ingredient usage validates;
 - every user-facing ingredient exposes an actionable baseline quantity/range rather than only `au goût`;
 - ingredient scaling works at minimum, reference and maximum servings;
 - shopping/pre-cook generation succeeds for those serving counts;
-- `buildMealSchedule()` can generate a schedule at minimum, reference and maximum servings;
+- `buildMealSchedule()` generates a complete schedule at minimum, reference and maximum servings;
+- generated active-step text has no unresolved quantity tokens;
 - declared dependencies are satisfied;
 - the baseline has no unresolved Woodfire conflict;
-- one unambiguous service milestone can be resolved for journal/session semantics.
+- one unambiguous service milestone resolves for journal/session semantics;
+- the executable cover is a committed local non-empty WebP asset.
 
-Adding another recipe must not require changing a test that enumerates recipe ids.
+Adding another recipe must not require changing a generic acceptance test that enumerates recipe ids.
 
-## Meal planning context API
-New recipe-facing planning integrations should use:
+Recipe-specific regression tests remain appropriate when an established timeline, quantity materialization or planner pattern is worth protecting.
+
+## Qualification is not a CI result
+Automated tests may establish that a recipe is technically executable but cannot prove:
+- real Woodfire heat behavior;
+- ingredient-size variability;
+- practical timing realism;
+- taste balance;
+- ergonomic clarity during a real cook;
+- whether a buffer/recheck interval is sufficient in practice.
+
+Therefore CI must never automatically promote `untested → test_cooked → validated`.
+
+Qualification changes require real-cook evidence as defined by `RECIPE_QUALIFICATION_V1.md`.
+
+## Meal-planning context API
+Recipe-facing integrations use:
 
 `buildMealSchedule(recipe, context)`
 
-rather than adding more positional arguments to the low-level solver.
+rather than growing positional arguments on the low-level solver.
 
 The context currently normalizes:
 - `servings`;
@@ -36,45 +69,50 @@ The context currently normalizes:
 - reserved future `selectedComponents`;
 - reserved future `variants`.
 
-When `targetServingAt` is supplied it is canonical and supplies both calendar date and local service time. This avoids day ambiguity for long/resumed cooks.
+When `targetServingAt` is supplied it is canonical and provides both calendar date and local service time, avoiding day ambiguity for long/resumed cooks.
 
-`buildSchedule()` remains the low-level solver API. Capacity/batching logic may later be inserted behind `buildMealSchedule()` without forcing another application-wide signature migration.
+`buildSchedule()` remains the low-level solver API. Capacity/batching logic may later sit behind `buildMealSchedule()` without forcing another application-wide API migration.
 
 ## Active-cook contract
-Executable recipes must be usable with the same generic lifecycle:
+Executable recipes use the same generic lifecycle:
 - `upcoming` — no actual start recorded;
 - `active` — actual start recorded, no completion yet;
 - `done` — actual completion recorded.
 
-Observation-enabled steps may create a pending recheck without completing the step. That pending recheck is a runtime planning constraint and may move downstream work when the recipe's planning buffer is exhausted.
+Observation-enabled steps may create a pending recheck without completing the step. The pending recheck is a runtime planning constraint and may move downstream work when planning buffer is exhausted.
 
-Actual step/control timestamps may be corrected after the fact. Corrections are historical facts and must feed the same planner path as timestamps recorded live.
+Actual step/control timestamps may be corrected after the fact. Corrections are historical facts and feed the same planner path as timestamps recorded live.
 
-An active session stores a recipe snapshot so a later deployed recipe version cannot silently mutate a cook already in progress.
+An active session stores a recipe snapshot so a later deployed content version cannot silently mutate a cook already in progress.
 
 ## Offline contract
 `recipes/index.json` is the source of truth for executable recipe discovery.
 
-The service worker must preload recipe JSON files by reading the manifest and selecting entries with:
+The service worker preloads recipe JSON and local covers by reading the manifest and selecting entries with:
 
 `status === "available"`
 
-Do not add individual recipe filenames to the static service-worker asset list.
+Do not add individual executable recipe or cover filenames to the static service-worker list.
 
-A newly available recipe should therefore require only its recipe content plus its manifest entry for JSON offline availability.
+Qualification does not change offline caching: an `untested` recipe with `status: available` is still executable and must remain available offline.
 
 ## V1 serving-capacity rule
-Ingredient quantities may scale within `servings.min..max`, and the meal-planning context carries the selected serving count, but Planner V1 does not yet create additional cooking batches or alter duration from servings.
+Ingredient quantities and structured step quantities may scale within `servings.min..max`, and the meal-planning context carries selected servings, but Planner V1 does not synthesize additional cooking batches or alter duration automatically from serving count.
 
-Therefore, for V1, `servings.max` must only advertise a quantity that can follow the same declared step/resource structure on the supported Woodfire setup. If increasing servings requires another batch, another vessel cycle or materially different timings, restrict the supported range until batching/capacity semantics are implemented.
+Therefore `servings.max` must only advertise a quantity that can follow the same declared step/resource structure on the supported Woodfire setup. If more servings require another batch, vessel cycle or materially different timing, restrict the range until batching/capacity semantics are implemented.
 
 ## Current deliberate limitations
-The following are not blockers for the current multi-recipe release:
-- components are grouping semantics, not yet independently swappable modules;
-- duplicate ingredient aggregation across external reusable components is not yet implemented;
+These are not blockers for the current executable library:
+- components remain grouping semantics rather than independently swappable external modules;
+- duplicate ingredient aggregation across external reusable components is not implemented;
 - only `woodfire` is automatically conflict-resolved as an exclusive resource;
-- temperature tracking is still a session-level feature and should become optional before recipes that do not benefit from it are promoted to `available`;
-- Planner V1 does not synthesize batches/capacity changes from serving count.
+- non-Woodfire resources may run concurrently but are not generally conflict-solved;
+- Planner V1 does not synthesize batches/capacity changes from servings;
+- no predictive ETA is inferred from temperature slope/history.
+
+Temperature tracking is already optional per recipe and is not a current blocker for recipe promotion.
 
 ## Rule for future recipe additions
-Prefer extending the schema only when a real recipe cannot be represented faithfully. Do not add recipe-specific branches to `app.js` or `planner.js` merely to make one recipe pass.
+Prefer extending schema/planner semantics only when a real meal cannot be represented faithfully. Do not add recipe-specific branches to `app.js` or `planner.js` merely to make one recipe pass.
+
+Prefer qualifying existing diverse recipes through real cooks before expanding recipe count by default. A new recipe is most valuable when it either fills a real meal need or exposes a planner limitation that existing content cannot exercise.
