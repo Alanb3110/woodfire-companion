@@ -12,6 +12,8 @@ This protocol qualifies behavior that deterministic Node tests and Playwright We
 
 Playwright's mobile presets emulate properties such as viewport, user agent and touch behavior. They are valuable regression coverage, but they are not a physical iPhone or an installed iOS web app. A recipe must not be promoted on Playwright evidence alone.
 
+The automated Mobile WebKit smoke test verifies the critical UI flow, persistence across reload and that the service worker has populated CacheStorage with the recipe manifest. It deliberately does not treat `browserContext.setOffline()` as proof that WebKit service-worker fallback works: Playwright's service-worker instrumentation is Chromium-specific, so physical Q5 remains authoritative for actual installed-iPhone offline behavior.
+
 ## Preconditions
 
 Record before each run:
@@ -114,3 +116,4 @@ Verified 2026-09-02:
 - Apple, **Inspecting iOS and iPadOS**: https://developer.apple.com/documentation/safari-developer-tools/inspecting-ios
 - Playwright, **Emulation**: https://playwright.dev/docs/emulation
 - Playwright, **Browsers**: https://playwright.dev/docs/browsers
+- Playwright, **Service Workers**: https://playwright.dev/docs/service-workers
