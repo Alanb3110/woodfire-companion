@@ -2,7 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-const serviceWorker = await readFile(new URL('../service-worker.js', import.meta.url), 'utf8');
+const [serviceWorker, app] = await Promise.all([
+  readFile(new URL('../service-worker.js', import.meta.url), 'utf8'),
+  readFile(new URL('../app.js', import.meta.url), 'utf8')
+]);
 
 test('offline recipe cache is driven by the library manifest', () => {
   assert.match(serviceWorker, /fetch\('\.\/recipes\/index\.json'/);
@@ -24,4 +27,9 @@ test('offline shell carries an explicit cache revision and bypasses stale HTTP c
   assert.match(serviceWorker, /'\.\/js\/step-details\.js'/);
   assert.doesNotMatch(serviceWorker, /'\.\/js\/start-hint\.js'/);
   assert.match(serviceWorker, /fetch\(event\.request, \{ cache: 'no-store' \}\)/);
+});
+
+test('service worker registration survives asynchronous initialization past window load', () => {
+  assert.match(app, /document\.readyState === 'complete'/);
+  assert.match(app, /window\.addEventListener\('load', registerServiceWorker, \{ once: true \}\)/);
 });

@@ -836,7 +836,9 @@ async function init() {
   }, 30000);
 
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(console.warn));
+    const registerServiceWorker = () => navigator.serviceWorker.register('./service-worker.js').catch(console.warn);
+    if (document.readyState === 'complete') registerServiceWorker();
+    else window.addEventListener('load', registerServiceWorker, { once: true });
   }
 }
 
