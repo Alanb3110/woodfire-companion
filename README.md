@@ -119,7 +119,7 @@ The deterministic planner matrix currently executes 15,082 all-library scenarios
 npm run test:e2e
 ```
 
-This browser test covers reload/offline recovery and core controls; installed-iPhone suspension, screen locking and real multi-hour ergonomics remain field tests.
+This browser test covers reload, service-worker cached reads under emulated offline mode and core controls; installed-iPhone offline relaunch, suspension, screen locking and real multi-hour ergonomics remain field tests.
 
 ## Architecture
 

@@ -250,7 +250,7 @@ The deterministic planner matrix covers every available recipe, every integer se
 
 Storage-fault tests cover unavailable access, quota exhaustion, corrupt JSON, future schemas and invalid backup input with byte-for-byte no-overwrite assertions.
 
-GitHub Actions also installs Playwright's Mobile WebKit runtime and runs the critical library → configuration → DEV cook → recheck/step/temperature → reload → offline reload → journal-import flow:
+GitHub Actions also installs Playwright's Mobile WebKit runtime and runs the critical library → configuration → DEV cook → recheck/step/temperature → reload → service-worker cached fetch under emulated offline mode → journal-import flow:
 
 ```bash
 npm run test:e2e

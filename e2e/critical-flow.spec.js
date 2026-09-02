@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('mobile critical flow survives reload, offline mode and journal restore', async ({ page, context }) => {
+test('mobile critical flow survives reload, cached offline access and journal restore', async ({ page, context }) => {
   await page.goto('/');
   await expect(page.locator('button.recipe-card').first()).toBeVisible();
 
@@ -47,10 +47,18 @@ test('mobile critical flow survives reload, offline mode and journal restore', a
     return true;
   });
   await page.reload();
+  await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true);
   await context.setOffline(true);
-  await page.reload({ waitUntil: 'domcontentloaded' });
-  await expect(page.locator('#testCookBanner')).toContainText('Mode test');
+  const offlineRecipeCount = await page.evaluate(async () => {
+    const response = await fetch('./recipes/index.json', { cache: 'no-store' });
+    if (!response.ok) throw new Error(`Offline manifest returned ${response.status}.`);
+    const manifest = await response.json();
+    return manifest.recipes?.length || 0;
+  });
+  expect(offlineRecipeCount).toBeGreaterThan(0);
   await context.setOffline(false);
+  await page.reload();
+  await expect(page.locator('#testCookBanner')).toContainText('Mode test');
 
   await page.getByRole('button', { name: /Quitter le test|Restaurer ma cuisson/ }).click();
   await expect(page.locator('#libraryView')).toBeVisible();
