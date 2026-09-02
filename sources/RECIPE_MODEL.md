@@ -35,7 +35,7 @@ It contains:
 - title/description/tags/difficulty;
 - supported serving range;
 - descriptive timing metadata;
-- optional temperature-tracking capability;
+- optional temperature-tracking capability with a stable guidance/traceability id for current targets;
 - meal components;
 - top-level ingredients;
 - equipment/consumables;
@@ -150,7 +150,9 @@ The active-cook UI derives the hardware summary from this structure.
 ## Completion criteria
 Supported semantic patterns include manual/checkpoint, appearance, tenderness, temperature and combined/state-driven completion.
 
-Safety-critical fixed temperatures are verified against authoritative current sources before encoding them as recipe rules.
+Safety-critical fixed temperatures are verified against authoritative current sources before encoding them as recipe rules. Current executable targets resolve through `temperature.guidanceId` into `sources/FOOD_SAFETY_TRACEABILITY_V1.md`; missing ids remain warning-only for frozen legacy snapshots so update safety is not weakened.
+
+The same register separates safety minima from 92–95 °C collagen/tenderness targets, which are culinary endpoints rather than universal safety thresholds.
 
 ## Observation / recheck model
 Observation-driven cooking is implemented.

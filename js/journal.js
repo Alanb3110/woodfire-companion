@@ -1,3 +1,10 @@
+import {
+  LocalDataError,
+  preservedDataError,
+  readStorageItem,
+  writeStorageItem
+} from './storage.js';
+
 export const JOURNAL_KEY = 'woodfire-companion-journal-v1';
 export const JOURNAL_SCHEMA_VERSION = 2;
 export const JOURNAL_BACKUP_KIND = 'woodfire-companion-journal-backup';
@@ -39,8 +46,12 @@ function migrateJournalData(parsed) {
   if (Array.isArray(parsed)) {
     return { schemaVersion: JOURNAL_SCHEMA_VERSION, entries: parsed.map(normalizeEntry) };
   }
-  if (!parsed || !Array.isArray(parsed.entries)) return defaultData();
-  if (parsed.schemaVersion > JOURNAL_SCHEMA_VERSION) return defaultData();
+  if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.entries)) {
+    throw new Error('Invalid journal payload.');
+  }
+  if (parsed.schemaVersion > JOURNAL_SCHEMA_VERSION) {
+    throw new Error(`Unsupported journal schemaVersion ${parsed.schemaVersion}.`);
+  }
   return {
     schemaVersion: JOURNAL_SCHEMA_VERSION,
     entries: parsed.entries.map(normalizeEntry)
@@ -101,24 +112,46 @@ export function createSessionId(now = new Date()) {
   return `cook-${stamp}-${random}`;
 }
 
-export function loadJournal(storage = globalThis.localStorage) {
-  if (!storage) return defaultData();
+function decodeJournal(raw) {
   try {
-    const raw = storage.getItem(JOURNAL_KEY);
-    if (!raw) return defaultData();
     return migrateJournalData(JSON.parse(raw));
   } catch (error) {
-    console.warn('Journal local illisible, retour à un journal vide.', error);
-    return defaultData();
+    throw preservedDataError(error);
   }
 }
 
-export function saveJournal(data, storage = globalThis.localStorage) {
-  if (!storage) return;
-  storage.setItem(JOURNAL_KEY, JSON.stringify({
+export function readJournal(storage) {
+  try {
+    const raw = readStorageItem(JOURNAL_KEY, storage);
+    if (!raw) return { data: defaultData(), status: 'empty', warning: null };
+    return { data: decodeJournal(raw), status: 'ok', warning: null };
+  } catch (error) {
+    console.warn('Journal local illisible, retour à un journal vide.', error);
+    const normalized = error instanceof LocalDataError ? error : preservedDataError(error);
+    return {
+      data: defaultData(),
+      status: normalized.code,
+      warning: normalized.message,
+      error: normalized
+    };
+  }
+}
+
+export function loadJournal(storage) {
+  return readJournal(storage).data;
+}
+
+function loadJournalForMutation(storage) {
+  const result = readJournal(storage);
+  if (result.status !== 'ok' && result.status !== 'empty') throw result.error;
+  return result.data;
+}
+
+export function saveJournal(data, storage) {
+  writeStorageItem(JOURNAL_KEY, JSON.stringify({
     schemaVersion: JOURNAL_SCHEMA_VERSION,
     entries: Array.isArray(data?.entries) ? data.entries.map(normalizeEntry) : []
-  }));
+  }), storage);
 }
 
 export function exportJournalBackup(data = loadJournal(), now = new Date()) {
@@ -131,10 +164,10 @@ export function exportJournalBackup(data = loadJournal(), now = new Date()) {
   }, null, 2);
 }
 
-export function importJournalBackup(serialized, storage = globalThis.localStorage) {
+export function importJournalBackup(serialized, storage) {
   const payload = parseJournalBackup(serialized);
   const imported = migrateJournalData(payload.journal);
-  const existing = loadJournal(storage);
+  const existing = loadJournalForMutation(storage);
   const merged = new Map(existing.entries.map(entry => [entry.id, entry]));
   let added = 0;
   let updated = 0;
@@ -254,9 +287,9 @@ export function buildJournalEntry({ state, recipe, schedule, now = new Date() })
   };
 }
 
-export function upsertJournalEntry(entry, storage = globalThis.localStorage) {
+export function upsertJournalEntry(entry, storage) {
   if (entry?.isTest) return loadJournal(storage);
-  const data = loadJournal(storage);
+  const data = loadJournalForMutation(storage);
   const hasRating = Object.prototype.hasOwnProperty.call(entry || {}, 'rating');
   const hasNotes = Object.prototype.hasOwnProperty.call(entry || {}, 'notes');
   const hasFeedbackUpdatedAt = Object.prototype.hasOwnProperty.call(entry || {}, 'feedbackUpdatedAt');
@@ -281,14 +314,14 @@ export function upsertJournalEntry(entry, storage = globalThis.localStorage) {
   return data;
 }
 
-export function updateJournalFeedback(id, { rating = null, notes = '' } = {}, storage = globalThis.localStorage, now = new Date()) {
+export function updateJournalFeedback(id, { rating = null, notes = '' } = {}, storage, now = new Date()) {
   if (!id) throw new Error('Journal feedback requires an entry id.');
   const normalizedRating = rating === null || rating === '' ? null : Number(rating);
   if (normalizedRating !== null && (!Number.isInteger(normalizedRating) || normalizedRating < 1 || normalizedRating > 5)) {
     throw new Error('La note doit être comprise entre 1 et 5.');
   }
   const normalizedNotes = normalizeNotes(notes);
-  const data = loadJournal(storage);
+  const data = loadJournalForMutation(storage);
   const index = data.entries.findIndex(item => item.id === id);
   if (index < 0) throw new Error('Cuisson introuvable dans le journal.');
   data.entries[index] = normalizeEntry({
@@ -301,14 +334,15 @@ export function updateJournalFeedback(id, { rating = null, notes = '' } = {}, st
   return data.entries[index];
 }
 
-export function removeJournalEntry(id, storage = globalThis.localStorage) {
-  const data = loadJournal(storage);
+export function removeJournalEntry(id, storage) {
+  const data = loadJournalForMutation(storage);
   data.entries = data.entries.filter(item => item.id !== id);
   saveJournal(data, storage);
   return data;
 }
 
-export function clearJournal(storage = globalThis.localStorage) {
+export function clearJournal(storage) {
+  loadJournalForMutation(storage);
   const data = defaultData();
   saveJournal(data, storage);
   return data;

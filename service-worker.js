@@ -1,5 +1,5 @@
-const APP_VERSION = '0.3.0-dev.10';
-const CACHE_REVISION = 'egg-fried-rice-safety-1';
+const APP_VERSION = '0.3.0-rc.1';
+const CACHE_REVISION = 'stabilization-rc1-1';
 const CACHE_PREFIX = 'woodfire-companion-';
 const CACHE_NAME = `${CACHE_PREFIX}${APP_VERSION}-${CACHE_REVISION}`;
 const APP_ASSETS = [
@@ -26,6 +26,7 @@ const APP_ASSETS = [
   './js/journal.js',
   './js/journal-ui.js',
   './js/observations.js',
+  './js/storage.js',
   './js/session.js',
   './js/timestamp-editor.js',
   './js/dev-tools.js',

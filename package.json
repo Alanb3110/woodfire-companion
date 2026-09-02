@@ -1,9 +1,13 @@
 {
   "name": "woodfire-companion",
-  "version": "0.3.0-dev.10",
+  "version": "0.3.0-rc.1",
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.0"
   }
 }

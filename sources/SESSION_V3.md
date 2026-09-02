@@ -47,6 +47,11 @@ Test sessions must never pollute the real Cook Journal. Journal entries carry `i
 ## Migration
 Schema v2 records migrate to v3 by adding `isTest: false`. Legacy v1 records still migrate through v2 first; existing completed timestamps are preserved and missing historical starts are never fabricated.
 
+## Persistence failure safety
+`readSessionState()` distinguishes empty, valid, unavailable and preserved-incompatible storage. Corrupt JSON and schemas newer than V3 return an in-memory default only for safe rendering, together with a user-facing warning; their raw stored bytes remain untouched.
+
+Before every session write, the existing payload is decoded/migrated again. If it is corrupt or from a future schema, the write aborts instead of replacing it. Unavailable storage and quota exhaustion also raise actionable errors; `localStorage.setItem` failure leaves the previous record intact.
+
 ## Offline behavior
 The timestamp editor is part of normal app behavior. DEV test tooling is loaded only when a visible DEV build badge is present. Both modules are cached in the PWA shell so development validation also works after the app has been loaded once.
 

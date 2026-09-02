@@ -2,9 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-const expectedVersion = '0.3.0-dev.10';
+const expectedVersion = '0.3.0-rc.1';
 
-test('development version is consistent across package, UI and service worker cache', async () => {
+test('release-candidate version is consistent across package, UI and service worker cache', async () => {
   const [packageText, indexHtml, serviceWorker] = await Promise.all([
     readFile(new URL('../package.json', import.meta.url), 'utf8'),
     readFile(new URL('../index.html', import.meta.url), 'utf8'),

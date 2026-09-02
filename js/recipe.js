@@ -135,6 +135,17 @@ export function validateRecipe(recipe) {
   if (recipe.temperature?.enabled === false && recipe.temperature.defaultTargetC !== undefined) {
     errors.push('temperature.defaultTargetC must be omitted when temperature tracking is disabled.');
   }
+  if (recipe.temperature?.guidanceId !== undefined
+    && (typeof recipe.temperature.guidanceId !== 'string'
+      || !/^[A-Z0-9][A-Z0-9-]*$/.test(recipe.temperature.guidanceId))) {
+    errors.push('temperature.guidanceId must be an uppercase traceability id when provided.');
+  }
+  if (recipe.temperature?.enabled === false && recipe.temperature.guidanceId !== undefined) {
+    errors.push('temperature.guidanceId must be omitted when temperature tracking is disabled.');
+  }
+  if (isFiniteNumber(recipe.temperature?.defaultTargetC) && !recipe.temperature?.guidanceId) {
+    warnings.push('temperature.guidanceId is missing; legacy snapshots remain executable but current recipe data should trace its target.');
+  }
 
   const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
   const components = Array.isArray(recipe.components) ? recipe.components : [];

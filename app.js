@@ -3,7 +3,7 @@ import { loadLibrary, findLibraryRecipe, recipeQualification } from './js/librar
 import { loadRecipe } from './js/recipe-loader.js';
 import { formatWoodfireSummary, scaleIngredients, validateRecipe } from './js/recipe.js';
 import { renderPreCook } from './js/prep-ui.js';
-import { clearJournal, createSessionId, loadJournal } from './js/journal.js';
+import { clearJournal, createSessionId, readJournal } from './js/journal.js';
 import { renderJournalEntries } from './js/journal-ui.js';
 import { recommendedStartFromPlan, resolveSessionServingTarget } from './js/meal-planner.js';
 import { getNextScheduledTask, plannedDurationMin } from './js/planner.js';
@@ -16,7 +16,7 @@ import {
 import {
   firstKnownSessionTimestamp,
   hasSessionProgress as sessionHasProgress,
-  loadSessionState,
+  readSessionState,
   resetCookProgress,
   saveSessionState,
   snapshotRecipe,
@@ -34,7 +34,8 @@ let selectedRecipe = null;
 let selectedEntry = null;
 let configServings = 4;
 let configMealTime = '20:00';
-let state = repairLoadedSession(loadSessionState());
+const initialSessionRead = readSessionState();
+let state = repairLoadedSession(initialSessionRead.state);
 
 const $ = id => document.getElementById(id);
 const appError = $('appError');
@@ -83,7 +84,8 @@ const activeCookController = createActiveCookController({
   getRecipe: () => recipe,
   getState: () => state,
   setState: next => { state = next; },
-  saveState
+  saveState,
+  onPersistenceError: error => showError(error.message || 'Impossible d’enregistrer les données locales.')
 });
 
 const temperatureController = createTemperatureController({
@@ -126,7 +128,14 @@ function repairLoadedSession(value) {
 }
 
 function saveState() {
-  saveSessionState(state);
+  try {
+    saveSessionState(state);
+    return true;
+  } catch (error) {
+    console.error('Session persistence failed:', error);
+    showError(error.message || 'Impossible d’enregistrer la cuisson sur cet appareil.');
+    return false;
+  }
 }
 
 function showError(message) {
@@ -206,8 +215,9 @@ function applyVisual(element, visual = {}) {
 }
 
 function renderJournalHistory() {
-  const data = loadJournal();
-  renderJournalEntries(data.entries, { container: journalList, countElement: journalCount, clearButton: clearJournalBtn });
+  const result = readJournal();
+  if (result.warning) showError(result.warning);
+  renderJournalEntries(result.data.entries, { container: journalList, countElement: journalCount, clearButton: clearJournalBtn });
 }
 
 function renderLibrary() {
@@ -786,8 +796,12 @@ function bindEvents() {
 
   clearJournalBtn.addEventListener('click', () => {
     if (!confirm('Effacer tout le journal de cuisson local ? Cette action est définitive.')) return;
-    clearJournal();
-    renderJournalHistory();
+    try {
+      clearJournal();
+      renderJournalHistory();
+    } catch (error) {
+      showError(error.message || 'Impossible d’effacer le journal local.');
+    }
   });
 
   installHelpBtn.addEventListener('click', () => {
@@ -798,6 +812,7 @@ function bindEvents() {
 
 async function init() {
   clearError();
+  if (initialSessionRead.warning) showError(initialSessionRead.warning);
   fillTimePicker(configMealHour, configMealMinute, state.mealTime);
   fillTimePicker(cookMealHour, cookMealMinute, state.mealTime);
   bindEvents();
@@ -821,7 +836,9 @@ async function init() {
   }, 30000);
 
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(console.warn));
+    const registerServiceWorker = () => navigator.serviceWorker.register('./service-worker.js').catch(console.warn);
+    if (document.readyState === 'complete') registerServiceWorker();
+    else window.addEventListener('load', registerServiceWorker, { once: true });
   }
 }
 

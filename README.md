@@ -25,7 +25,9 @@ Implemented today:
 - fast optional temperature logging;
 - versioned active-session migration and frozen recipe snapshots;
 - local Cook Journal with rating/notes and JSON backup/restore;
+- explicit local-storage failure warnings that preserve corrupt/future/quota-blocked data instead of silently replacing it;
 - conservative service-worker update lifecycle for long cooks;
+- traceable fixed temperature/storage guidance;
 - automated CI acceptance for every executable recipe.
 
 The main remaining product risk is **real-cook qualification**, not basic planner construction.
@@ -100,15 +102,24 @@ Then open `http://localhost:8000`.
 
 ## Tests
 
-The project uses Node's built-in test runner and has no npm runtime dependency.
+The application has no runtime package dependency. Development uses Node's built-in test runner plus Playwright for the Mobile WebKit integration smoke path.
 
 ```bash
+npm ci
 npm test
 ```
 
 GitHub Actions runs the suite on pull requests and supported branch pushes. The generic `available`-recipe contract verifies schema/content validation, qualification metadata, min/reference/max scaling, shopping/prep generation, serving-aware advance-prep materialization, schedule generation, structured active-step quantities, dependencies, service milestone resolution, Woodfire conflict freedom and local illustrated covers.
 
-Additional regression tests cover planner/replanning behavior, midnight handling, buffers/rechecks, session migrations, recipe snapshots, timestamp correction, journal backup/merge, optional temperature capability, PWA/offline contracts, dedicated quick-recipe covers, app sharing, the quick overnight-prep recipe batch, Korean pork/fried-rice option semantics and static UI/module wiring.
+Additional regression tests cover planner/replanning behavior, midnight handling, buffers/rechecks, session migrations, recipe snapshots, timestamp correction, journal backup/merge, storage failure preservation, food-safety traceability, optional temperature capability, PWA/offline contracts, dedicated quick-recipe covers, app sharing, the quick overnight-prep recipe batch, Korean pork/fried-rice option semantics and static UI/module wiring.
+
+The deterministic planner matrix currently executes 15,082 all-library scenarios. CI also installs WebKit and runs the mobile critical path:
+
+```bash
+npm run test:e2e
+```
+
+This browser test covers reload, service-worker cached reads under emulated offline mode and core controls; installed-iPhone offline relaunch, suspension, screen locking and real multi-hour ergonomics remain field tests.
 
 ## Architecture
 
@@ -137,6 +148,7 @@ woodfire-companion/
 │   ├── prep-ui.js
 │   ├── session.js               # versioned session state/migrations
 │   ├── observations.js
+│   ├── storage.js               # guarded local-storage access/errors
 │   ├── temperature.js
 │   ├── temperature-ui.js
 │   ├── journal.js
@@ -148,7 +160,9 @@ woodfire-companion/
 ├── recipes/
 │   ├── index.json
 │   └── *.json                   # structured executable meals
-├── tests/
+├── tests/                        # Node/domain/contract tests
+├── e2e/                          # Mobile WebKit critical-flow smoke
+├── playwright.config.js
 ├── sources/                     # product/technical source of truth
 └── icons/
 ```
@@ -205,6 +219,8 @@ Available recipe JSON and covers are discovered from `recipes/index.json` and pr
 - `sources/RECIPE_MODEL.md`
 - `sources/RECIPE_SCHEMA_V1.md`
 - `sources/RECIPE_QUALIFICATION_V1.md`
+- `sources/IPHONE_PWA_QUALIFICATION_V1.md`
+- `sources/FOOD_SAFETY_TRACEABILITY_V1.md`
 - `sources/QUICK_OVERNIGHT_RECIPES_2026-09-01.md`
 - `sources/KOREAN_PORK_EGG_FRIED_RICE.md`
 - `sources/SHARING_V1.md`

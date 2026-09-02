@@ -122,3 +122,5 @@ Any prediction should expose uncertainty. A temperature curve alone may be misle
 
 ## Safety rule
 Food-safety guidance must not be inferred from preference or historical recipe notes. When encoding a minimum safe internal temperature, holding time, storage rule, or similar safety-critical statement, verify it against an authoritative current source before treating it as a fixed application rule.
+
+Current fixed targets and rice/marinade controls are indexed in `sources/FOOD_SAFETY_TRACEABILITY_V1.md`. New executable temperature targets must carry a stable `temperature.guidanceId`; culinary tenderness targets must be labelled separately from safety minima. Reverify the relevant authority when a target, rest time, storage limit, reheating rule or raw-marinade rule changes.

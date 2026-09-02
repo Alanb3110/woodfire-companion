@@ -13,7 +13,8 @@
     "elapsedRangeMin": [300, 360]
   },
   "temperature": {
-    "defaultTargetC": 93
+    "defaultTargetC": 93,
+    "guidanceId": "CULINARY-COLLAGEN-TENDERNESS"
   },
   "advancePrep": [
     {

@@ -11,7 +11,7 @@ Conceptual layers:
 3. session state + persistence/orchestration;
 4. UI rendering/interactions.
 
-Independent settings, shopping and journal stores remain separate when their lifecycles differ from the active cook.
+Independent settings, shopping and journal stores remain separate when their lifecycles differ from the active cook. `js/storage.js` centralizes safe storage access and user-facing unavailable/quota/conflict errors for the active session and journal.
 
 ## Application flow
 Three top-level views:
@@ -218,10 +218,14 @@ Temperature tracking is optional per recipe.
 
 Manual logging remains value → Add/Enter → automatic timestamp. Measurements do not automatically complete recipe steps. No ETA is inferred from temperature slope.
 
+Current executable temperature targets carry `temperature.guidanceId`. `sources/FOOD_SAFETY_TRACEABILITY_V1.md` resolves each id to an authoritative source, recipe coverage, jurisdiction and limitations; collagen/tenderness targets are explicitly not treated as universal safety minima. Legacy frozen snapshots without the field remain valid with a warning so an update cannot invalidate an active cook.
+
 ## Cook Journal V2
 Cook history remains separate under `woodfire-companion-journal-v1`.
 
 Journal entries retain recipe/version, servings, target/actual service, schedule, actual starts/completions, observations, delays, temperatures, rating and notes. Versioned local JSON backup/import validates before writing and merges by stable session id.
+
+Session and journal reads distinguish empty, valid, unavailable and preserved-incompatible states. Writes abort with an actionable error when storage is unavailable/full or when existing raw data is corrupt/future-version; the pre-existing bytes are not replaced by a default payload. The application surfaces these failures in the main error region or the relevant journal control.
 
 Raw real-cook feedback should be captured in the journal first; durable findings are promoted into recipe/source revisions and may justify qualification changes.
 
@@ -232,31 +236,45 @@ Application and cache generation identifiers are authoritative in `package.json`
 
 No `skipWaiting()` is used: a new generation must not replace the worker controlling an already-open cook. It activates after existing controlled clients close.
 
-Available recipe JSON and covers are discovered from `recipes/index.json`; individual recipe files are not hard-coded in the static shell list. Sharing JS/CSS remain part of the static shell because the library UI needs them even after an offline launch.
+Available recipe JSON and covers are discovered from `recipes/index.json`; individual recipe files are not hard-coded in the static shell list. Sharing JS/CSS and the storage helper remain part of the static shell because the library/cook UI needs them even after an offline launch.
 
 ## Testing and CI
 Run:
 
 ```bash
+npm ci
 npm test
 ```
 
-GitHub Actions covers generic recipe acceptance, qualification, serving/prep materialization, planner behavior, observations, session migration/snapshots, timestamp correction, journal backup, optional temperature tracking, PWA/offline lifecycle, quick overnight-prep recipe contracts, dedicated cover assets, Korean pork/fried-rice contracts, app-sharing behavior and static UI/module contracts.
+The deterministic planner matrix covers every available recipe, every integer serving count in range, baseline planning, 1/5/15/30/60/120 min actual-start/actual-completion/recheck delays and progressively frozen historical prefixes. Its current manifest-derived cardinality is 15,082 scenarios. Violations between two immutable historical facts are retained; all constraints involving at least one movable step must be resolved.
+
+Storage-fault tests cover unavailable access, quota exhaustion, corrupt JSON, future schemas and invalid backup input with byte-for-byte no-overwrite assertions.
+
+GitHub Actions also installs Playwright's Mobile WebKit runtime and runs the critical library → configuration → DEV cook → recheck/step/temperature → reload → service-worker cached fetch under emulated offline mode → journal-import flow:
+
+```bash
+npm run test:e2e
+```
+
+This browser smoke test verifies integration and mobile-WebKit behavior, but does not qualify an installed iPhone PWA, screen locking, background suspension or a multi-hour real cook.
 
 ## Current technical priorities
 1. Keep source contracts synchronized with merged behavior.
-2. Qualify the executable library progressively through installed-iPhone real cooks, including Korean pulled pork / Egg Fried Rice as a likely near-term cook.
-3. Use real cooks to decide whether flexible windows, non-Woodfire conflicts, explicit option toggles, batching or external components are needed.
-4. Continue small `app.js` extractions only where ownership becomes materially unclear.
-5. Complete safe branch cleanup and protect `main` with CI if repository settings allow it.
-6. Periodically validate PWA update/offline behavior on installed iPhone.
-7. Add predictive ETA only later from clean history with explicit uncertainty.
+2. Keep the stabilization baseline green: planner stress, storage failures, safety traceability and Mobile WebKit smoke.
+3. Qualify the executable library progressively through installed-iPhone real cooks, including Korean pulled pork / Egg Fried Rice as a likely near-term cook.
+4. Use real cooks to decide whether flexible windows, non-Woodfire conflicts, explicit option toggles, batching or external components are needed.
+5. Continue small `app.js` extractions only where ownership becomes materially unclear.
+6. Complete safe branch cleanup and protect `main` with CI if repository settings allow it.
+7. Periodically validate PWA update/offline behavior on installed iPhone.
+8. Add predictive ETA only later from clean history with explicit uncertainty.
 
 ## Relevant source contracts
 - `sources/PRODUCT_SPEC.md`;
 - `sources/RECIPE_MODEL.md`;
 - `sources/RECIPE_SCHEMA_V1.md`;
+- `sources/FOOD_SAFETY_TRACEABILITY_V1.md`;
 - `sources/RECIPE_QUALIFICATION_V1.md`;
+- `sources/IPHONE_PWA_QUALIFICATION_V1.md`;
 - `sources/STEP_INGREDIENT_USAGE_V1.md`;
 - `sources/SHOPPING_PREP.md`;
 - `sources/QUICK_OVERNIGHT_RECIPES_2026-09-01.md`;
