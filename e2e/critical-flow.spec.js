@@ -34,13 +34,13 @@ test('mobile critical flow survives reload, offline mode and journal restore', a
   await page.locator('.tab[data-tab="temperature"]').click();
   await page.locator('#temperatureInput').fill('88');
   await page.locator('#addTemperatureBtn').click();
-  await expect(page.locator('#measurementCount')).toHaveText('4');
+  await expect(page.locator('#measurementCount')).toHaveText(/^4 mesures$/);
 
   await page.reload();
   await expect(page.locator('#testCookBanner')).toContainText('Mode test');
   await expect(page.locator('.task-card[data-task-id="finish-pork"]')).toHaveClass(/completed/);
   await page.locator('.tab[data-tab="temperature"]').click();
-  await expect(page.locator('#measurementCount')).toHaveText('4');
+  await expect(page.locator('#measurementCount')).toHaveText(/^4 mesures$/);
 
   await page.evaluate(async () => {
     await navigator.serviceWorker.ready;
