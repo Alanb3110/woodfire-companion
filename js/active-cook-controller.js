@@ -37,6 +37,7 @@ export function createActiveCookController({
   setState,
   saveState,
   journalOps = DEFAULT_JOURNAL_OPS,
+  onPersistenceError = error => console.error('Cook persistence failed:', error),
   now = () => new Date()
 }) {
   let schedule = [];
@@ -84,13 +85,21 @@ export function createActiveCookController({
     const servedAt = serve ? state.completed?.[serve.id] : null;
     if (!servedAt) {
       state.sessionServedAt = null;
-      journalOps.removeJournalEntry(state.sessionId);
+      try {
+        journalOps.removeJournalEntry(state.sessionId);
+      } catch (error) {
+        onPersistenceError(error);
+      }
       saveState();
       return;
     }
 
     state.sessionServedAt = servedAt;
-    journalOps.upsertJournalEntry(journalOps.buildJournalEntry({ state, recipe, schedule }));
+    try {
+      journalOps.upsertJournalEntry(journalOps.buildJournalEntry({ state, recipe, schedule }));
+    } catch (error) {
+      onPersistenceError(error);
+    }
     saveState();
   }
 

@@ -49,7 +49,8 @@ Current merged capabilities include:
 - versioned local active sessions with frozen recipe snapshots;
 - local Cook Journal with rating/notes and JSON backup/restore;
 - offline PWA behavior and conservative service-worker updates;
-- generic CI acceptance for every executable recipe.
+- generic CI acceptance for every executable recipe;
+- deterministic all-library planner stress coverage, local-storage failure preservation and a Mobile WebKit critical-flow smoke test.
 
 The main remaining product risk is **real-cook qualification and field usability**, not construction of the basic planner.
 
@@ -228,6 +229,8 @@ A measurement does not automatically complete a step; the cook confirms the rele
 
 No ETA is currently inferred from temperature slope. Future prediction may use temperature/history only with realistic uncertainty.
 
+Every current executable temperature target carries a stable traceability id. `sources/FOOD_SAFETY_TRACEABILITY_V1.md` records the value, recipe coverage, jurisdiction, authoritative source and known limits, while keeping collagen/tenderness targets distinct from minimum safety rules.
+
 ## Cook Journal
 Completed real sessions are stored locally with recipe/version, servings, target/actual service, schedule, actual starts/completions, observations, delays and temperature samples.
 
@@ -237,6 +240,8 @@ The journal also supports:
 - local versioned JSON backup/restore.
 
 DEV/test sessions do not pollute real history.
+
+If session or journal storage is unavailable, full, corrupt or from a future schema, the application surfaces an actionable warning. Existing unreadable/future data is preserved byte-for-byte instead of being silently replaced by defaults.
 
 The journal is the preferred place to capture raw real-cook evidence. Durable findings should then become recipe/source revisions rather than remaining trapped in one local note.
 
@@ -260,9 +265,12 @@ Prefer qualifying the current diverse library before adding recipes simply to in
 
 Service-worker updates must not force a new app generation over an already-open long cook.
 
+Physical installed-iPhone qualification follows `sources/IPHONE_PWA_QUALIFICATION_V1.md`; Mobile WebKit automation is a prerequisite, not a substitute for screen-lock, suspension, offline/update and real-cook evidence.
+
 ## Product roadmap from current state
 ### Current stabilization / qualification phase
 - keep documentation synchronized with merged code;
+- keep the planner stress matrix, persistence fault tests, safety traceability and Mobile WebKit smoke path green;
 - run representative real cooks across distinct planner patterns;
 - refine recipes from journal evidence;
 - expose qualification clearly;

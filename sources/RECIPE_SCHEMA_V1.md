@@ -33,7 +33,8 @@ Supported top-level semantics:
 ```json
 "temperature": {
   "enabled": true,
-  "defaultTargetC": 74
+  "defaultTargetC": 74,
+  "guidanceId": "FS-USDA-POULTRY-74C"
 }
 ```
 
@@ -42,6 +43,8 @@ Rules:
 - `temperature.enabled: false` explicitly disables tracking and must not also declare `defaultTargetC`;
 - `temperature.enabled: true` requires `defaultTargetC` between 30 and 120 °C;
 - for backward compatibility, an existing recipe with numeric `defaultTargetC` and no `enabled` flag is treated as enabled;
+- current executable recipe data with a numeric target declares an uppercase `guidanceId` resolved in `sources/FOOD_SAFETY_TRACEABILITY_V1.md`;
+- a legacy frozen cook snapshot without `guidanceId` remains valid and emits only a validation warning, preserving update safety;
 - a step using `completion.type: "temperature"` requires enabled recipe temperature tracking with a valid target.
 
 When tracking is disabled, Active Cook hides the temperature tab, stores no fabricated 93 °C target for a new session and redirects any stale `temperature` tab state back to Planning.
@@ -238,7 +241,7 @@ Critical appliance state must not live only in prose.
 ## Validation summary
 `validateRecipe()` plus recipe-load ingredient-usage validation now reject at least:
 - invalid serving bounds/timing ranges;
-- invalid/contradictory temperature tracking metadata or temperature completion without a target;
+- invalid/contradictory temperature tracking metadata, malformed traceability ids or temperature completion without a target;
 - duplicate ingredient/component/equipment/advance-prep/step ids;
 - malformed scaling or incomplete step breakpoints;
 - invalid/missing step or advance-prep ingredient-usage references and quantity tokens;
@@ -258,6 +261,8 @@ The repository contains both reference-recipe tests and synthetic contract fixtu
 Available-recipe tests validate structured instruction usage, materialize advance-prep reminders and build schedules at minimum/reference/maximum servings with no unresolved quantity tokens. Pork Belly additionally has explicit 2/4/6/8-serving Active Cook text regression coverage; turkey has 4/5/6 gratin coverage; barbacoa covers 6/8 advance-prep and Active Cook quantities.
 
 Observation tests cover label derivation, scheduled rechecks, actual completion and persistence helpers for both tenderness-driven Pork Belly and temperature-driven turkey.
+
+The deterministic planner stress matrix executes every current integer serving count across all available recipes, baseline schedules, 1/5/15/30/60/120 min actual-start, actual-completion and expected-completion delays, plus progressively frozen historical prefixes. The current manifest yields 15,082 scenarios. Fixed historical contradictions are retained as facts; every remaining movable dependency and Woodfire constraint must still be resolved.
 
 See `sources/MULTI_RECIPE_CONTRACT.md`, `sources/STEP_INGREDIENT_USAGE_V1.md` and `sources/OBSERVATIONS_V1.md`.
 

@@ -31,6 +31,13 @@ for (const entry of library.recipes.filter(item => item.status === 'available'))
     assert.equal(recipe.id, entry.id, 'Manifest and recipe ids must match.');
     assert.equal(recipe.title, entry.title, 'Manifest and recipe titles must match.');
     assert.deepEqual(recipe.servings, entry.servings, 'Manifest and recipe serving ranges must match.');
+    if (recipe.temperature?.defaultTargetC !== undefined) {
+      assert.match(
+        recipe.temperature.guidanceId || '',
+        /^[A-Z0-9][A-Z0-9-]*$/,
+        `${recipe.id} must trace its temperature target through temperature.guidanceId.`
+      );
+    }
 
     for (const ingredient of recipe.ingredients) {
       assert.notEqual(

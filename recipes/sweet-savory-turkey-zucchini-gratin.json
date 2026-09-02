@@ -14,7 +14,8 @@
     "elapsedRangeMin": [210, 240]
   },
   "temperature": {
-    "defaultTargetC": 74
+    "defaultTargetC": 74,
+    "guidanceId": "FS-USDA-POULTRY-74C"
   },
   "advancePrep": [
     {

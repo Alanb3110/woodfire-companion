@@ -144,7 +144,8 @@ For every recipe:
 - placement/spacing/covering/liquid-level instructions where relevant;
 - no contradiction between overview, ingredient quantities, timeline and active-cook cards;
 - user-facing ingredients expose actionable baseline quantities/ranges rather than only `au goût`;
-- safety-critical temperature/storage statements are verified against current authoritative guidance before becoming fixed application rules.
+- safety-critical temperature/storage statements are verified against current authoritative guidance before becoming fixed application rules;
+- current executable temperature targets carry a stable `temperature.guidanceId` resolved in `sources/FOOD_SAFETY_TRACEABILITY_V1.md`; preserve compatibility with frozen legacy snapshots that predate this metadata.
 
 Known household defaults are preferences, not universal recipe facts: generous sauces, sweet-savoury profiles welcome, thyme generally avoided, alcohol/flambé avoided unless explicitly requested.
 
@@ -180,21 +181,24 @@ Do not extend these areas until real meals prove the need.
 - Start meaningful work from current `main` on focused branches/PRs.
 - Do not mix major planner refactors, broad visual redesigns and content waves unnecessarily.
 - Add/update automated tests for changed behavior/contracts.
+- Keep the deterministic planner stress matrix and Mobile WebKit smoke path green; neither substitutes for installed-iPhone field qualification.
+- Use `sources/IPHONE_PWA_QUALIFICATION_V1.md` for physical-device release evidence; automation alone must not mark the installed PWA as qualified.
 - Keep generic recipe acceptance manifest-driven; do not enumerate recipe ids there.
 - Update source docs whenever product semantics, recipe/schema/planner/storage behavior changes.
 - Test meaningful UX/PWA changes on installed iPhone/Safari; Node/static tests are necessary but not sufficient.
 
 ## Current priorities
 1. Keep README/source contracts synchronized with merged code.
-2. Qualify the executable library through representative real cooks across distinct planner patterns:
+2. Keep the stabilization baseline green: storage-fault preservation, safety traceability, exhaustive planner scenarios and Mobile WebKit smoke coverage.
+3. Qualify the executable library through representative real cooks across distinct planner patterns:
    - fast temperature-driven + parallel work;
    - genuine Woodfire resource conflict;
    - long tenderness/recheck meal.
-3. Feed journal observations into recipe revisions and qualification changes.
-4. Complete stale-branch cleanup and protect `main` with CI if repository settings allow it.
-5. Continue small `app.js` extractions only when ownership becomes materially unclear.
-6. Add flexible windows, non-Woodfire conflict solving, reusable external components or batching only when real meals demonstrate the need.
-7. Defer predictive ETA until enough clean cook history exists to express uncertainty honestly.
+4. Feed journal observations into recipe revisions and qualification changes.
+5. Complete stale-branch cleanup and protect `main` with CI if repository settings allow it.
+6. Continue small `app.js` extractions only when ownership becomes materially unclear.
+7. Add flexible windows, non-Woodfire conflict solving, reusable external components or batching only when real meals demonstrate the need.
+8. Defer predictive ETA until enough clean cook history exists to express uncertainty honestly.
 
 ## Out of scope for the initial product
 - accounts/cloud backend;

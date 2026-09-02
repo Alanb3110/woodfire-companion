@@ -57,6 +57,11 @@ Import is a validated merge rather than a destructive replace:
 
 This protects completed-cook history against Safari/site-data loss without adding a backend or cloud account.
 
+## Persistence failure safety
+Journal reads distinguish empty, valid, unavailable and preserved-incompatible storage. Mutating operations require a valid or empty current journal; corrupt JSON and future schemas are rendered as an empty fallback with a visible warning but cannot be silently overwritten by upsert, feedback, removal, clear or import operations.
+
+Quota and unavailable-storage failures use the same actionable error contract as the active session. Automated tests assert that the pre-existing raw journal remains byte-for-byte unchanged after each failure class.
+
 ## Non-goals
 Journal V2 does not yet add:
 - photos;

@@ -20,11 +20,13 @@ test('cook session state carries stable journal and absolute serving metadata', 
 });
 
 test('startup does not overwrite an unreadable or future-version session with defaults', () => {
-  assert.match(appJs, /let state = repairLoadedSession\(loadSessionState\(\)\);/);
+  assert.match(appJs, /const initialSessionRead = readSessionState\(\);/);
+  assert.match(appJs, /let state = repairLoadedSession\(initialSessionRead\.state\);/);
   assert.doesNotMatch(
     appJs,
-    /let state = repairLoadedSession\(loadSessionState\(\)\);\s*saveSessionState\(state\);/
+    /let state = repairLoadedSession\(initialSessionRead\.state\);\s*saveSessionState\(state\);/
   );
+  assert.match(appJs, /if \(initialSessionRead\.warning\) showError\(initialSessionRead\.warning\);/);
 });
 
 test('replanning preserves the absolute serving date through the active-cook controller', () => {

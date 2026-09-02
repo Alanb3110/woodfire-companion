@@ -80,7 +80,7 @@ Manual temperature logging remains: value → Add/Enter → automatic timestamp.
 - Separate preparation, cooking, resting, finishing and service.
 - Use sensory/tenderness criteria when time/temperature alone is insufficient.
 - Keep placement, spacing, covering and liquid-level instructions explicit where relevant.
-- Verify safety-critical temperature/storage rules against current authoritative sources before encoding them.
+- Verify safety-critical temperature/storage rules against current authoritative sources before encoding them; current executable temperature targets resolve through `temperature.guidanceId` and `sources/FOOD_SAFETY_TRACEABILITY_V1.md`.
 
 Known household defaults: generous sauces; sweet-savoury welcome; thyme generally avoided; avoid alcohol/flambé unless explicitly requested.
 
@@ -92,6 +92,8 @@ Known household defaults: generous sauces; sweet-savoury welcome; thyme generall
 - Preserve recipe snapshots for active cooks.
 - Update source docs whenever product semantics, recipe/schema/planner/storage behavior changes.
 - Test meaningful UX/PWA changes on installed iPhone/Safari; Node/static tests do not replace that qualification.
+- Keep storage-fault preservation, the deterministic planner stress matrix and the Mobile WebKit smoke path green.
+- Use `sources/IPHONE_PWA_QUALIFICATION_V1.md` for physical-device release evidence.
 
 ## Current priorities
 1. Keep README/source contracts synchronized with merged code.

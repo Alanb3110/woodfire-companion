@@ -41,7 +41,7 @@ Import is intentionally non-destructive:
 For duplicate freshness comparison, feedback update time, general journal update time and service time are considered in that order of availability/recency. The merge therefore avoids overwriting a newer local note with an older backup copy.
 
 ## Failure safety
-A malformed JSON file, an unrecognized backup type, an unsupported wrapper version, a future journal schema or structurally invalid journal entries must fail before `localStorage` is mutated.
+A malformed JSON file, an unrecognized backup type, an unsupported wrapper version, a future journal schema or structurally invalid journal entries must fail before `localStorage` is mutated. Import also aborts if the existing local journal is unreadable/future-version or if the final write hits quota/unavailable storage; the prior raw journal is preserved.
 
 Import is not a destructive "replace journal" operation in V1. Rolling back intentionally to an older journal snapshot is out of scope.
 

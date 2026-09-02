@@ -1,3 +1,10 @@
+import {
+  LocalDataError,
+  preservedDataError,
+  readStorageItem,
+  writeStorageItem
+} from './storage.js';
+
 export const SESSION_STORAGE_KEY = 'woodfire-companion-v1';
 export const SESSION_SCHEMA_VERSION = 3;
 
@@ -81,24 +88,42 @@ export function migrateSessionState(value) {
   return result;
 }
 
-export function loadSessionState(storage = globalThis.localStorage) {
-  if (!storage) return createDefaultSessionState();
+function decodeSessionState(raw) {
   try {
-    const raw = storage.getItem(SESSION_STORAGE_KEY);
-    if (!raw) return createDefaultSessionState();
     return migrateSessionState(JSON.parse(raw));
   } catch (error) {
-    console.warn('État local illisible ou incompatible, réinitialisation.', error);
-    return createDefaultSessionState();
+    throw preservedDataError(error);
   }
 }
 
-export function saveSessionState(state, storage = globalThis.localStorage) {
-  if (!storage) return;
-  storage.setItem(SESSION_STORAGE_KEY, JSON.stringify({
+export function readSessionState(storage) {
+  try {
+    const raw = readStorageItem(SESSION_STORAGE_KEY, storage);
+    if (!raw) return { state: createDefaultSessionState(), status: 'empty', warning: null };
+    return { state: decodeSessionState(raw), status: 'ok', warning: null };
+  } catch (error) {
+    console.warn('État local illisible ou incompatible, réinitialisation.', error);
+    const normalized = error instanceof LocalDataError ? error : preservedDataError(error);
+    return {
+      state: createDefaultSessionState(),
+      status: normalized.code,
+      warning: normalized.message,
+      error: normalized
+    };
+  }
+}
+
+export function loadSessionState(storage) {
+  return readSessionState(storage).state;
+}
+
+export function saveSessionState(state, storage) {
+  const existing = readStorageItem(SESSION_STORAGE_KEY, storage);
+  if (existing) decodeSessionState(existing);
+  writeStorageItem(SESSION_STORAGE_KEY, JSON.stringify({
     ...state,
     schemaVersion: SESSION_SCHEMA_VERSION
-  }));
+  }), storage);
 }
 
 export function firstKnownSessionTimestamp(value, now = new Date()) {

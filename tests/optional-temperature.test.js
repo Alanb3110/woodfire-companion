@@ -51,6 +51,18 @@ test('enabled tracking requires a valid 30–120 °C default target', () => {
   assert.equal(validateRecipe(valid).valid, true, validateRecipe(valid).errors.join('\n'));
 });
 
+test('temperature guidance ids are validated without breaking legacy cook snapshots', () => {
+  const legacy = copyRecipe();
+  delete legacy.temperature.guidanceId;
+  const legacyValidation = validateRecipe(legacy);
+  assert.equal(legacyValidation.valid, true, legacyValidation.errors.join('\n'));
+  assert.ok(legacyValidation.warnings.some(warning => warning.includes('guidanceId')));
+
+  const malformed = copyRecipe();
+  malformed.temperature.guidanceId = 'not traceable';
+  assert.equal(validateRecipe(malformed).valid, false);
+});
+
 test('temperature completion cannot be declared when recipe tracking has no target', () => {
   const recipe = copyRecipe();
   delete recipe.temperature;
